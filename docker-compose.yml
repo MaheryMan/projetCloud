@@ -10,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql  # Changé ici
     restart: unless-stopped
 
   api:
@@ -30,6 +30,7 @@ services:
   map:
     image: overv/openstreetmap-tile-server
     container_name: osm-map
+    command: run 
     ports:
       - "8081:80"
     volumes:
