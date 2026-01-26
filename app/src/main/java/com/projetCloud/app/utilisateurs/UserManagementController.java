@@ -30,8 +30,41 @@ public class UserManagementController {
     }
 
     @PostMapping
-    public Utilisateur createUser(@RequestBody Utilisateur utilisateur) {
-        return utilisateurService.save(utilisateur);
+    public ResponseEntity<?> createUser(@RequestBody Utilisateur utilisateur) {
+        // Validation des champs requis
+        if (utilisateur.getEmail() == null || utilisateur.getEmail().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("L'email est requis");
+        }
+        if (utilisateur.getNom() == null || utilisateur.getNom().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Le nom est requis");
+        }
+        if (utilisateur.getPrenom() == null || utilisateur.getPrenom().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Le prénom est requis");
+        }
+        if (utilisateur.getIdSource() == null) {
+            return ResponseEntity.badRequest().body("La source est requise");
+        }
+        if (utilisateur.getIdStatus() == null) {
+            return ResponseEntity.badRequest().body("Le statut est requis");
+        }
+
+        try {
+            utilisateur.setId(null); // Ensure it's a new entity
+            Utilisateur savedUser = utilisateurService.save(utilisateur);
+            return ResponseEntity.ok(savedUser);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            if (e.getMessage().contains("email")) {
+                return ResponseEntity.badRequest().body("Email déjà utilisé");
+            } else if (e.getMessage().contains("num_tel")) {
+                return ResponseEntity.badRequest().body("Numéro de téléphone déjà utilisé");
+            } else if (e.getMessage().contains("fk_source") || e.getMessage().contains("fk_status")) {
+                return ResponseEntity.badRequest().body("Source ou statut invalide");
+            } else {
+                return ResponseEntity.badRequest().body("Erreur de validation des données: " + e.getMessage());
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur interne du serveur: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")

@@ -30,8 +30,22 @@ public class RoleController {
     }
 
     @PostMapping
-    public Role createRole(@RequestBody Role role) {
-        return roleService.save(role);
+    public ResponseEntity<?> createRole(@RequestBody Role role) {
+        // Validation des champs requis
+        if (role.getLibelle() == null || role.getLibelle().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Le libelle est requis");
+        }
+        if (role.getNiveau() == null) {
+            return ResponseEntity.badRequest().body("Le niveau est requis");
+        }
+
+        try {
+            role.setId(null); // Ensure it's a new entity
+            Role savedRole = roleService.save(role);
+            return ResponseEntity.ok(savedRole);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur interne du serveur: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")

@@ -11,9 +11,17 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.Parameter;
 
 @RestController
 @RequestMapping("/api/signalements")
+@Tag(name = "Signalements", description = "API pour la gestion des signalements")
 public class SignalementController {
 
     @Autowired
@@ -26,12 +34,26 @@ public class SignalementController {
     private NiveauTravailService niveauTravailService;
 
     @GetMapping
+    @Operation(summary = "Récupérer tous les signalements", description = "Retourne la liste de tous les signalements")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Liste des signalements récupérée avec succès",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = Signalement.class)))
+    })
     public List<Signalement> getAllSignalements() {
         return signalementService.findAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Signalement> getSignalementById(@PathVariable Long id) {
+    @Operation(summary = "Récupérer un signalement par ID", description = "Retourne un signalement spécifique selon son identifiant")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Signalement trouvé",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = Signalement.class))),
+        @ApiResponse(responseCode = "404", description = "Signalement non trouvé",
+                    content = @Content)
+    })
+    public ResponseEntity<Signalement> getSignalementById(@Parameter(description = "ID du signalement") @PathVariable Long id) {
         Optional<Signalement> signalement = signalementService.findById(id);
         if (signalement.isPresent()) {
             return ResponseEntity.ok(signalement.get());
@@ -41,7 +63,17 @@ public class SignalementController {
     }
 
     @PostMapping
-    public ResponseEntity<Signalement> createSignalement(@RequestBody SignalementRequest request) {
+    @Operation(summary = "Créer un nouveau signalement", description = "Crée un nouveau signalement avec les informations fournies")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Signalement créé avec succès",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = Signalement.class))),
+        @ApiResponse(responseCode = "400", description = "Données invalides ou utilisateur/niveau de travail non trouvé",
+                    content = @Content)
+    })
+    public ResponseEntity<Signalement> createSignalement(
+            @Parameter(description = "Données du signalement à créer", required = true)
+            @RequestBody SignalementRequest request) {
         Optional<Utilisateur> utilisateur = utilisateurService.findById(request.getIdUtilisateur());
         Optional<NiveauTravail> niveauTravail = niveauTravailService.findById(request.getIdNiveauTravail());
 
@@ -61,7 +93,15 @@ public class SignalementController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Signalement> updateSignalement(@PathVariable Long id, @RequestBody SignalementRequest request) {
+    @Operation(summary = "Mettre à jour un signalement", description = "Met à jour les informations d'un signalement existant")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Signalement mis à jour avec succès",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = Signalement.class))),
+        @ApiResponse(responseCode = "404", description = "Signalement non trouvé",
+                    content = @Content)
+    })
+    public ResponseEntity<Signalement> updateSignalement(@Parameter(description = "ID du signalement") @PathVariable Long id, @RequestBody SignalementRequest request) {
         Optional<Signalement> signalementOpt = signalementService.findById(id);
         if (signalementOpt.isPresent()) {
             Signalement signalement = signalementOpt.get();
@@ -77,7 +117,14 @@ public class SignalementController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSignalement(@PathVariable Long id) {
+    @Operation(summary = "Supprimer un signalement", description = "Supprime un signalement selon son identifiant")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "Signalement supprimé avec succès",
+                    content = @Content),
+        @ApiResponse(responseCode = "404", description = "Signalement non trouvé",
+                    content = @Content)
+    })
+    public ResponseEntity<Void> deleteSignalement(@Parameter(description = "ID du signalement") @PathVariable Long id) {
         if (signalementService.findById(id).isPresent()) {
             signalementService.deleteById(id);
             return ResponseEntity.noContent().build();
@@ -87,12 +134,33 @@ public class SignalementController {
     }
 
     // Classe interne pour la requête
+    @Schema(description = "Requête de création/modification d'un signalement", example = """
+            {
+              "latitude": -18.8792,
+              "longitude": 47.5079,
+              "surfaceM2": 100.50,
+              "description": "Route endommagée nécessitant réparation",
+              "idNiveauTravail": 1,
+              "idUtilisateur": 1
+            }
+            """)
     public static class SignalementRequest {
+        @Schema(description = "Latitude du signalement", example = "-18.8792", required = true, format = "double")
         private BigDecimal latitude;
+
+        @Schema(description = "Longitude du signalement", example = "47.5079", required = true, format = "double")
         private BigDecimal longitude;
+
+        @Schema(description = "Surface en mètres carrés", example = "100.50", format = "double")
         private BigDecimal surfaceM2;
+
+        @Schema(description = "Description du signalement", example = "Route endommagée nécessitant réparation", required = true)
         private String description;
+
+        @Schema(description = "ID du niveau de travail", example = "1", required = true, format = "int64")
         private Long idNiveauTravail;
+
+        @Schema(description = "ID de l'utilisateur", example = "1", required = true, format = "int64")
         private Long idUtilisateur;
 
         public BigDecimal getLatitude() {

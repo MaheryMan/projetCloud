@@ -54,7 +54,9 @@ public class Utilisateur {
     private Set<Role> roles;
 
     // Constructeurs
-    public Utilisateur() {}
+    public Utilisateur() {
+        this.roles = new java.util.HashSet<>();
+    }
 
     public Utilisateur(String email, String numTel, String password, String nom, String prenom, Integer idSource, Integer idStatus) {
         this.email = email;
@@ -64,6 +66,7 @@ public class Utilisateur {
         this.prenom = prenom;
         this.idSource = idSource;
         this.idStatus = idStatus;
+        this.roles = new java.util.HashSet<>();
     }
 
     // Getters et Setters

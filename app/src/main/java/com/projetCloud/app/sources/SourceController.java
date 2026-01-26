@@ -30,8 +30,14 @@ public class SourceController {
     }
 
     @PostMapping
-    public Source createSource(@RequestBody Source source) {
-        return sourceService.save(source);
+    public ResponseEntity<?> createSource(@RequestBody Source source) {
+        try {
+            source.setId(null); // Ensure it's a new entity
+            Source savedSource = sourceService.save(source);
+            return ResponseEntity.ok(savedSource);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur interne du serveur: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")

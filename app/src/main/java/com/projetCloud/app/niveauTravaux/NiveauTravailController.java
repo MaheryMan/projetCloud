@@ -30,8 +30,22 @@ public class NiveauTravailController {
     }
 
     @PostMapping
-    public NiveauTravail createNiveauTravail(@RequestBody NiveauTravail niveauTravail) {
-        return niveauTravailService.save(niveauTravail);
+    public ResponseEntity<?> createNiveauTravail(@RequestBody NiveauTravail niveauTravail) {
+        // Validation des champs requis
+        if (niveauTravail.getLibelle() == null || niveauTravail.getLibelle().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Le libelle est requis");
+        }
+        if (niveauTravail.getNiveau() == null) {
+            return ResponseEntity.badRequest().body("Le niveau est requis");
+        }
+
+        try {
+            niveauTravail.setId(null); // Ensure it's a new entity
+            NiveauTravail savedNiveauTravail = niveauTravailService.save(niveauTravail);
+            return ResponseEntity.ok(savedNiveauTravail);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erreur interne du serveur: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
