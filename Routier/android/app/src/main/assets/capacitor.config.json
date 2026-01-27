@@ -1,0 +1,14 @@
+{
+	"appId": "mg.itu.routier",
+	"appName": "Routier",
+	"webDir": "dist",
+	"plugins": {
+		"FirebaseAuthentication": {
+			"providers": [
+				"google.com"
+			],
+			"skipNativeAuth": false,
+			"serverClientId": "709870854675-2nmt120tclarcq7g6rafcaifl7e7enpe.apps.googleusercontent.com"
+		}
+	}
+}

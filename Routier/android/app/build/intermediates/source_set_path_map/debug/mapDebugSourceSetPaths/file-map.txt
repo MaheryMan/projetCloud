@@ -1,0 +1,57 @@
+mg.itu.routier.app-datastore-release-0 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/05a89d3dc8b5c67fd2491ba4357fe820/transformed/datastore-release/res
+mg.itu.routier.app-play-services-auth-21.1.1-1 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/0e796bcd060e9a4136b6099371c62b0d/transformed/play-services-auth-21.1.1/res
+mg.itu.routier.app-core-1.17.0-2 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/11094a199bb7945826b161d8a9c17beb/transformed/core-1.17.0/res
+mg.itu.routier.app-lifecycle-process-2.6.2-3 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/14a3b51da1167f75215e7e32d2231e74/transformed/lifecycle-process-2.6.2/res
+mg.itu.routier.app-annotation-experimental-1.4.1-4 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/1d9ef0194f51a6e0da4e440575587814/transformed/annotation-experimental-1.4.1/res
+mg.itu.routier.app-emoji2-views-helper-1.3.0-5 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/25a881cfd51f0b690442a74b496782fd/transformed/emoji2-views-helper-1.3.0/res
+mg.itu.routier.app-datastore-preferences-release-6 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/311c3575769e20e5e56d5dc0a0a79dc1/transformed/datastore-preferences-release/res
+mg.itu.routier.app-emoji2-1.3.0-7 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/353d69426d62513a7e19e841051a3a44/transformed/emoji2-1.3.0/res
+mg.itu.routier.app-savedstate-1.2.1-8 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/3f2ab0b27a59a3dfe1466c241ece8334/transformed/savedstate-1.2.1/res
+mg.itu.routier.app-activity-1.11.0-9 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/4ce00e85fb17003296e7add5523825c1/transformed/activity-1.11.0/res
+mg.itu.routier.app-credentials-1.3.0-10 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/4e650832fa4ac20c5da4b41e022fe4f1/transformed/credentials-1.3.0/res
+mg.itu.routier.app-core-splashscreen-1.2.0-11 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/4f5eb2e1ae45a07736e2f6ed862ea36a/transformed/core-splashscreen-1.2.0/res
+mg.itu.routier.app-credentials-play-services-auth-1.3.0-12 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/51c5f2d04ccabb207f61c11c5faa7be3/transformed/credentials-play-services-auth-1.3.0/res
+mg.itu.routier.app-play-services-basement-18.4.0-13 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/535e9dd0a65eaa85bd344836d560144e/transformed/play-services-basement-18.4.0/res
+mg.itu.routier.app-core-runtime-2.2.0-14 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/56c299ca5cc1351fb9b11d94695125dc/transformed/core-runtime-2.2.0/res
+mg.itu.routier.app-core-ktx-1.17.0-15 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/6443194ff2cd53b8a19f0de2b31832a0/transformed/core-ktx-1.17.0/res
+mg.itu.routier.app-lifecycle-runtime-ktx-2.6.2-16 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/6583f0d36caeecc03ba4543defa7b1c3/transformed/lifecycle-runtime-ktx-2.6.2/res
+mg.itu.routier.app-core-common-2.0.3-17 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/6e7ce74072759d15a6db2a117c209940/transformed/core-common-2.0.3/res
+mg.itu.routier.app-datastore-preferences-core-release-18 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/6f56b386da98fd76bd907abf5837b86e/transformed/datastore-preferences-core-release/res
+mg.itu.routier.app-startup-runtime-1.1.1-19 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/7179ce4c01b9a0b75718a869351620f5/transformed/startup-runtime-1.1.1/res
+mg.itu.routier.app-fragment-1.8.9-20 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/754c4f1b691d2a1223e4f8f413992fee/transformed/fragment-1.8.9/res
+mg.itu.routier.app-core-viewtree-1.0.0-21 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/9275faa7fc56368462609e8a34802ec7/transformed/core-viewtree-1.0.0/res
+mg.itu.routier.app-savedstate-ktx-1.2.1-22 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/92c4e4e9733c7bb3143235d2de140578/transformed/savedstate-ktx-1.2.1/res
+mg.itu.routier.app-lifecycle-viewmodel-2.6.2-23 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/ab32e4c3e2bf096654fd9e14504854dc/transformed/lifecycle-viewmodel-2.6.2/res
+mg.itu.routier.app-lifecycle-viewmodel-ktx-2.6.2-24 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/af4be80c3b5d72e4271858a76c00ae8c/transformed/lifecycle-viewmodel-ktx-2.6.2/res
+mg.itu.routier.app-activity-ktx-1.11.0-25 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/b1b6c7d44bdce8f4e30ff96e9d1948e3/transformed/activity-ktx-1.11.0/res
+mg.itu.routier.app-lifecycle-livedata-core-2.6.2-26 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/b5655c5df44c26433ffde34d45e6b2a4/transformed/lifecycle-livedata-core-2.6.2/res
+mg.itu.routier.app-appcompat-resources-1.7.1-27 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/bee8f78bb28e6cb788edd05c601f4778/transformed/appcompat-resources-1.7.1/res
+mg.itu.routier.app-play-services-base-18.5.0-28 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/c1b0052ae712299163f2612d6db27779/transformed/play-services-base-18.5.0/res
+mg.itu.routier.app-webkit-1.14.0-29 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/c2f70b51baa62bcee94ea5c7e05791a1/transformed/webkit-1.14.0/res
+mg.itu.routier.app-appcompat-1.7.1-30 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/c3f09e8abd8bb01c9314454bd06bb337/transformed/appcompat-1.7.1/res
+mg.itu.routier.app-firebase-common-22.0.1-31 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/cb546919c09df4bb1e2d2127157bcaa2/transformed/firebase-common-22.0.1/res
+mg.itu.routier.app-datastore-core-release-32 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/d69119d46c7440cf0598cfe4478dcec7/transformed/datastore-core-release/res
+mg.itu.routier.app-tracing-1.2.0-33 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/dcfd9b438b7b1dc562c63a5efe9cf4a0/transformed/tracing-1.2.0/res
+mg.itu.routier.app-lifecycle-viewmodel-savedstate-2.6.2-34 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/de2a1b5c01db4d02ef6d13f0f4e2cf96/transformed/lifecycle-viewmodel-savedstate-2.6.2/res
+mg.itu.routier.app-browser-1.4.0-35 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/e97c28717006cbcaf13326b3632ab4ff/transformed/browser-1.4.0/res
+mg.itu.routier.app-lifecycle-runtime-2.6.2-36 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/ebf9360ba611f1d20f2bddac6f1045ca/transformed/lifecycle-runtime-2.6.2/res
+mg.itu.routier.app-coordinatorlayout-1.3.0-37 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/ef97883a45eaa5cc79115d450cce1dbe/transformed/coordinatorlayout-1.3.0/res
+mg.itu.routier.app-profileinstaller-1.4.0-38 /Users/andriamalalatojo/.gradle/caches/8.14.3/transforms/f95ab50c54d3211c648684c462933e30/transformed/profileinstaller-1.4.0/res
+mg.itu.routier.app-pngs-39 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/android/app/build/generated/res/pngs/debug
+mg.itu.routier.app-res-40 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/android/app/build/generated/res/processDebugGoogleServices
+mg.itu.routier.app-resValues-41 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/android/app/build/generated/res/resValues/debug
+mg.itu.routier.app-updated_navigation_xml-42 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/android/app/build/generated/updated_navigation_xml/debug
+mg.itu.routier.app-packageDebugResources-43 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/android/app/build/intermediates/incremental/debug/packageDebugResources/merged.dir
+mg.itu.routier.app-packageDebugResources-44 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/android/app/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
+mg.itu.routier.app-debug-45 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/android/app/build/intermediates/merged_res/debug/mergeDebugResources
+mg.itu.routier.app-debug-46 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/android/app/src/debug/res
+mg.itu.routier.app-main-47 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/android/app/src/main/res
+mg.itu.routier.app-debug-48 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/android/capacitor-cordova-android-plugins/build/intermediates/packaged_res/debug/packageDebugResources
+mg.itu.routier.app-debug-49 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/node_modules/@capacitor-firebase/app/android/build/intermediates/packaged_res/debug/packageDebugResources
+mg.itu.routier.app-debug-50 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/node_modules/@capacitor-firebase/authentication/android/build/intermediates/packaged_res/debug/packageDebugResources
+mg.itu.routier.app-debug-51 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/node_modules/@capacitor/android/capacitor/build/intermediates/packaged_res/debug/packageDebugResources
+mg.itu.routier.app-debug-52 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/node_modules/@capacitor/app/android/build/intermediates/packaged_res/debug/packageDebugResources
+mg.itu.routier.app-debug-53 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/node_modules/@capacitor/geolocation/android/build/intermediates/packaged_res/debug/packageDebugResources
+mg.itu.routier.app-debug-54 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/node_modules/@capacitor/haptics/android/build/intermediates/packaged_res/debug/packageDebugResources
+mg.itu.routier.app-debug-55 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/node_modules/@capacitor/keyboard/android/build/intermediates/packaged_res/debug/packageDebugResources
+mg.itu.routier.app-debug-56 /Users/andriamalalatojo/Documents/ITU/S5/Mr Rojo/Cloud/projetCloud/Routier/node_modules/@capacitor/status-bar/android/build/intermediates/packaged_res/debug/packageDebugResources
