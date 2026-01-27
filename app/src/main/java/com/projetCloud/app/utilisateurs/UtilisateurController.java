@@ -39,19 +39,37 @@ public class UtilisateurController {
                     content = @Content(mediaType = "application/json",
                                      schema = @Schema(implementation = Utilisateur.class))),
         @ApiResponse(responseCode = "400", description = "Email ou mot de passe incorrect",
-                    content = @Content(mediaType = "text/plain"))
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<?> login(
             @Parameter(description = "Données d'authentification", required = true)
             @RequestBody LoginRequest loginRequest) {
         Optional<Utilisateur> utilisateur = utilisateurService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
         return utilisateur.<ResponseEntity<?>>map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.badRequest().body("Email ou mot de passe incorrect"));
+                .orElseGet(() -> ResponseEntity.badRequest().body(new ErrorResponse("Email ou mot de passe incorrect")));
     }
 
-    /**
-     * Classe interne pour la requête de connexion
-     */
+    @Schema(description = "Erreur standard renvoyée par l'API")
+    public static class ErrorResponse {
+        @Schema(example = "Email ou mot de passe incorrect")
+        private String message;
+
+        public ErrorResponse() {}
+
+        public ErrorResponse(String message) {
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+    }
+
     @Schema(description = "Requête d'authentification contenant les informations de connexion", example = """
             {
               "email": "user@example.com",

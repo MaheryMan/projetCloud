@@ -75,9 +75,7 @@ function App() {
           <Route 
             path="/users" 
             element={
-              <ProtectedRoute>
                 <UserManagement />
-              </ProtectedRoute>
             } 
           />
           <Route 
