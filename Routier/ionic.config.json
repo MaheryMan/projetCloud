@@ -1,0 +1,7 @@
+{
+  "name": "Routier",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
