@@ -1,0 +1,1 @@
+// This configuration is not used - the active SecurityConfig is in the security package

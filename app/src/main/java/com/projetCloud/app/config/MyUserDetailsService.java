@@ -1,0 +1,1 @@
+// This class is not used - authentication is handled in UtilisateurService
