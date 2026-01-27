@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +19,7 @@ import io.swagger.v3.oas.annotations.Parameter;
  * Controller pour la gestion des utilisateurs
  */
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping("/api/auth")
 @Tag(name = "Authentification", description = "API pour l'authentification des utilisateurs")
 public class UtilisateurController {
@@ -77,5 +80,24 @@ public class UtilisateurController {
         public void setPassword(String password) {
             this.password = password;
         }
+    }
+
+    @GetMapping("/debug-user/{email}")
+    public ResponseEntity<?> debugUser(@PathVariable String email) {
+        Optional<Utilisateur> user = utilisateurService.findByEmail(email);
+        
+        Map<String, Object> response = new HashMap<>();
+        if (user.isPresent()) {
+            Utilisateur u = user.get();
+            response.put("found", true);
+            response.put("email", u.getEmail());
+            response.put("deleteLe", u.getDeleteLe());
+            response.put("passwordStartsWith", u.getPassword().substring(0, 10));
+            response.put("isDeleted", u.getDeleteLe() != null);
+        } else {
+            response.put("found", false);
+        }
+        
+        return ResponseEntity.ok(response);
     }
 }

@@ -1,8 +1,8 @@
 services:
-
   postgres:
-    image: postgres:latest
+    image: postgres:15  
     container_name: pg-auth
+    hostname: postgres
     environment:
       POSTGRES_DB: cloud
       POSTGRES_USER: cloud
@@ -10,14 +10,17 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql
+      - pgdata:/var/lib/postgresql/data  
     networks:
-      - app-network
+      app-network:
+        aliases:
+          - postgres  
     restart: unless-stopped
 
   api:
     build:
       context: ./app
+      dockerfile: Dockerfile
     container_name: cloud-api
     depends_on:
       - postgres
@@ -27,6 +30,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/cloud
       SPRING_DATASOURCE_USERNAME: cloud
       SPRING_DATASOURCE_PASSWORD: cloud
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: 30000
     networks:
       - app-network
     restart: unless-stopped
