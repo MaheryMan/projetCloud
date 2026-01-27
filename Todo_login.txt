@@ -1,0 +1,174 @@
+GUIDE FONCTIONNEL – API AUTH & SYNC (TODO)
+==========================================
+
+Version : API uniquement (sans UI)
+Projet : Authentification hybride Firebase + Spring Boot + Postgres + Offline Manager
+
+
+1. PREPARATION BACKEND
+----------------------
+
+1.1. Installer Firebase Admin SDK
+    - Ajouter dépendance Firebase Admin dans Spring Boot
+    - Charger serviceAccountKey.json
+    - Initialiser FirebaseApp au démarrage
+
+1.2. Mettre à jour schéma Postgres
+    - Ajouter colonnes :
+        password_hash TEXT
+        firebase_uid VARCHAR(128) UNIQUE
+        cree_le, update_le, delete_le
+    - Conserver table users_roles pour les rôles
+
+
+2. MODULE AUTH – MANAGER ONLINE/OFFLINE
+---------------------------------------
+
+2.1. Endpoint : Login ONLINE (Firebase)
+    POST /api/auth/login-online
+    - Input : idToken Firebase
+    - Vérifier token via Firebase Admin
+    - Charger utilisateur Postgres via email ou firebase_uid
+    - Vérifier rôle MANAGER
+    - Retourner profil + permissions
+
+2.2. Endpoint : Login OFFLINE (Postgres)
+    POST /api/auth/login-offline
+    - Input : email + password
+    - Vérifier BCrypt(password_hash)
+    - Vérifier rôle MANAGER
+    - Générer JWT offline (8–12h)
+    - Retourner JWT offline
+
+2.3. Middleware d’authentification
+    - Si token Firebase → vérifier via Firebase Admin
+    - Si token offline JWT → vérifier signature locale
+    - Injecter user_id, roles, mode dans SecurityContext
+
+
+3. MODULE ADMIN – GESTION DES UTILISATEURS
+------------------------------------------
+
+3.1. Endpoint : Créer un utilisateur
+    POST /api/admin/users
+
+    Cas A : email + password
+        - Hash BCrypt
+        - Créer user Postgres
+        - Créer user Firebase (email/password)
+        - Stocker firebase_uid
+        - Assigner rôles Postgres
+        - Ajouter custom claims Firebase
+
+    Cas B : email Google
+        - Créer user Postgres (password_hash = null)
+        - Ne pas créer Firebase immédiatement
+        - Sync plus tard via bouton
+
+3.2. Endpoint : Modifier un utilisateur
+    PUT /api/admin/users/{id}
+    - Mettre à jour Postgres
+    - Mettre à jour Firebase si email/nom changent
+
+3.3. Endpoint : Supprimer un utilisateur
+    DELETE /api/admin/users/{id}
+    - Soft delete Postgres
+    - Désactiver user Firebase
+    - Bloquer accès dans les deux apps
+
+
+4. MODULE SYNC – SYNCHRONISATION FIREBASE ↔ POSTGRES
+-----------------------------------------------------
+
+4.1. Endpoint : Sync utilisateurs
+    POST /api/admin/sync/users
+
+    4.1.1. Postgres → Firebase
+        - Pour chaque user sans firebase_uid :
+            - Si password_hash → créer user Firebase (email/password)
+            - Sinon → créer user Firebase sans password (Google-only)
+        - Mettre à jour firebase_uid
+        - Mettre à jour custom claims
+
+    4.1.2. Firebase → Postgres
+        - Lister users Firebase
+        - Pour chaque user inconnu en Postgres :
+            - Créer entrée minimale Postgres
+            - Pas de password_hash
+            - Rôle USER par défaut
+
+4.2. Endpoint : Sync travaux routiers
+    POST /api/admin/sync/travaux
+    - Postgres → Firebase (si Firestore utilisé)
+    - Firebase → Postgres (signalements créés via mobile)
+
+
+5. MODULE AUTHORIZATION – ROLES & PERMISSIONS
+---------------------------------------------
+
+5.1. Rôles dans Postgres
+    - ROLE_MANAGER
+    - ROLE_USER
+    - ROLE_VISITOR (optionnel)
+
+5.2. Rôles dans Firebase (custom claims)
+    - role: "MANAGER" ou "USER"
+    - Recalculer claims lors de chaque sync
+
+
+6. MODULE JWT OFFLINE
+---------------------
+
+6.1. Structure du JWT offline
+    - sub = user_id
+    - email
+    - roles = [...]
+    - mode = "offline"
+    - exp = +8h
+
+6.2. Stockage côté front
+    - IndexedDB ou localStorage
+
+
+7. SECURITE
+-----------
+
+7.1. Password hashing
+    - BCrypt (strength 10–12)
+
+7.2. JWT offline
+    - Signature HMAC256
+    - Clé dans .env
+
+7.3. Firebase token
+    - Vérification via Admin SDK
+
+
+8. TESTS
+--------
+
+8.1. Tests unitaires
+    - Création user
+    - Login offline
+    - Login online
+    - Sync utilisateurs
+
+8.2. Tests d’intégration
+    - Firebase Admin mocké
+    - Postgres via Testcontainers
+
+8.3. Tests manuels
+    - Manager offline
+    - Manager online
+    - Mobile login Google
+    - Sync bidirectionnelle
+
+
+9. LIVRABLES API
+----------------
+
+- Fichier OpenAPI/Swagger
+- Collection Postman
+- Script SQL migration
+- Documentation endpoints
+- Guide installation Firebase Admin

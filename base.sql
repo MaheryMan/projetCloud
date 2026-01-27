@@ -26,22 +26,21 @@ CREATE TABLE niveau_travaux(
    PRIMARY KEY(id)
 );
 
-CREATE TABLE utilisateurs(
-   id INTEGER,
-   email VARCHAR(50) ,
-   num_tel VARCHAR(50) ,
-   password TEXT,
-   nom VARCHAR(255)  NOT NULL,
-   prenom VARCHAR(255)  NOT NULL,
-   tentatives INTEGER,
-   cree_le TIMESTAMP,
-   update_le TIMESTAMP,
-   delete_le TIMESTAMP,
-   id_source INTEGER NOT NULL,
-   id_status INTEGER NOT NULL,
-   PRIMARY KEY(id),
-   UNIQUE(email),
-   UNIQUE(num_tel),
+CREATE TABLE utilisateurs (
+   id              SERIAL PRIMARY KEY,
+   email           VARCHAR(255) UNIQUE,
+   num_tel         VARCHAR(50) UNIQUE,
+   password_hash   TEXT,                 -- hash BCrypt (nullable si Google-only)
+   firebase_uid    VARCHAR(128),        -- id Firebase, nullable au début
+   nom             VARCHAR(255) NOT NULL,
+   prenom          VARCHAR(255) NOT NULL,
+   tentatives      INTEGER DEFAULT 0,
+   cree_le         TIMESTAMP DEFAULT now(),
+   update_le       TIMESTAMP,
+   delete_le       TIMESTAMP,
+   id_source       INTEGER NOT NULL,
+   id_status       INTEGER NOT NULL,
+   CONSTRAINT uq_firebase_uid UNIQUE (firebase_uid),
    FOREIGN KEY(id_source) REFERENCES sources(id),
    FOREIGN KEY(id_status) REFERENCES status(id)
 );
@@ -93,9 +92,9 @@ CREATE TABLE historiques_status_signalement(
    FOREIGN KEY(id_status) REFERENCES status(id)
 );
 
-CREATE TABLE users_roles(
-   id_utilisateur INTEGER,
-   id_role INTEGER,
+CREATE TABLE users_roles (
+   id_utilisateur  INTEGER,
+   id_role         INTEGER,
    PRIMARY KEY(id_utilisateur, id_role),
    FOREIGN KEY(id_utilisateur) REFERENCES utilisateurs(id),
    FOREIGN KEY(id_role) REFERENCES roles(id)
