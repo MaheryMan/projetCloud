@@ -54,10 +54,10 @@
                             </div>
 
                             <!-- Google Login -->
-                            <ion-button expand="block" @click="loginGoogle" :disabled="loadingGoogle"
+                            <ion-button expand="block" @click="loginGoogle" :disabled="loading"
                                 class="google-button">
                                 <ion-icon :icon="logoGoogle" slot="start"></ion-icon>
-                                <ion-spinner name="crescent" v-if="loadingGoogle"></ion-spinner>
+                                <ion-spinner name="crescent" v-if="loading"></ion-spinner>
                                 <span v-else>Se connecter avec Google</span>
                             </ion-button>
 
@@ -114,7 +114,7 @@ const { loading, error } = storeToRefs(authStore)
 const { showToast } = useToast()
 const { handleError, clearError } = useErrorHandler()
 
-const { errors, hasErrors } = useFormValidation({ email, password })
+const {hasErrors } = useFormValidation({ email, password })
 
 const handleLogin = async () => {
     clearError()
