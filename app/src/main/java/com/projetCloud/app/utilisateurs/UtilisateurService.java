@@ -31,9 +31,21 @@ public class UtilisateurService {
     public Optional<Utilisateur> authenticate(String email, String password) {
         Optional<Utilisateur> utilisateur = utilisateurRepository.findByEmail(email);
         if (utilisateur.isPresent()
-                && utilisateur.get().getDeleteLe() == null
-                && passwordEncoder.matches(password, utilisateur.get().getPassword())) {
-            return utilisateur;
+                && utilisateur.get().getDeleteLe() == null) {
+            String storedPassword = utilisateur.get().getPassword();
+            boolean passwordMatches = false;
+            if (storedPassword != null) {
+                if (storedPassword.startsWith("$2a$")) {
+                    // Password is BCrypt hashed
+                    passwordMatches = passwordEncoder.matches(password, storedPassword);
+                } else {
+                    // Password is plain text (for backward compatibility)
+                    passwordMatches = password.equals(storedPassword);
+                }
+            }
+            if (passwordMatches) {
+                return utilisateur;
+            }
         }
         return Optional.empty();
     }
@@ -109,7 +121,8 @@ public class UtilisateurService {
      * @return l'utilisateur enregistré
      */
     public Utilisateur save(Utilisateur utilisateur) {
-        if (utilisateur.getPassword() != null && !utilisateur.getPassword().startsWith("$2a$")) { // Check if not already encoded
+        if (utilisateur.getPassword() != null && !utilisateur.getPassword().startsWith("$2a$")) {
+            // Encode plain text passwords
             utilisateur.setPassword(passwordEncoder.encode(utilisateur.getPassword()));
         }
         return utilisateurRepository.save(utilisateur);
