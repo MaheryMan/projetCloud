@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "709870854675",
+    "project_id": "s5-routier",
+    "storage_bucket": "s5-routier.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:709870854675:android:01dea7efbe2d3081e5d5e6",
+        "android_client_info": {
+          "package_name": "mg.itu.routier"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "709870854675-k8b7rvcmhkqer7pd94dcff2atal86nol.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "mg.itu.routier",
+            "certificate_hash": "0122b80266cf4449055537b67e0fb377b3966b80"
+          }
+        },
+        {
+          "client_id": "709870854675-2nmt120tclarcq7g6rafcaifl7e7enpe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGhjqFzEKN_ziUIrSQNdEQgc6hAkcolUk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "709870854675-2nmt120tclarcq7g6rafcaifl7e7enpe.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
