@@ -4,4 +4,7 @@
     <string name="title_activity_main">Routier</string>
     <string name="package_name">mg.itu.routier</string>
     <string name="custom_url_scheme">mg.itu.routier</string>
+
+    <!-- Firebase Authentication -->
+    <string name="default_web_client_id">709870854675-2nmt120tclarcq7g6rafcaifl7e7enpe.apps.googleusercontent.com</string>
 </resources>

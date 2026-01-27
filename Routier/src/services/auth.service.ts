@@ -4,11 +4,12 @@ import {
     signOut,
     onAuthStateChanged,
     User,
-    GoogleAuthProvider,
-    signInWithPopup,
     createUserWithEmailAndPassword,
-    updateProfile
+    updateProfile,
+    GoogleAuthProvider,
+    signInWithCredential
 } from 'firebase/auth'
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
 import {
     doc,
     getDoc,
@@ -56,8 +57,11 @@ export async function register(email: string, password: string, displayName?: st
  * Connexion via Google
  */
 export async function loginWithGoogle(): Promise<User> {
-    const provider = new GoogleAuthProvider()
-    const result = await signInWithPopup(auth, provider)
+    const googleUser = await GoogleAuth.signIn()
+
+    // Créer un credential Firebase avec le token Google
+    const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken)
+    const result = await signInWithCredential(auth, credential)
     const user = result.user
 
     // Création du profil Firestore si inexistant

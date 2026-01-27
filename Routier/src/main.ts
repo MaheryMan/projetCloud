@@ -5,6 +5,9 @@ import router from './router';
 import { IonicVue } from '@ionic/vue';
 import { createPinia } from 'pinia'
 
+// Initialize Google Auth
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
+
 // Import icon utilities
 import { addIcons } from 'ionicons';
 
@@ -140,6 +143,13 @@ const app = createApp(App)
   .use(IonicVue)
   .use(createPinia())
   .use(router);
+
+// Initialize Google Auth
+GoogleAuth.initialize({
+  clientId: '709870854675-2nmt120tclarcq7g6rafcaifl7e7enpe.apps.googleusercontent.com',
+  scopes: ['profile', 'email'],
+  grantOfflineAccess: true,
+});
 
 router.isReady().then(() => {
   app.mount('#app');
