@@ -1,4 +1,1 @@
-package com.projetCloud.app.config;
-
-public class MyUserDetailsService {
-}
+// This class is not used - authentication is handled in UtilisateurService
