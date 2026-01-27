@@ -97,52 +97,51 @@ import {
 } from 'ionicons/icons'
 
 import { ref } from 'vue'
-import { login } from '@/services/auth.service'
-import { loginWithGoogle } from '@/services/auth.service'
 import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { useAuthStore } from '@/stores/auth.store'
+import { useToast } from '@/composables/useToast'
+import { useErrorHandler } from '@/composables/useErrorHandler'
+import { useFormValidation } from '@/composables/useFormValidation'
 
 const email = ref('')
 const password = ref('')
-const error = ref('')
-const loading = ref(false)
-const loadingGoogle = ref(false)
 const showPassword = ref(false)
 const router = useRouter()
 
-const handleLogin = async () => {
-    error.value = ''
+const authStore = useAuthStore()
+const { loading, error } = storeToRefs(authStore)
+const { showToast } = useToast()
+const { handleError, clearError } = useErrorHandler()
 
-    if (!email.value || !password.value) {
-        error.value = 'Veuillez remplir tous les champs'
+const { errors, hasErrors } = useFormValidation({ email, password })
+
+const handleLogin = async () => {
+    clearError()
+
+    if (hasErrors.value) {
+        showToast('Veuillez remplir tous les champs obligatoires', 'warning')
         return
     }
 
-    loading.value = true
-
     try {
-        await login(email.value, password.value)
+        await authStore.loginWithEmail(email.value, password.value)
+        showToast('Connexion réussie', 'success')
         router.replace('/home')
-    } catch (err: any) {
-        error.value = 'Email ou mot de passe incorrect'
-        // Affiche le message d'erreur Firebase dans la console pour debug
-        console.error('Erreur Firebase login:', err?.message || err)
-    } finally {
-        loading.value = false
+    } catch (err) {
+        handleError(err, 'Email ou mot de passe incorrect')
     }
 }
 
 const loginGoogle = async () => {
-    error.value = ''
-    loadingGoogle.value = true
+    clearError()
 
     try {
-        await loginWithGoogle()
+        await authStore.loginGoogleAction()
+        showToast('Connexion avec Google réussie', 'success')
         router.replace('/home')
-    } catch (err: any) {
-        error.value = 'Erreur lors de la connexion avec Google'
-        console.error('Erreur Google login', err)
-    } finally {
-        loadingGoogle.value = false
+    } catch (err) {
+        handleError(err, 'Erreur lors de la connexion avec Google')
     }
 }
 

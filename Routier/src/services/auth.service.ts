@@ -5,7 +5,9 @@ import {
     onAuthStateChanged,
     User,
     GoogleAuthProvider,
-    signInWithPopup
+    signInWithPopup,
+    createUserWithEmailAndPassword,
+    updateProfile
 } from 'firebase/auth'
 import {
     doc,
@@ -13,6 +15,7 @@ import {
     setDoc,
     serverTimestamp
 } from 'firebase/firestore'
+import type { UserProfile } from '@/types/user.types'
 
 /**
  * Connexion email / mot de passe
@@ -21,6 +24,32 @@ import {
 export async function login(email: string, password: string): Promise<User> {
     const result = await signInWithEmailAndPassword(auth, email, password)
     return result.user
+}
+
+/**
+ * Inscription email / mot de passe
+ */
+export async function register(email: string, password: string, displayName?: string): Promise<User> {
+    const cred = await createUserWithEmailAndPassword(auth, email, password)
+    const user = cred.user
+
+    if (displayName) {
+        await updateProfile(user, { displayName })
+    }
+
+    const profile: UserProfile = {
+        uid: user.uid,
+        email: user.email,
+        name: user.displayName || displayName || null,
+        photoURL: user.photoURL,
+        role: 'driver',
+        createdAt: serverTimestamp() as any
+    }
+
+    const userRef = doc(db, 'users', user.uid)
+    await setDoc(userRef, profile)
+
+    return user
 }
 
 /**

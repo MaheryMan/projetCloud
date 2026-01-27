@@ -3,6 +3,7 @@ import App from './App.vue'
 import router from './router';
 
 import { IonicVue } from '@ionic/vue';
+import { createPinia } from 'pinia'
 
 // Import icon utilities
 import { addIcons } from 'ionicons';
@@ -14,17 +15,30 @@ import {
   globeOutline,
   alertCircleOutline,
   checkmarkCircleOutline,
+  checkmarkCircle,
   timeOutline,
+  layersOutline,
+  locate,
   locateOutline,
   addOutline,
+  addCircleOutline,
+  removeOutline,
+  personCircleOutline,
   locationOutline,
+  location,
   closeOutline,
   listOutline,
   documentTextOutline,
   informationCircleOutline,
+  arrowForwardOutline,
   constructOutline,
+  createOutline,
   swapHorizontalOutline,
   checkmarkOutline,
+  warningOutline,
+  calendarOutline,
+  fingerPrintOutline,
+  shieldCheckmarkOutline,
   // Add these if you're using them in other components:
   homeOutline,
   settingsOutline,
@@ -48,18 +62,31 @@ addIcons({
   'person-outline': personOutline,
   'globe-outline': globeOutline,
   'alert-circle-outline': alertCircleOutline,
+  'person-circle-outline': personCircleOutline,
   'checkmark-circle-outline': checkmarkCircleOutline,
+  'checkmark-circle': checkmarkCircle,
   'time-outline': timeOutline,
+  'layers-outline': layersOutline,
+  'locate': locate,
   'locate-outline': locateOutline,
   'add-outline': addOutline,
+  'add-circle-outline': addCircleOutline,
+  'remove-outline': removeOutline,
   'location-outline': locationOutline,
+  'location': location,
   'close-outline': closeOutline,
   'list-outline': listOutline,
   'document-text-outline': documentTextOutline,
   'information-circle-outline': informationCircleOutline,
+  'arrow-forward-outline': arrowForwardOutline,
   'construct-outline': constructOutline,
+  'create-outline': createOutline,
   'swap-horizontal-outline': swapHorizontalOutline,
   'checkmark-outline': checkmarkOutline,
+  'warning-outline': warningOutline,
+  'calendar-outline': calendarOutline,
+  'finger-print-outline': fingerPrintOutline,
+  'shield-checkmark-outline': shieldCheckmarkOutline,
   // Optional: add these for other pages
   'home-outline': homeOutline,
   'settings-outline': settingsOutline,
@@ -111,6 +138,7 @@ import './theme/variables.css';
 
 const app = createApp(App)
   .use(IonicVue)
+  .use(createPinia())
   .use(router);
 
 router.isReady().then(() => {

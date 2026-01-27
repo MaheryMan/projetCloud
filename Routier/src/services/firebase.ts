@@ -2,14 +2,32 @@ import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
+const requiredEnvKeys = [
+  'VITE_FIREBASE_API_KEY',
+  'VITE_FIREBASE_AUTH_DOMAIN',
+  'VITE_FIREBASE_PROJECT_ID',
+  'VITE_FIREBASE_STORAGE_BUCKET',
+  'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  'VITE_FIREBASE_APP_ID'
+] as const
+
+const missingEnvKeys = requiredEnvKeys.filter((k) => {
+  const v = (import.meta as any).env?.[k]
+  return !v || String(v).trim().length === 0
+})
+
+if (missingEnvKeys.length > 0) {
+  throw new Error(`Missing Firebase env vars: ${missingEnvKeys.join(', ')}`)
+}
+
 const firebaseConfig = {
-  apiKey: "AIzaSyCQVfKLVG7Ip47ode7bZ6DMiifP3gIFJyA",
-  authDomain: "s5-routier.firebaseapp.com",
-  projectId: "s5-routier",
-  storageBucket: "s5-routier.firebasestorage.app",
-  messagingSenderId: "709870854675",
-  appId: "1:709870854675:web:b3422df365df0683e5d5e6",
-  measurementId: "G-KL1XFCXQTG"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 }
 
 const app = initializeApp(firebaseConfig)

@@ -30,7 +30,6 @@
         </ion-buttons>
       </ion-toolbar>
 
-      <!-- Barre de stats améliorée -->
       <div class="stats-bar">
         <div class="stat-item" v-for="stat in statsData" :key="stat.label">
           <div class="stat-icon-wrapper" :class="stat.class">
@@ -44,6 +43,30 @@
           </div>
         </div>
       </div>
+
+      <div class="recap-toggle" @click="showRecap = !showRecap">
+        <span class="recap-toggle-text">Récap</span>
+        <span class="recap-toggle-state">{{ showRecap ? 'Masquer' : 'Afficher' }}</span>
+      </div>
+
+      <transition name="slide-fade">
+        <ion-card v-if="showRecap" class="recap-card">
+          <ion-card-content class="recap-content">
+            <div class="recap-item">
+              <span class="recap-label">Surface totale</span>
+              <span class="recap-value">{{ totalSurfaceM2.toFixed(0) }} m²</span>
+            </div>
+            <div class="recap-item">
+              <span class="recap-label">Budget total</span>
+              <span class="recap-value">{{ totalBudgetEstimated.toFixed(0) }} Ar</span>
+            </div>
+            <div class="recap-item">
+              <span class="recap-label">Avancement</span>
+              <span class="recap-value">{{ progressPercent }}%</span>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </transition>
 
       <!-- Message d'information amélioré -->
       <transition name="slide-fade">
@@ -131,13 +154,7 @@
         </div>
       </transition>
 
-      <!-- Bouton Ajouter amélioré -->
-      <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="startAddReport" class="add-button">
-          <ion-icon name="add-outline" class="add-icon"></ion-icon>
-          <span class="add-pulse"></span>
-        </ion-fab-button>
-      </ion-fab>
+      
 
       <!-- Message si aucun signalement amélioré -->
       <transition name="fade-up">
@@ -210,6 +227,45 @@
                   <span class="coord">{{ newPosition.lng.toFixed(5) }}°</span>
                 </span>
               </div>
+            </div>
+
+            <div class="form-section">
+              <div class="section-header">
+                <span class="section-number">3</span>
+                <div class="section-info">
+                  <h3 class="section-title">Détails</h3>
+                  <p class="section-subtitle">Complétez les informations</p>
+                </div>
+              </div>
+
+              <ion-item lines="none" class="input-item">
+                <ion-input
+                  v-model.number="surfaceM2"
+                  label="Surface (m²)"
+                  label-placement="floating"
+                  inputmode="decimal"
+                  type="number"
+                />
+              </ion-item>
+
+              <ion-item lines="none" class="input-item">
+                <ion-input
+                  v-model.number="budgetEstimated"
+                  label="Budget estimé (Ar)"
+                  label-placement="floating"
+                  inputmode="decimal"
+                  type="number"
+                />
+              </ion-item>
+
+              <ion-item lines="none" class="input-item">
+                <ion-input
+                  v-model="companyName"
+                  label="Entreprise concernée"
+                  label-placement="floating"
+                  type="text"
+                />
+              </ion-item>
             </div>
             <div class="position-hint">
               <ion-icon name="finger-print-outline"></ion-icon>
@@ -323,15 +379,18 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton,
-  IonIcon, IonFab, IonFabButton, IonModal, IonTextarea, IonSpinner, toastController
+  IonIcon, IonFabButton, IonModal, IonTextarea, IonSpinner, IonItem, IonInput,
+  IonCard, IonCardContent
 } from '@ionic/vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { db, auth } from '@/services/firebase';
-import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { auth } from '@/services/firebase';
+import { createReport, getAllReports, getReportsByUser } from '@/services/report.service';
 import { onAuthStateChanged } from 'firebase/auth';
 import { logout } from '@/services/auth.service';
 import { Geolocation } from '@capacitor/geolocation';
+import { useToast } from '@/composables/useToast';
+import { computeReportMetrics } from '@/utils/reportMetrics';
 
 const router = useRouter();
 
@@ -342,11 +401,19 @@ const markers: any[] = [];
 const showForm = ref(false);
 const reportType = ref('trou');
 const reportDescription = ref('');
+const surfaceM2 = ref<number>(0);
+const budgetEstimated = ref<number>(0);
+const companyName = ref('');
+const showRecap = ref(false);
 const newPosition = ref({ lat: -18.8792, lng: 47.5079 });
 const isAuthenticated = ref(false);
 const totalReports = ref(0);
 const approvedReports = ref(0);
 const pendingReports = ref(0);
+const inProgressReports = ref(0);
+const totalSurfaceM2 = ref(0);
+const totalBudgetEstimated = ref(0);
+const progressPercent = ref(0);
 const loading = ref(false);
 const submitting = ref(false);
 const showMyReports = ref(false);
@@ -368,7 +435,12 @@ const formProgress = computed(() => {
 });
 
 const canSubmit = computed(() => {
-  return reportType.value && reportDescription.value.trim().length >= 10;
+  return (
+    reportType.value &&
+    reportDescription.value.trim().length >= 10 &&
+    Number(surfaceM2.value) > 0 &&
+    companyName.value.trim().length > 0
+  );
 });
 
 const placeholderText = computed(() => {
@@ -388,16 +460,22 @@ const statsData = computed(() => [
     class: 'primary'
   },
   {
-    label: 'Validés',
+    label: 'Terminé',
     value: approvedReports.value,
     icon: 'checkmark-circle-outline',
     class: 'success'
   },
   {
-    label: 'En attente',
+    label: 'Nouveau',
     value: pendingReports.value,
     icon: 'time-outline',
     class: 'warning'
+  },
+  {
+    label: 'En cours',
+    value: inProgressReports.value,
+    icon: 'construct-outline',
+    class: 'info'
   }
 ]);
 
@@ -408,10 +486,12 @@ const reportTypes = [
 ];
 
 const legendItems = [
-  { type: 'trou', label: 'Trou', icon: '!' },
-  { type: 'chantier', label: 'Chantier', icon: '⚙' },
-  { type: 'deviation', label: 'Déviation', icon: '↔' }
+  { type: 'nouveau', label: 'Nouveau', icon: '●' },
+  { type: 'en_cours', label: 'En cours', icon: '●' },
+  { type: 'termine', label: 'Terminé', icon: '●' }
 ];
+
+const { showToast } = useToast();
 
 // Fonctions
 const toggleLegend = () => {
@@ -421,16 +501,6 @@ const toggleLegend = () => {
 const toggleMyReports = () => {
   showMyReports.value = !showMyReports.value;
   loadReports();
-};
-
-const showToast = async (message: string, color: 'success' | 'warning' | 'danger' | 'primary' = 'success') => {
-  const toast = await toastController.create({
-    message,
-    duration: 2000,
-    position: 'top',
-    color
-  });
-  await toast.present();
 };
 
 const startAddReport = () => {
@@ -448,6 +518,9 @@ const startAddReport = () => {
   
   reportType.value = 'trou';
   reportDescription.value = '';
+  surfaceM2.value = 0;
+  budgetEstimated.value = 0;
+  companyName.value = '';
   showForm.value = true;
 };
 
@@ -461,6 +534,9 @@ const startAddReportAtPosition = (position: L.LatLng) => {
   newPosition.value = position;
   reportType.value = 'trou';
   reportDescription.value = '';
+  surfaceM2.value = 0;
+  budgetEstimated.value = 0;
+  companyName.value = '';
   showForm.value = true;
 };
 
@@ -595,14 +671,16 @@ const submitReport = async () => {
   submitting.value = true;
 
   try {
-    await addDoc(collection(db, 'reports'), {
-      uid: auth.currentUser?.uid,
+    await createReport({
+      uid: auth.currentUser?.uid as string,
       description: reportDescription.value,
-      type: reportType.value,
+      type: reportType.value as any,
       lat: newPosition.value.lat,
       lng: newPosition.value.lng,
-      status: 'pending',
-      createdAt: new Date()
+      status: 'nouveau',
+      surfaceM2: Number(surfaceM2.value || 0),
+      budgetEstimated: Number(budgetEstimated.value || 0),
+      companyName: companyName.value || ''
     });
 
     showToast('Signalement créé avec succès!');
@@ -639,11 +717,11 @@ const recenterOnGPS = () => {
   }
 };
 
-const getMarkerIcon = (type: string) => {
-  const colors: Record<string, string> = {
-    trou: '#ef4444',
-    chantier: '#f59e0b',
-    deviation: '#3b82f6'
+const getMarkerIcon = (type: string, status: string) => {
+  const statusColors: Record<string, string> = {
+    nouveau: '#3b82f6',
+    en_cours: '#f59e0b',
+    termine: '#22c55e'
   };
 
   const icons: Record<string, string> = {
@@ -654,7 +732,7 @@ const getMarkerIcon = (type: string) => {
 
   return L.divIcon({
     html: `
-      <div class="custom-marker" style="--marker-color: ${colors[type] || '#64748b'}">
+      <div class="custom-marker" style="--marker-color: ${statusColors[status] || '#64748b'}">
         <div class="marker-pin">
           <span class="marker-icon">${icons[type] || '?'}</span>
         </div>
@@ -683,39 +761,43 @@ const loadReports = async () => {
   markers.length = 0;
 
   try {
-    const reportsRef = collection(db, 'reports');
-    let q;
+    let reports;
 
     if (showMyReports.value && isAuthenticated.value && auth.currentUser) {
-      q = query(reportsRef, where('uid', '==', auth.currentUser.uid));
+      reports = await getReportsByUser(auth.currentUser.uid);
     } else {
-      q = reportsRef;
+      reports = await getAllReports();
     }
 
-    const snapshot = await getDocs(q);
-    
     let approved = 0;
     let pending = 0;
+    let inProgress = 0;
 
-    snapshot.forEach(doc => {
-      const data: any = doc.data();
-      
-      if (data.status === 'approved') approved++;
-      if (data.status === 'pending') pending++;
+    reports.forEach((data: any) => {
+      if (data.status === 'termine') approved++;
+      if (data.status === 'nouveau') pending++;
+      if (data.status === 'en_cours') inProgress++;
 
-      if (data.status === 'approved' && map.value && data.lat && data.lng) {
+      const normalizedStatus = data.status === 'pending' ? 'nouveau' : data.status
+
+      if (map.value && data.lat && data.lng) {
         const marker = L.marker([data.lat, data.lng], {
-          icon: getMarkerIcon(data.type)
+          icon: getMarkerIcon(data.type, normalizedStatus)
         }).bindPopup(`
           <div class="custom-popup">
             <div class="popup-header">
               <span class="popup-type ${data.type}">${data.type}</span>
-              <span class="popup-status">Validé</span>
+              <span class="popup-status">${normalizedStatus}</span>
             </div>
             <p class="popup-description">${data.description}</p>
+            <div class="popup-details">
+              <div class="popup-detail"><strong>Entreprise:</strong> ${data.companyName || ''}</div>
+              <div class="popup-detail"><strong>Surface:</strong> ${(data.surfaceM2 || 0)} m²</div>
+              <div class="popup-detail"><strong>Budget:</strong> ${(data.budgetEstimated || 0)} Ar</div>
+            </div>
             <div class="popup-footer">
               <ion-icon name="calendar-outline"></ion-icon>
-              <span>${new Date(data.createdAt?.toDate()).toLocaleDateString('fr-FR')}</span>
+              <span>${new Date(data.createdAt).toLocaleDateString('fr-FR')}</span>
             </div>
           </div>
         `, {
@@ -727,9 +809,15 @@ const loadReports = async () => {
       }
     });
 
-    totalReports.value = snapshot.size;
+    totalReports.value = reports.length;
     approvedReports.value = approved;
     pendingReports.value = pending;
+    inProgressReports.value = inProgress;
+
+    const metrics = computeReportMetrics(reports as any);
+    totalSurfaceM2.value = metrics.totalSurfaceM2;
+    totalBudgetEstimated.value = metrics.totalBudgetEstimated;
+    progressPercent.value = metrics.progressPercent;
   } catch (error) {
     console.error('Erreur chargement reports:', error);
     showToast('Erreur lors du chargement', 'danger');
