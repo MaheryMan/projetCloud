@@ -60,6 +60,11 @@
                                 <ion-spinner name="crescent" v-if="loadingGoogle"></ion-spinner>
                                 <span v-else>Se connecter avec Google</span>
                             </ion-button>
+
+                            <!-- Bouton pour accéder à l'accueil sans connexion -->
+                            <ion-button expand="block" fill="outline" @click="goToHomeWithoutLogin" class="guest-button">
+                                Continuer sans se connecter
+                            </ion-button>
                         </ion-card-content>
                     </ion-card>
                 </div>
@@ -139,6 +144,10 @@ const loginGoogle = async () => {
     } finally {
         loadingGoogle.value = false
     }
+}
+
+const goToHomeWithoutLogin = () => {
+    router.push('/home')
 }
 
 </script>
@@ -329,6 +338,32 @@ const loginGoogle = async () => {
 .google-button ion-icon {
     font-size: 24px;
     margin-right: 8px;
+}
+
+/* Guest Button */
+.guest-button {
+    --background: transparent;
+    --color: #64748b;
+    --border-radius: 12px;
+    --border-color: #64748b;
+    --border-width: 2px;
+    height: 50px;
+    font-weight: 600;
+    text-transform: none;
+    font-size: 16px;
+    margin-top: 12px;
+    transition: all 0.3s ease;
+}
+
+.guest-button:hover {
+    --background: rgba(100, 116, 139, 0.1);
+    --border-color: #475569;
+    --color: #475569;
+    transform: translateY(-2px);
+}
+
+.guest-button:active {
+    transform: translateY(0);
 }
 
 /* Register Section */
