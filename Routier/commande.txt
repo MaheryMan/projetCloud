@@ -1,0 +1,4 @@
+npm install --legacy-peer-deps
+
+Android :
+npm rub build, npx cap sync android
