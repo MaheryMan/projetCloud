@@ -25,9 +25,10 @@ function normalizeReport(id: string, data: any): Report {
     lat: data.lat,
     lng: data.lng,
     status,
-    surfaceM2: Number(data.surfaceM2 || 0),
-    budgetEstimated: Number(data.budgetEstimated || 0),
-    companyName: String(data.companyName || ''),
+    surfaceM2: data.surfaceM2 ? Number(data.surfaceM2) : undefined,
+    budgetEstimated: data.budgetEstimated ? Number(data.budgetEstimated) : undefined,
+    companyName: data.companyName || undefined,
+    photo: data.photo || undefined,
     createdAt
   }
 }

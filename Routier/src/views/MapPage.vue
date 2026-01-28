@@ -247,25 +247,6 @@
                   type="number"
                 />
               </ion-item>
-
-              <ion-item lines="none" class="input-item">
-                <ion-input
-                  v-model.number="budgetEstimated"
-                  label="Budget estimé (Ar)"
-                  label-placement="floating"
-                  inputmode="decimal"
-                  type="number"
-                />
-              </ion-item>
-
-              <ion-item lines="none" class="input-item">
-                <ion-input
-                  v-model="companyName"
-                  label="Entreprise concernée"
-                  label-placement="floating"
-                  type="text"
-                />
-              </ion-item>
             </div>
             <div class="position-hint">
               <ion-icon name="finger-print-outline"></ion-icon>
@@ -332,6 +313,35 @@
               </div>
             </div>
 
+            <!-- Étape 2.5: Photo -->
+            <div class="form-section">
+              <div class="section-header">
+                <span class="section-number">2.5</span>
+                <div class="section-info">
+                  <h3 class="section-title">Photo (optionnel)</h3>
+                  <p class="section-subtitle">Ajoutez une photo du problème</p>
+                </div>
+              </div>
+              
+              <div class="photo-section">
+                <div v-if="!reportPhoto" class="photo-placeholder" @click="openPhotoOptions">
+                  <ion-icon name="camera-outline" class="photo-icon"></ion-icon>
+                  <span class="photo-text">Ajouter une photo</span>
+                </div>
+                <div v-else class="photo-preview">
+                  <img :src="reportPhoto" alt="Photo du signalement" class="photo-image" />
+                  <div class="photo-actions">
+                    <ion-button fill="clear" size="small" @click="openPhotoOptions" class="photo-change-btn">
+                      <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                    <ion-button fill="clear" size="small" @click="removePhoto" class="photo-remove-btn">
+                      <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Note d'information -->
             <div class="info-note">
               <div class="note-icon">
@@ -371,6 +381,14 @@
         </div>
       </ion-content>
     </ion-modal>
+
+    <!-- Action Sheet pour les options photo -->
+    <ion-action-sheet
+      :is-open="showActionSheet"
+      header="Ajouter une photo"
+      :buttons="photoActionButtons"
+      @didDismiss="showActionSheet = false"
+    ></ion-action-sheet>
   </ion-page>
 </template>
 
@@ -380,7 +398,7 @@ import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton,
   IonIcon, IonFabButton, IonModal, IonTextarea, IonSpinner, IonItem, IonInput,
-  IonCard, IonCardContent
+  IonCard, IonCardContent, IonActionSheet
 } from '@ionic/vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -389,6 +407,7 @@ import { createReport, getAllReports, getReportsByUser } from '@/services/report
 import { onAuthStateChanged } from 'firebase/auth';
 import { logout } from '@/services/auth.service';
 import { Geolocation } from '@capacitor/geolocation';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { useToast } from '@/composables/useToast';
 import { computeReportMetrics } from '@/utils/reportMetrics';
 
@@ -402,8 +421,8 @@ const showForm = ref(false);
 const reportType = ref('trou');
 const reportDescription = ref('');
 const surfaceM2 = ref<number>(0);
-const budgetEstimated = ref<number>(0);
-const companyName = ref('');
+const reportPhoto = ref<string>('');
+const showActionSheet = ref(false);
 const showRecap = ref(false);
 const newPosition = ref({ lat: -18.8792, lng: 47.5079 });
 const isAuthenticated = ref(false);
@@ -437,9 +456,7 @@ const formProgress = computed(() => {
 const canSubmit = computed(() => {
   return (
     reportType.value &&
-    reportDescription.value.trim().length >= 10 &&
-    Number(surfaceM2.value) > 0 &&
-    companyName.value.trim().length > 0
+    reportDescription.value.trim().length >= 10
   );
 });
 
@@ -451,6 +468,30 @@ const placeholderText = computed(() => {
   };
   return placeholders[reportType.value] || "Décrivez le problème...";
 });
+
+const photoActionButtons = computed(() => [
+  {
+    text: 'Prendre une photo',
+    icon: 'camera-outline',
+    handler: takePhoto
+  },
+  {
+    text: 'Choisir depuis la galerie',
+    icon: 'images-outline',
+    handler: chooseFromGallery
+  },
+  {
+    text: reportPhoto.value ? 'Changer la photo' : 'Annuler',
+    icon: 'close-outline',
+    role: 'cancel'
+  },
+  ...(reportPhoto.value ? [{
+    text: 'Supprimer la photo',
+    icon: 'trash-outline',
+    role: 'destructive',
+    handler: removePhoto
+  }] : [])
+]);
 
 const statsData = computed(() => [
   {
@@ -519,8 +560,7 @@ const startAddReport = () => {
   reportType.value = 'trou';
   reportDescription.value = '';
   surfaceM2.value = 0;
-  budgetEstimated.value = 0;
-  companyName.value = '';
+  reportPhoto.value = '';
   showForm.value = true;
 };
 
@@ -535,13 +575,53 @@ const startAddReportAtPosition = (position: L.LatLng) => {
   reportType.value = 'trou';
   reportDescription.value = '';
   surfaceM2.value = 0;
-  budgetEstimated.value = 0;
-  companyName.value = '';
+  reportPhoto.value = '';
   showForm.value = true;
 };
 
 const closeForm = () => {
   showForm.value = false;
+};
+
+const openPhotoOptions = () => {
+  showActionSheet.value = true;
+};
+
+const takePhoto = async () => {
+  try {
+    const image = await Camera.getPhoto({
+      quality: 80,
+      allowEditing: false,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Camera
+    });
+    reportPhoto.value = image.dataUrl || '';
+    showActionSheet.value = false;
+  } catch (error) {
+    console.error('Erreur caméra:', error);
+    showToast('Erreur lors de la prise de photo', 'danger');
+  }
+};
+
+const chooseFromGallery = async () => {
+  try {
+    const image = await Camera.getPhoto({
+      quality: 80,
+      allowEditing: false,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Photos
+    });
+    reportPhoto.value = image.dataUrl || '';
+    showActionSheet.value = false;
+  } catch (error) {
+    console.error('Erreur galerie:', error);
+    showToast('Erreur lors de la sélection de photo', 'danger');
+  }
+};
+
+const removePhoto = () => {
+  reportPhoto.value = '';
+  showActionSheet.value = false;
 };
 
 const zoomIn = () => {
@@ -679,8 +759,7 @@ const submitReport = async () => {
       lng: newPosition.value.lng,
       status: 'nouveau',
       surfaceM2: Number(surfaceM2.value || 0),
-      budgetEstimated: Number(budgetEstimated.value || 0),
-      companyName: companyName.value || ''
+      photo: reportPhoto.value || undefined
     });
 
     showToast('Signalement créé avec succès!');
@@ -790,10 +869,11 @@ const loadReports = async () => {
               <span class="popup-status">${normalizedStatus}</span>
             </div>
             <p class="popup-description">${data.description}</p>
+            ${data.photo ? `<div class="popup-photo"><img src="${data.photo}" alt="Photo du signalement" /></div>` : ''}
             <div class="popup-details">
-              <div class="popup-detail"><strong>Entreprise:</strong> ${data.companyName || ''}</div>
               <div class="popup-detail"><strong>Surface:</strong> ${(data.surfaceM2 || 0)} m²</div>
-              <div class="popup-detail"><strong>Budget:</strong> ${(data.budgetEstimated || 0)} Ar</div>
+              <div class="popup-detail"><strong>Budget estimé:</strong> ${(data.budgetEstimated || 0)} Ar</div>
+              <div class="popup-detail"><strong>Entreprise:</strong> ${data.companyName || 'Non spécifiée'}</div>
             </div>
             <div class="popup-footer">
               <ion-icon name="calendar-outline"></ion-icon>

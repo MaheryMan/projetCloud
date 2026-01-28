@@ -16,8 +16,9 @@ export interface Report {
   lat: number
   lng: number
   status: ReportStatus
-  surfaceM2: number
-  budgetEstimated: number
-  companyName: string
+  surfaceM2?: number
+  budgetEstimated?: number
+  companyName?: string
+  photo?: string
   createdAt: Timestamp
 }
