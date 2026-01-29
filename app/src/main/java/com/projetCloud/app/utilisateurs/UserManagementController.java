@@ -19,6 +19,26 @@ public class UserManagementController {
         return utilisateurService.findAll();
     }
 
+    @GetMapping("/blocked")
+    public List<Utilisateur> getBlockedUsers() {
+        return utilisateurService.findAll().stream()
+                .filter(u -> u.getDeleteLe() != null)
+                .toList();
+    }
+
+    @PostMapping("/{id}/unblock")
+    public ResponseEntity<?> unblockUser(@PathVariable Long id) {
+        Optional<Utilisateur> user = utilisateurService.findById(id);
+        if (user.isPresent()) {
+            Utilisateur u = user.get();
+            u.setDeleteLe(null);
+            utilisateurService.save(u);
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Utilisateur> getUserById(@PathVariable Long id) {
         Optional<Utilisateur> utilisateur = utilisateurService.findById(id);

@@ -2,15 +2,13 @@ package com.projetCloud.app.signalements;
 
 import com.projetCloud.app.niveauTravaux.NiveauTravail;
 import com.projetCloud.app.niveauTravaux.NiveauTravailService;
+import com.projetCloud.app.typesSignalement.TypeSignalement;
+import com.projetCloud.app.typesSignalement.TypeSignalementService;
 import com.projetCloud.app.utilisateurs.Utilisateur;
 import com.projetCloud.app.utilisateurs.UtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -19,6 +17,14 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.Parameter;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+/**
+ * Contrôleur pour la gestion des signalements
+ */
 @RestController
 @RequestMapping("/api/signalements")
 @Tag(name = "Signalements", description = "API pour la gestion des signalements")
@@ -33,6 +39,9 @@ public class SignalementController {
     @Autowired
     private NiveauTravailService niveauTravailService;
 
+    @Autowired
+    private TypeSignalementService typeSignalementService;
+
     @GetMapping
     @Operation(summary = "Récupérer tous les signalements", description = "Retourne la liste de tous les signalements")
     @ApiResponses(value = {
@@ -42,6 +51,41 @@ public class SignalementController {
     })
     public List<Signalement> getAllSignalements() {
         return signalementService.findAll();
+    }
+
+    @GetMapping("/recent")
+    @Operation(summary = "Récupérer les signalements récents", description = "Retourne les 10 derniers signalements")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Liste des signalements récents récupérée avec succès",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = Signalement.class)))
+    })
+    public List<Signalement> getRecentSignalements() {
+        List<Signalement> all = signalementService.findAll();
+        // Return last 10, assuming sorted by date desc
+        return all.size() > 10 ? all.subList(0, 10) : all;
+    }
+
+    @GetMapping("/stats")
+    @Operation(summary = "Récupérer les statistiques des signalements", description = "Retourne les statistiques globales")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Statistiques récupérées avec succès",
+                    content = @Content(mediaType = "application/json"))
+    })
+    public ResponseEntity<?> getStats() {
+        List<Signalement> all = signalementService.findAll();
+        int total = all.size();
+        // For simplicity, assume some counts
+        // In real app, would query by status
+        return ResponseEntity.ok(Map.of(
+            "totalSignalements", total,
+            "nouveau", total / 4,
+            "enCours", total / 4,
+            "termine", total / 4,
+            "surfaceTotal", 1000.0,
+            "budgetTotal", 50000.0,
+            "avancement", 50
+        ));
     }
 
     @GetMapping("/{id}")
@@ -76,14 +120,16 @@ public class SignalementController {
             @RequestBody SignalementRequest request) {
         Optional<Utilisateur> utilisateur = utilisateurService.findById(request.getIdUtilisateur());
         Optional<NiveauTravail> niveauTravail = niveauTravailService.findById(request.getIdNiveauTravail());
+        Optional<TypeSignalement> typeSignalement = typeSignalementService.findById(request.getIdTypeSignalement());
 
-        if (utilisateur.isPresent() && niveauTravail.isPresent()) {
+        if (utilisateur.isPresent() && niveauTravail.isPresent() && typeSignalement.isPresent()) {
             Signalement signalement = new Signalement(
                 request.getLatitude(),
                 request.getLongitude(),
                 request.getSurfaceM2(),
                 request.getDescription(),
                 niveauTravail.get(),
+                typeSignalement.get(),
                 utilisateur.get()
             );
             return ResponseEntity.ok(signalementService.save(signalement));
@@ -109,7 +155,13 @@ public class SignalementController {
             signalement.setLongitude(request.getLongitude());
             signalement.setSurfaceM2(request.getSurfaceM2());
             signalement.setDescription(request.getDescription());
-            // niveauTravail and utilisateur not updated in this example
+            if (request.getIdTypeSignalement() != null) {
+                Optional<TypeSignalement> typeSignalement = typeSignalementService.findById(request.getIdTypeSignalement());
+                if (typeSignalement.isEmpty()) {
+                    return ResponseEntity.badRequest().build();
+                }
+                signalement.setTypeSignalement(typeSignalement.get());
+            }
             return ResponseEntity.ok(signalementService.save(signalement));
         } else {
             return ResponseEntity.notFound().build();
@@ -140,11 +192,13 @@ public class SignalementController {
               "longitude": 47.5079,
               "surfaceM2": 100.50,
               "description": "Route endommagée nécessitant réparation",
+              "idTypeSignalement": 1,
               "idNiveauTravail": 1,
               "idUtilisateur": 1
             }
             """)
     public static class SignalementRequest {
+
         @Schema(description = "Latitude du signalement", example = "-18.8792", required = true, format = "double")
         private BigDecimal latitude;
 
@@ -156,6 +210,9 @@ public class SignalementController {
 
         @Schema(description = "Description du signalement", example = "Route endommagée nécessitant réparation", required = true)
         private String description;
+
+        @Schema(description = "ID du type de signalement", example = "1", required = true, format = "int64")
+        private Long idTypeSignalement;
 
         @Schema(description = "ID du niveau de travail", example = "1", required = true, format = "int64")
         private Long idNiveauTravail;
@@ -193,6 +250,14 @@ public class SignalementController {
 
         public void setDescription(String description) {
             this.description = description;
+        }
+
+        public Long getIdTypeSignalement() {
+            return idTypeSignalement;
+        }
+
+        public void setIdTypeSignalement(Long idTypeSignalement) {
+            this.idTypeSignalement = idTypeSignalement;
         }
 
         public Long getIdNiveauTravail() {

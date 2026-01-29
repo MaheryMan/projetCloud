@@ -1,6 +1,7 @@
 package com.projetCloud.app.signalements;
 
 import com.projetCloud.app.niveauTravaux.NiveauTravail;
+import com.projetCloud.app.typesSignalement.TypeSignalement;
 import com.projetCloud.app.utilisateurs.Utilisateur;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -34,18 +35,23 @@ public class Signalement {
     private NiveauTravail niveauTravail;
 
     @ManyToOne
+    @JoinColumn(name = "id_type_signalement", nullable = false)
+    private TypeSignalement typeSignalement;
+
+    @ManyToOne
     @JoinColumn(name = "id_utilisateur", nullable = false)
     private Utilisateur utilisateur;
 
     // Constructeurs
     public Signalement() {}
 
-    public Signalement(BigDecimal latitude, BigDecimal longitude, BigDecimal surfaceM2, String description, NiveauTravail niveauTravail, Utilisateur utilisateur) {
+    public Signalement(BigDecimal latitude, BigDecimal longitude, BigDecimal surfaceM2, String description, NiveauTravail niveauTravail, TypeSignalement typeSignalement, Utilisateur utilisateur) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.surfaceM2 = surfaceM2;
         this.description = description;
         this.niveauTravail = niveauTravail;
+        this.typeSignalement = typeSignalement;
         this.utilisateur = utilisateur;
     }
 
@@ -104,6 +110,14 @@ public class Signalement {
 
     public void setNiveauTravail(NiveauTravail niveauTravail) {
         this.niveauTravail = niveauTravail;
+    }
+
+    public TypeSignalement getTypeSignalement() {
+        return typeSignalement;
+    }
+
+    public void setTypeSignalement(TypeSignalement typeSignalement) {
+        this.typeSignalement = typeSignalement;
     }
 
     public Utilisateur getUtilisateur() {

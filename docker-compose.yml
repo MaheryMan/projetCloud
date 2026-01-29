@@ -37,9 +37,9 @@ services:
     ports:
       - "8081:8080"
     volumes:
-      - ./map:/data:ro
-    environment:
-      - MBTILES_FILE=maptiler-osm-2020-02-10-v3.11-madagascar_antananarivo.mbtiles
+      - ./map:/data
+    # On remplace la variable d'env MBTILES_FILE par la commande config
+    command: -c /data/config.json
     networks:
       - app-network
     restart: unless-stopped
