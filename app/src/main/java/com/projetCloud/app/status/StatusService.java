@@ -28,8 +28,8 @@ public class StatusService {
         statusRepository.deleteById(id);
     }
 
-    public Optional<Status> findByStatusId(String statusId) {
-        return statusRepository.findByStatusId(statusId);
+    public Optional<Status> findByCode(String code) {
+        return statusRepository.findByCode(code);
     }
 
     public Optional<Status> findByLibelle(String libelle) {

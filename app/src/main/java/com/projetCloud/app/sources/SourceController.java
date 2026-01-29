@@ -31,6 +31,9 @@ public class SourceController {
 
     @PostMapping
     public ResponseEntity<?> createSource(@RequestBody Source source) {
+        if (source.getProviderType() == null || source.getProviderType().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Le providerType est requis");
+        }
         try {
             source.setId(null); // Ensure it's a new entity
             Source savedSource = sourceService.save(source);
@@ -46,6 +49,12 @@ public class SourceController {
         if (source.isPresent()) {
             Source updatedSource = source.get();
             updatedSource.setLibelle(sourceDetails.getLibelle());
+            if (sourceDetails.getProviderType() != null) {
+                updatedSource.setProviderType(sourceDetails.getProviderType());
+            }
+            if (sourceDetails.getIsOnline() != null) {
+                updatedSource.setIsOnline(sourceDetails.getIsOnline());
+            }
             return ResponseEntity.ok(sourceService.save(updatedSource));
         } else {
             return ResponseEntity.notFound().build();

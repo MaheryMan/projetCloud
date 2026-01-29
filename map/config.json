@@ -5,7 +5,7 @@
       "fonts": "fonts",
       "styles": "styles",
       "mbtiles": "/data",
-      "sprites": "sprites"
+      "sprites": "."
     }
   },
   "data": {

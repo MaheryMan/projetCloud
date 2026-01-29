@@ -12,15 +12,15 @@ public class Deblocage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "date_deblocage")
-    private LocalDateTime dateDeblocage;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
     @Column(columnDefinition = "TEXT")
     private String motif;
 
     @ManyToOne
-    @JoinColumn(name = "id_utilisateur_bloque", nullable = false)
-    private Utilisateur utilisateurBloque;
+    @JoinColumn(name = "id_utilisateur", nullable = false)
+    private Utilisateur utilisateur;
 
     @ManyToOne
     @JoinColumn(name = "id_manager", nullable = false)
@@ -29,9 +29,9 @@ public class Deblocage {
     // Constructeurs
     public Deblocage() {}
 
-    public Deblocage(String motif, Utilisateur utilisateurBloque, Utilisateur manager) {
+    public Deblocage(String motif, Utilisateur utilisateur, Utilisateur manager) {
         this.motif = motif;
-        this.utilisateurBloque = utilisateurBloque;
+        this.utilisateur = utilisateur;
         this.manager = manager;
     }
 
@@ -44,12 +44,12 @@ public class Deblocage {
         this.id = id;
     }
 
-    public LocalDateTime getDateDeblocage() {
-        return dateDeblocage;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setDateDeblocage(LocalDateTime dateDeblocage) {
-        this.dateDeblocage = dateDeblocage;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public String getMotif() {
@@ -60,12 +60,12 @@ public class Deblocage {
         this.motif = motif;
     }
 
-    public Utilisateur getUtilisateurBloque() {
-        return utilisateurBloque;
+    public Utilisateur getUtilisateur() {
+        return utilisateur;
     }
 
-    public void setUtilisateurBloque(Utilisateur utilisateurBloque) {
-        this.utilisateurBloque = utilisateurBloque;
+    public void setUtilisateur(Utilisateur utilisateur) {
+        this.utilisateur = utilisateur;
     }
 
     public Utilisateur getManager() {

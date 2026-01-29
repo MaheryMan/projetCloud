@@ -40,7 +40,13 @@ public class SessionController {
     public ResponseEntity<Session> createSession(@RequestBody SessionRequest request) {
         Optional<Utilisateur> utilisateur = utilisateurService.findById(request.getIdUtilisateur());
         if (utilisateur.isPresent()) {
-            Session session = new Session(request.getToken(), request.getExpireLe(), utilisateur.get());
+            Session session = new Session(request.getToken(), request.getExpiresAt(), utilisateur.get());
+            session.setDeviceInfo(request.getDeviceInfo());
+            session.setIpAddress(request.getIpAddress());
+            if (request.getIsValid() != null) {
+                session.setIsValid(request.getIsValid());
+            }
+            session.setLogoutAt(request.getLogoutAt());
             return ResponseEntity.ok(sessionService.save(session));
         } else {
             return ResponseEntity.badRequest().build();
@@ -53,8 +59,11 @@ public class SessionController {
         if (sessionOpt.isPresent()) {
             Session session = sessionOpt.get();
             session.setToken(request.getToken());
-            session.setExpireLe(request.getExpireLe());
-            session.setEstValide(request.getEstValide());
+            session.setExpiresAt(request.getExpiresAt());
+            session.setIsValid(request.getIsValid());
+            session.setDeviceInfo(request.getDeviceInfo());
+            session.setIpAddress(request.getIpAddress());
+            session.setLogoutAt(request.getLogoutAt());
             // utilisateur not updated
             return ResponseEntity.ok(sessionService.save(session));
         } else {
@@ -75,8 +84,11 @@ public class SessionController {
     // Classe interne pour la requête
     public static class SessionRequest {
         private String token;
-        private LocalDateTime expireLe;
-        private Boolean estValide;
+        private LocalDateTime expiresAt;
+        private Boolean isValid;
+        private String deviceInfo;
+        private String ipAddress;
+        private LocalDateTime logoutAt;
         private Long idUtilisateur;
 
         public String getToken() {
@@ -87,20 +99,44 @@ public class SessionController {
             this.token = token;
         }
 
-        public LocalDateTime getExpireLe() {
-            return expireLe;
+        public LocalDateTime getExpiresAt() {
+            return expiresAt;
         }
 
-        public void setExpireLe(LocalDateTime expireLe) {
-            this.expireLe = expireLe;
+        public void setExpiresAt(LocalDateTime expiresAt) {
+            this.expiresAt = expiresAt;
         }
 
-        public Boolean getEstValide() {
-            return estValide;
+        public Boolean getIsValid() {
+            return isValid;
         }
 
-        public void setEstValide(Boolean estValide) {
-            this.estValide = estValide;
+        public void setIsValid(Boolean isValid) {
+            this.isValid = isValid;
+        }
+
+        public String getDeviceInfo() {
+            return deviceInfo;
+        }
+
+        public void setDeviceInfo(String deviceInfo) {
+            this.deviceInfo = deviceInfo;
+        }
+
+        public String getIpAddress() {
+            return ipAddress;
+        }
+
+        public void setIpAddress(String ipAddress) {
+            this.ipAddress = ipAddress;
+        }
+
+        public LocalDateTime getLogoutAt() {
+            return logoutAt;
+        }
+
+        public void setLogoutAt(LocalDateTime logoutAt) {
+            this.logoutAt = logoutAt;
         }
 
         public Long getIdUtilisateur() {

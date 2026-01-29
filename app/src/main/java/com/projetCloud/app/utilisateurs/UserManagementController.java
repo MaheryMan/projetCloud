@@ -22,7 +22,7 @@ public class UserManagementController {
     @GetMapping("/blocked")
     public List<Utilisateur> getBlockedUsers() {
         return utilisateurService.findAll().stream()
-                .filter(u -> u.getDeleteLe() != null)
+                .filter(u -> Boolean.TRUE.equals(u.getIsBlocked()))
                 .toList();
     }
 
@@ -31,7 +31,7 @@ public class UserManagementController {
         Optional<Utilisateur> user = utilisateurService.findById(id);
         if (user.isPresent()) {
             Utilisateur u = user.get();
-            u.setDeleteLe(null);
+            u.setIsBlocked(false);
             utilisateurService.save(u);
             return ResponseEntity.ok().build();
         } else {

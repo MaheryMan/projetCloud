@@ -11,6 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql
+      - ./sql/newbase.sql:/docker-entrypoint-initdb.d/01_newbase.sql:ro
     networks:
       - app-network
     restart: unless-stopped

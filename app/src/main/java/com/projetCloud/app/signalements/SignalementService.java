@@ -31,8 +31,4 @@ public class SignalementService {
     public List<Signalement> findByUtilisateurId(Long utilisateurId) {
         return signalementRepository.findByUtilisateurId(utilisateurId);
     }
-
-    public List<Signalement> findByNiveauTravailId(Long niveauTravailId) {
-        return signalementRepository.findByNiveauTravailId(niveauTravailId);
-    }
 }

@@ -1,7 +1,7 @@
 package com.projetCloud.app.signalements;
 
-import com.projetCloud.app.niveauTravaux.NiveauTravail;
-import com.projetCloud.app.niveauTravaux.NiveauTravailService;
+import com.projetCloud.app.status.Status;
+import com.projetCloud.app.status.StatusService;
 import com.projetCloud.app.typesSignalement.TypeSignalement;
 import com.projetCloud.app.typesSignalement.TypeSignalementService;
 import com.projetCloud.app.utilisateurs.Utilisateur;
@@ -37,7 +37,7 @@ public class SignalementController {
     private UtilisateurService utilisateurService;
 
     @Autowired
-    private NiveauTravailService niveauTravailService;
+    private StatusService statusService;
 
     @Autowired
     private TypeSignalementService typeSignalementService;
@@ -112,23 +112,26 @@ public class SignalementController {
         @ApiResponse(responseCode = "200", description = "Signalement créé avec succès",
                     content = @Content(mediaType = "application/json",
                                      schema = @Schema(implementation = Signalement.class))),
-        @ApiResponse(responseCode = "400", description = "Données invalides ou utilisateur/niveau de travail non trouvé",
+        @ApiResponse(responseCode = "400", description = "Données invalides ou utilisateur/statut non trouvé",
                     content = @Content)
     })
     public ResponseEntity<Signalement> createSignalement(
             @Parameter(description = "Données du signalement à créer", required = true)
             @RequestBody SignalementRequest request) {
         Optional<Utilisateur> utilisateur = utilisateurService.findById(request.getIdUtilisateur());
-        Optional<NiveauTravail> niveauTravail = niveauTravailService.findById(request.getIdNiveauTravail());
         Optional<TypeSignalement> typeSignalement = typeSignalementService.findById(request.getIdTypeSignalement());
+        Optional<Status> status = statusService.findById(request.getIdStatus());
 
-        if (utilisateur.isPresent() && niveauTravail.isPresent() && typeSignalement.isPresent()) {
+        if (utilisateur.isPresent() && typeSignalement.isPresent() && status.isPresent()) {
             Signalement signalement = new Signalement(
                 request.getLatitude(),
                 request.getLongitude(),
                 request.getSurfaceM2(),
+                request.getBudget(),
                 request.getDescription(),
-                niveauTravail.get(),
+                request.getPhotoUrl(),
+                request.getIdEntreprise(),
+                request.getIdStatus(),
                 typeSignalement.get(),
                 utilisateur.get()
             );
@@ -154,7 +157,17 @@ public class SignalementController {
             signalement.setLatitude(request.getLatitude());
             signalement.setLongitude(request.getLongitude());
             signalement.setSurfaceM2(request.getSurfaceM2());
+            signalement.setBudget(request.getBudget());
             signalement.setDescription(request.getDescription());
+            signalement.setPhotoUrl(request.getPhotoUrl());
+            signalement.setIdEntreprise(request.getIdEntreprise());
+            if (request.getIdStatus() != null) {
+                Optional<Status> status = statusService.findById(request.getIdStatus());
+                if (status.isEmpty()) {
+                    return ResponseEntity.badRequest().build();
+                }
+                signalement.setIdStatus(request.getIdStatus());
+            }
             if (request.getIdTypeSignalement() != null) {
                 Optional<TypeSignalement> typeSignalement = typeSignalementService.findById(request.getIdTypeSignalement());
                 if (typeSignalement.isEmpty()) {
@@ -191,9 +204,12 @@ public class SignalementController {
               "latitude": -18.8792,
               "longitude": 47.5079,
               "surfaceM2": 100.50,
+              "budget": 150000.00,
               "description": "Route endommagée nécessitant réparation",
+              "photoUrl": "https://example.com/photo.jpg",
               "idTypeSignalement": 1,
-              "idNiveauTravail": 1,
+              "idStatus": 1,
+              "idEntreprise": 1,
               "idUtilisateur": 1
             }
             """)
@@ -208,14 +224,23 @@ public class SignalementController {
         @Schema(description = "Surface en mètres carrés", example = "100.50", format = "double")
         private BigDecimal surfaceM2;
 
+        @Schema(description = "Budget estimé", example = "150000.00", format = "double")
+        private BigDecimal budget;
+
         @Schema(description = "Description du signalement", example = "Route endommagée nécessitant réparation", required = true)
         private String description;
+
+        @Schema(description = "URL de la photo", example = "https://example.com/photo.jpg")
+        private String photoUrl;
 
         @Schema(description = "ID du type de signalement", example = "1", required = true, format = "int64")
         private Long idTypeSignalement;
 
-        @Schema(description = "ID du niveau de travail", example = "1", required = true, format = "int64")
-        private Long idNiveauTravail;
+        @Schema(description = "ID du statut du signalement", example = "1", required = true, format = "int64")
+        private Long idStatus;
+
+        @Schema(description = "ID de l'entreprise", example = "1", format = "int64")
+        private Long idEntreprise;
 
         @Schema(description = "ID de l'utilisateur", example = "1", required = true, format = "int64")
         private Long idUtilisateur;
@@ -244,12 +269,28 @@ public class SignalementController {
             this.surfaceM2 = surfaceM2;
         }
 
+        public BigDecimal getBudget() {
+            return budget;
+        }
+
+        public void setBudget(BigDecimal budget) {
+            this.budget = budget;
+        }
+
         public String getDescription() {
             return description;
         }
 
         public void setDescription(String description) {
             this.description = description;
+        }
+
+        public String getPhotoUrl() {
+            return photoUrl;
+        }
+
+        public void setPhotoUrl(String photoUrl) {
+            this.photoUrl = photoUrl;
         }
 
         public Long getIdTypeSignalement() {
@@ -260,12 +301,20 @@ public class SignalementController {
             this.idTypeSignalement = idTypeSignalement;
         }
 
-        public Long getIdNiveauTravail() {
-            return idNiveauTravail;
+        public Long getIdStatus() {
+            return idStatus;
         }
 
-        public void setIdNiveauTravail(Long idNiveauTravail) {
-            this.idNiveauTravail = idNiveauTravail;
+        public void setIdStatus(Long idStatus) {
+            this.idStatus = idStatus;
+        }
+
+        public Long getIdEntreprise() {
+            return idEntreprise;
+        }
+
+        public void setIdEntreprise(Long idEntreprise) {
+            this.idEntreprise = idEntreprise;
         }
 
         public Long getIdUtilisateur() {
