@@ -391,7 +391,7 @@
     ></ion-action-sheet>
   </ion-page>
 </template>
-
+@@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
@@ -402,39 +402,20 @@ import {
 } from '@ionic/vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { auth } from '@/services/firebase';
-import { createReport, getAllReports, getReportsByUser } from '@/services/report.service';
-import { onAuthStateChanged } from 'firebase/auth';
 import { logout } from '@/services/auth.service';
 import { Geolocation } from '@capacitor/geolocation';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { useToast } from '@/composables/useToast';
-import { computeReportMetrics } from '@/utils/reportMetrics';
+import { useAuth } from '@/composables/useAuth'
+import { useReportMap } from '@/composables/useReportMap'
+import { useReportForm } from '@/composables/useReportForm'
+import type { ReportType } from '@/types/report.types'
 
 const router = useRouter();
 
 // Refs
 const mapContainer = ref<HTMLElement | null>(null);
-const map = ref<L.Map | null>(null);
-const markers: any[] = [];
-const showForm = ref(false);
-const reportType = ref('trou');
-const reportDescription = ref('');
-const surfaceM2 = ref<number>(0);
-const reportPhoto = ref<string>('');
-const showActionSheet = ref(false);
 const showRecap = ref(false);
 const newPosition = ref({ lat: -18.8792, lng: 47.5079 });
-const isAuthenticated = ref(false);
-const totalReports = ref(0);
-const approvedReports = ref(0);
-const pendingReports = ref(0);
-const inProgressReports = ref(0);
-const totalSurfaceM2 = ref(0);
-const totalBudgetEstimated = ref(0);
-const progressPercent = ref(0);
-const loading = ref(false);
-const submitting = ref(false);
 const showMyReports = ref(false);
 const isTrackingLocation = ref(false);
 const currentLocation = ref<L.LatLng | null>(null);
@@ -442,85 +423,104 @@ const userLocationMarker = ref<any>(null);
 const watchId = ref<string | null>(null);
 const isUserInteracting = ref(false);
 const pendingLocationUpdate = ref<L.LatLng | null>(null);
-const showLegend = ref(true);
-const isLegendExpanded = ref(false);
+
+const { showToast } = useToast();
+const { user, isAuthenticated } = useAuth()
+const userId = computed(() => user.value?.uid ?? null)
+
+const reportForm = useReportForm({
+  isAuthenticated,
+  userId,
+  newPosition,
+  showToast,
+  router,
+  onCreated: () => reportMap.loadReports()
+})
+
+const reportMap = useReportMap({
+  mapContainer,
+  initialCenter: computed(() => newPosition.value),
+  showForm: reportForm.showForm,
+  newPosition,
+  showMyReports,
+  isAuthenticated,
+  userId,
+  showToast,
+  onRequestCreateAtPosition: (position) => reportForm.startAddReportAtPosition({ lat: position.lat, lng: position.lng })
+})
+
+const {
+  showForm,
+  submitting,
+  reportType,
+  reportDescription,
+  surfaceM2,
+  reportPhoto,
+  showActionSheet,
+  photoActionButtons,
+  formProgress,
+  canSubmit,
+  placeholderText,
+  startAddReport: _startAddReport,
+  closeForm,
+  openPhotoOptions,
+  removePhoto,
+  submitReport
+} = reportForm
+
+const startAddReport = () => {
+  if (currentLocation.value) {
+    newPosition.value = currentLocation.value
+  }
+  _startAddReport()
+}
+
+const {
+  loading,
+  totalReports,
+  approvedReports,
+  pendingReports,
+  inProgressReports,
+  totalSurfaceM2,
+  totalBudgetEstimated,
+  progressPercent,
+  showLegend,
+  isLegendExpanded,
+  toggleLegend,
+  zoomIn,
+  zoomOut,
+  toggleMyReports
+} = reportMap
 
 // Computed
-const formProgress = computed(() => {
-  let progress = 0;
-  if (reportType.value) progress += 50;
-  if (reportDescription.value.trim().length >= 10) progress += 50;
-  return progress;
-});
-
-const canSubmit = computed(() => {
-  return (
-    reportType.value &&
-    reportDescription.value.trim().length >= 10
-  );
-});
-
-const placeholderText = computed(() => {
-  const placeholders: Record<string, string> = {
-    trou: "Ex: Grand trou sur la route principale causant des dégâts aux véhicules...",
-    chantier: "Ex: Travaux de réfection en cours, circulation alternée...",
-    deviation: "Ex: Route fermée, déviation par la RN2..."
-  };
-  return placeholders[reportType.value] || "Décrivez le problème...";
-});
-
-const photoActionButtons = computed(() => [
-  {
-    text: 'Prendre une photo',
-    icon: 'camera-outline',
-    handler: takePhoto
-  },
-  {
-    text: 'Choisir depuis la galerie',
-    icon: 'images-outline',
-    handler: chooseFromGallery
-  },
-  {
-    text: reportPhoto.value ? 'Changer la photo' : 'Annuler',
-    icon: 'close-outline',
-    role: 'cancel'
-  },
-  ...(reportPhoto.value ? [{
-    text: 'Supprimer la photo',
-    icon: 'trash-outline',
-    role: 'destructive',
-    handler: removePhoto
-  }] : [])
-]);
-
 const statsData = computed(() => [
   {
     label: 'Total',
-    value: totalReports.value,
+    value: reportMap.totalReports.value,
     icon: 'location-outline',
     class: 'primary'
   },
   {
     label: 'Terminé',
-    value: approvedReports.value,
+    value: reportMap.approvedReports.value,
     icon: 'checkmark-circle-outline',
     class: 'success'
   },
   {
     label: 'Nouveau',
-    value: pendingReports.value,
+    value: reportMap.pendingReports.value,
     icon: 'time-outline',
     class: 'warning'
   },
   {
     label: 'En cours',
-    value: inProgressReports.value,
+    value: reportMap.inProgressReports.value,
     icon: 'construct-outline',
     class: 'info'
   }
 ]);
 
-const reportTypes = [
+const reportTypes: Array<{ value: ReportType; label: string; icon: string; class: string }> = [
   { value: 'trou', label: 'Trou', icon: 'warning-outline', class: 'danger' },
   { value: 'chantier', label: 'Chantier', icon: 'construct-outline', class: 'warning' },
   { value: 'deviation', label: 'Déviation', icon: 'swap-horizontal-outline', class: 'info' }
@@ -532,114 +532,12 @@ const legendItems = [
   { type: 'termine', label: 'Terminé', icon: '●' }
 ];
 
-const { showToast } = useToast();
-
 // Fonctions
-const toggleLegend = () => {
-  isLegendExpanded.value = !isLegendExpanded.value;
-};
-
-const toggleMyReports = () => {
-  showMyReports.value = !showMyReports.value;
-  loadReports();
-};
-
-const startAddReport = () => {
-  if (document.hidden) return;
-  
-  if (!isAuthenticated.value) {
-    showToast('Veuillez vous connecter pour signaler un problème', 'warning');
-    router.push('/login');
-    return;
-  }
-  
-  if (currentLocation.value) {
-    newPosition.value = currentLocation.value;
-  }
-  
-  reportType.value = 'trou';
-  reportDescription.value = '';
-  surfaceM2.value = 0;
-  reportPhoto.value = '';
-  showForm.value = true;
-};
-
-const startAddReportAtPosition = (position: L.LatLng) => {
-  if (!isAuthenticated.value) {
-    showToast('Veuillez vous connecter pour signaler un problème', 'warning');
-    router.push('/login');
-    return;
-  }
-  
-  newPosition.value = position;
-  reportType.value = 'trou';
-  reportDescription.value = '';
-  surfaceM2.value = 0;
-  reportPhoto.value = '';
-  showForm.value = true;
-};
-
-const closeForm = () => {
-  showForm.value = false;
-};
-
-const openPhotoOptions = () => {
-  showActionSheet.value = true;
-};
-
-const takePhoto = async () => {
-  try {
-    const image = await Camera.getPhoto({
-      quality: 80,
-      allowEditing: false,
-      resultType: CameraResultType.DataUrl,
-      source: CameraSource.Camera
-    });
-    reportPhoto.value = image.dataUrl || '';
-    showActionSheet.value = false;
-  } catch (error) {
-    console.error('Erreur caméra:', error);
-    showToast('Erreur lors de la prise de photo', 'danger');
-  }
-};
-
-const chooseFromGallery = async () => {
-  try {
-    const image = await Camera.getPhoto({
-      quality: 80,
-      allowEditing: false,
-      resultType: CameraResultType.DataUrl,
-      source: CameraSource.Photos
-    });
-    reportPhoto.value = image.dataUrl || '';
-    showActionSheet.value = false;
-  } catch (error) {
-    console.error('Erreur galerie:', error);
-    showToast('Erreur lors de la sélection de photo', 'danger');
-  }
-};
-
-const removePhoto = () => {
-  reportPhoto.value = '';
-  showActionSheet.value = false;
-};
-
-const zoomIn = () => {
-  if (map.value) {
-    map.value.zoomIn();
-  }
-};
-
-const zoomOut = () => {
-  if (map.value) {
-    map.value.zoomOut();
-  }
-};
 
 const applyLocationUpdate = (location: L.LatLng) => {
-  if (!map.value || !isTrackingLocation.value) return;
+  if (!reportMap.map.value || !isTrackingLocation.value) return;
   
-  map.value.setView(location, map.value.getZoom(), {
+  reportMap.map.value.setView(location, reportMap.map.value.getZoom(), {
     animate: true,
     duration: 0.5
   });
@@ -660,9 +558,7 @@ const applyLocationUpdate = (location: L.LatLng) => {
     });
     
     userLocationMarker.value = L.marker(location, { icon: userIcon });
-    if (map.value) {
-      map.value.addLayer(userLocationMarker.value);
-    }
+    reportMap.map.value.addLayer(userLocationMarker.value);
   }
 };
 
@@ -729,48 +625,12 @@ const stopLocationTracking = () => {
     watchId.value = null;
   }
 
-  if (userLocationMarker.value && map.value) {
-    map.value.removeLayer(userLocationMarker.value);
+  if (userLocationMarker.value && reportMap.map.value) {
+    reportMap.map.value.removeLayer(userLocationMarker.value);
     userLocationMarker.value = null;
   }
 
   currentLocation.value = null;
-};
-
-const submitReport = async () => {
-  if (document.hidden) return;
-
-  if (!isAuthenticated.value) {
-    showToast('Veuillez vous connecter pour signaler un problème', 'warning');
-    router.push('/login');
-    return;
-  }
-
-  if (!canSubmit.value) return;
-
-  submitting.value = true;
-
-  try {
-    await createReport({
-      uid: auth.currentUser?.uid as string,
-      description: reportDescription.value,
-      type: reportType.value as any,
-      lat: newPosition.value.lat,
-      lng: newPosition.value.lng,
-      status: 'nouveau',
-      surfaceM2: Number(surfaceM2.value || 0),
-      photo: reportPhoto.value || undefined
-    });
-
-    showToast('Signalement créé avec succès!');
-    closeForm();
-    loadReports();
-  } catch (error) {
-    console.error('Erreur lors de la création:', error);
-    showToast('Erreur lors de la création du signalement', 'danger');
-  } finally {
-    submitting.value = false;
-  }
 };
 
 const goToLogin = () => {
@@ -778,7 +638,7 @@ const goToLogin = () => {
 };
 
 const recenterOnGPS = () => {
-  if (currentLocation.value && map.value) {
+  if (currentLocation.value && reportMap.map.value) {
     const wasInteracting = isUserInteracting.value;
     isUserInteracting.value = false;
     
@@ -796,167 +656,24 @@ const recenterOnGPS = () => {
   }
 };
 
-const getMarkerIcon = (type: string, status: string) => {
-  const statusColors: Record<string, string> = {
-    nouveau: '#3b82f6',
-    en_cours: '#f59e0b',
-    termine: '#22c55e'
-  };
-
-  const icons: Record<string, string> = {
-    trou: '!',
-    chantier: '⚙',
-    deviation: '↔'
-  };
-
-  return L.divIcon({
-    html: `
-      <div class="custom-marker" style="--marker-color: ${statusColors[status] || '#64748b'}">
-        <div class="marker-pin">
-          <span class="marker-icon">${icons[type] || '?'}</span>
-        </div>
-        <div class="marker-shadow"></div>
-      </div>
-    `,
-    className: '',
-    iconSize: [40, 50],
-    iconAnchor: [20, 50],
-    popupAnchor: [0, -50]
-  });
-};
-
-const loadReports = async () => {
-  if (!map.value) return;
-
-  loading.value = true;
-
-  markers.forEach(m => {
-    try {
-      map.value?.removeLayer(m);
-    } catch (e) {
-      console.warn('Erreur suppression marker:', e);
-    }
-  });
-  markers.length = 0;
-
-  try {
-    let reports;
-
-    if (showMyReports.value && isAuthenticated.value && auth.currentUser) {
-      reports = await getReportsByUser(auth.currentUser.uid);
-    } else {
-      reports = await getAllReports();
-    }
-
-    let approved = 0;
-    let pending = 0;
-    let inProgress = 0;
-
-    reports.forEach((data: any) => {
-      if (data.status === 'termine') approved++;
-      if (data.status === 'nouveau') pending++;
-      if (data.status === 'en_cours') inProgress++;
-
-      const normalizedStatus = data.status === 'pending' ? 'nouveau' : data.status
-
-      if (map.value && data.lat && data.lng) {
-        const marker = L.marker([data.lat, data.lng], {
-          icon: getMarkerIcon(data.type, normalizedStatus)
-        }).bindPopup(`
-          <div class="custom-popup">
-            <div class="popup-header">
-              <span class="popup-type ${data.type}">${data.type}</span>
-              <span class="popup-status">${normalizedStatus}</span>
-            </div>
-            <p class="popup-description">${data.description}</p>
-            ${data.photo ? `<div class="popup-photo"><img src="${data.photo}" alt="Photo du signalement" /></div>` : ''}
-            <div class="popup-details">
-              <div class="popup-detail"><strong>Surface:</strong> ${(data.surfaceM2 || 0)} m²</div>
-              <div class="popup-detail"><strong>Budget estimé:</strong> ${(data.budgetEstimated || 0)} Ar</div>
-              <div class="popup-detail"><strong>Entreprise:</strong> ${data.companyName || 'Non spécifiée'}</div>
-            </div>
-            <div class="popup-footer">
-              <ion-icon name="calendar-outline"></ion-icon>
-              <span>${new Date(data.createdAt).toLocaleDateString('fr-FR')}</span>
-            </div>
-          </div>
-        `, {
-          className: 'custom-popup-container'
-        });
-        
-        map.value.addLayer(marker);
-        markers.push(marker);
-      }
-    });
-
-    totalReports.value = reports.length;
-    approvedReports.value = approved;
-    pendingReports.value = pending;
-    inProgressReports.value = inProgress;
-
-    const metrics = computeReportMetrics(reports as any);
-    totalSurfaceM2.value = metrics.totalSurfaceM2;
-    totalBudgetEstimated.value = metrics.totalBudgetEstimated;
-    progressPercent.value = metrics.progressPercent;
-  } catch (error) {
-    console.error('Erreur chargement reports:', error);
-    showToast('Erreur lors du chargement', 'danger');
-  } finally {
-    loading.value = false;
-  }
-};
-
 onMounted(async () => {
-  onAuthStateChanged(auth, (user) => {
-    isAuthenticated.value = !!user;
-  });
-
-  if (!mapContainer.value) return;
-
-  await new Promise(resolve => setTimeout(resolve, 100));
-
-  if (!mapContainer.value) return;
-
   try {
-    map.value = L.map(mapContainer.value, {
-      zoomControl: false,
-      attributionControl: true
-    }).setView([newPosition.value.lat, newPosition.value.lng], 13);
+    await reportMap.initMap()
 
-    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap',
-      maxZoom: 19
-    });
-    map.value.addLayer(tileLayer);
-
-    map.value.on('click', (e: L.LeafletMouseEvent) => {
-      if (showForm.value) {
-        newPosition.value = e.latlng;
-        showToast('Position mise à jour', 'primary');
-      } else {
-        const confirmCreate = confirm(`Créer un signalement ici ?\n📍 ${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`);
-        if (confirmCreate) {
-          startAddReportAtPosition(e.latlng);
-        }
-      }
-    });
-
-    map.value.on('zoomstart movestart', () => {
+    reportMap.map.value?.on('zoomstart movestart', () => {
       isUserInteracting.value = true;
     });
 
-    map.value.on('zoomend moveend', () => {
+    reportMap.map.value?.on('zoomend moveend', () => {
       setTimeout(() => {
         isUserInteracting.value = false;
-        
+
         if (pendingLocationUpdate.value) {
           applyLocationUpdate(pendingLocationUpdate.value);
           pendingLocationUpdate.value = null;
         }
       }, 150);
     });
-
-    await loadReports();
   } catch (error) {
     console.error('Erreur initialisation carte:', error);
     showToast('Erreur lors du chargement de la carte', 'danger');
@@ -982,9 +699,7 @@ onBeforeUnmount(() => {
     isTrackingLocation.value = false;
   }
 
-  if (map.value) {
-    map.value.remove();
-  }
+  reportMap.destroyMap()
 });
 </script>
 
