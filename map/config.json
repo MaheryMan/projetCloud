@@ -1,0 +1,24 @@
+{
+  "options": {
+    "paths": {
+      "root": "/data",
+      "fonts": "fonts",
+      "styles": "styles",
+      "mbtiles": "/data",
+      "sprites": "."
+    }
+  },
+  "data": {
+    "mon-osm": {
+      "mbtiles": "maptiler-osm-2020-02-10-v3.11-madagascar_antananarivo_2.mbtiles"
+    }
+  },
+  "styles": {
+    "osm-bright": {
+      "style": "style.json",
+      "tilejson": {
+        "type": "overlay"
+      }
+    }
+  }
+}

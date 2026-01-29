@@ -1,0 +1,345 @@
+:root {
+  --primary-dark: #1a2332;
+  --primary-blue: #2c3e50;
+  --accent-blue: #3498db;
+  --light-bg: #f8f9fa;
+  --text-primary: #2c3e50;
+  --text-secondary: #7f8c8d;
+  --border-color: #ecf0f1;
+  --success: #27ae60;
+  --warning: #f39c12;
+  --danger: #e74c3c;
+  --shadow-sm: 0 2px 4px rgba(26, 35, 50, 0.08);
+  --shadow-md: 0 4px 12px rgba(26, 35, 50, 0.12);
+}
+
+.user-management {
+  padding: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: var(--light-bg);
+  min-height: 100vh;
+}
+
+.page-header {
+  margin-bottom: 40px;
+}
+
+.page-header h1 {
+  font-size: 32px;
+  color: var(--primary-dark);
+  margin-bottom: 8px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.page-header p {
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 28px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent-blue);
+}
+
+.stat-card.danger::before {
+  background: var(--danger);
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+}
+
+.stat-icon {
+  font-size: 40px;
+  opacity: 0.9;
+}
+
+.stat-content .stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+.stat-content .stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  border: 1px solid var(--border-color);
+}
+
+.filter-btn {
+  padding: 12px 24px;
+  border: 2px solid var(--border-color);
+  background: white;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.filter-btn.active {
+  background: var(--primary-dark);
+  color: white;
+  border-color: var(--primary-dark);
+}
+
+.table-container {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1100px;
+}
+
+.data-table thead {
+  background: var(--light-bg);
+}
+
+.data-table th {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--primary-dark);
+  font-size: 13px;
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.data-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.data-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.data-table tbody tr:hover {
+  background: var(--light-bg);
+}
+
+.blocked-row {
+  background: rgba(231, 76, 60, 0.05) !important;
+}
+
+.user-name strong {
+  color: var(--primary-dark);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.status-active {
+  background-color: rgba(39, 174, 96, 0.1);
+  color: var(--success);
+}
+
+.status-blocked {
+  background-color: rgba(231, 76, 60, 0.1);
+  color: var(--danger);
+}
+
+.status-deleted {
+  background-color: rgba(127, 140, 141, 0.1);
+  color: var(--text-secondary);
+}
+
+.attempts {
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: rgba(39, 174, 96, 0.1);
+  color: var(--success);
+  font-size: 13px;
+}
+
+.attempts.max-attempts {
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--danger);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-unblock, .btn-reset {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-unblock {
+  background: var(--success);
+  color: white;
+}
+
+.btn-unblock:hover {
+  background: #229954;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-reset {
+  background: var(--accent-blue);
+  color: white;
+}
+
+.btn-reset:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.no-results {
+  text-align: center;
+  padding: 60px;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.info-box {
+  background: white;
+  border-radius: 12px;
+  padding: 28px;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--accent-blue);
+  box-shadow: var(--shadow-sm);
+}
+
+.info-box h3 {
+  margin: 0 0 16px 0;
+  color: var(--primary-dark);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.info-box ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.info-box li {
+  color: var(--text-primary);
+  line-height: 1.8;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .user-management {
+    padding: 20px;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-section {
+    flex-direction: column;
+  }
+
+  .filter-btn {
+    width: 100%;
+  }
+
+  .table-container {
+    padding: 16px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .btn-unblock, .btn-reset {
+    width: 100%;
+  }
+}

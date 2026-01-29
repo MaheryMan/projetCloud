@@ -3,3 +3,4 @@ app/.DS_Store
 map/data/madagascar-latest.osm.pbf
 madagascar-latest.osm.pbf
 osm_tile_server.tar
+map/madagascar.osm.pbf
