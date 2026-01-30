@@ -1,6 +1,8 @@
 -- =========================
 -- TABLE: SOURCES (authentification)
 -- =========================
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE TABLE sources (
     id BIGSERIAL PRIMARY KEY,
     libelle VARCHAR(50) NOT NULL,
@@ -105,7 +107,7 @@ INSERT INTO utilisateurs (email, password, nom, prenom, id_source, id_status)
 VALUES (
     'manager@admin.com',
     -- Mot de passe hashé: 'admin123' (à changer en production)
-    '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+    crypt('admin123', gen_salt('bf', 10)),
     'Admin',
     'Manager',
     (SELECT id FROM sources WHERE provider_type = 'local'),

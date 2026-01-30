@@ -94,6 +94,17 @@ public class UserManagementController {
                 return ResponseEntity.badRequest().body("Erreur de validation des données: " + e.getMessage());
             }
         } catch (Exception e) {
+            Throwable root = e;
+            while (root.getCause() != null && root.getCause() != root) {
+                root = root.getCause();
+            }
+
+            String msg = root.getMessage() != null ? root.getMessage() : e.getMessage();
+            if (msg != null && (msg.contains("Un utilisateur Firebase/Google ne doit pas avoir de mot de passe local")
+                    || msg.contains("Un utilisateur local doit avoir un mot de passe"))) {
+                return ResponseEntity.badRequest().body(msg);
+            }
+
             return ResponseEntity.status(500).body("Erreur interne du serveur: " + e.getMessage());
         }
     }

@@ -261,7 +261,8 @@ INSERT INTO configurations (cle, valeur, description) VALUES
 ('duree_session_minutes', '1440', 'Durée de validité d''une session en minutes (24h)'),
 ('duree_blocage_minutes', '30', 'Durée du blocage après trop de tentatives'),
 ('sync_auto', 'false', 'Synchronisation automatique avec Firebase'),
-('version_api', '1.0.0', 'Version actuelle de l''API');
+('version_api', '1.0.0', 'Version actuelle de l''API'),
+('default_manager_email', 'manager@projetcloud.com', 'Email du manager par défaut');
 
 -- =========================
 -- VUES UTILES
