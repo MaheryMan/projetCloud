@@ -106,6 +106,15 @@ CREATE TABLE utilisateurs (
     )
 );
 
+CREATE TABLE user_roles (
+    id_utilisateur INTEGER NOT NULL REFERENCES utilisateurs(id),
+    id_role INTEGER NOT NULL REFERENCES roles(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_utilisateur, id_role)
+);
+
+
+
 -- Créer le compte manager par défaut (local)
 INSERT INTO utilisateurs (email, password, nom, prenom, id_source, id_status) 
 VALUES (
@@ -114,27 +123,20 @@ VALUES (
     '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
     'Admin',
     'Manager',
-    (SELECT id FROM sources WHERE provider_type = 'local'),
-    (SELECT id FROM status WHERE code = 'USER_ACTIF')
+    (SELECT id FROM sources WHERE provider_type = 'local' LIMIT 1),
+    (SELECT id FROM status WHERE code = 'USER_ACTIF' LIMIT 1)
 );
 
 -- =========================
 -- TABLE: USER_ROLES (liaison utilisateurs-rôles)
 -- =========================
-CREATE TABLE user_roles (
-    id_utilisateur INTEGER NOT NULL REFERENCES utilisateurs(id),
-    id_role INTEGER NOT NULL REFERENCES roles(id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id_utilisateur, id_role)
-);
 
 -- Assigner rôle Manager au compte par défaut
 INSERT INTO user_roles (id_utilisateur, id_role)
 VALUES (
-    (SELECT id FROM utilisateurs WHERE email = 'manager@admin.com'),
-    (SELECT id FROM roles WHERE libelle = 'Manager')
+    (SELECT id FROM utilisateurs WHERE email = 'manager@admin.com' LIMIT 1),
+    (SELECT id FROM roles WHERE libelle = 'Manager' LIMIT 1)
 );
-
 -- =========================
 -- TABLE: SESSIONS
 -- =========================

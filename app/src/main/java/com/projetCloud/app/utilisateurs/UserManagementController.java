@@ -4,6 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.projetCloud.app.deblocages.Deblocage;
+import com.projetCloud.app.deblocages.DeblocageService;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +16,9 @@ public class UserManagementController {
 
     @Autowired
     private UtilisateurService utilisateurService;
+
+    @Autowired
+    private DeblocageService deblocageService;
 
     @GetMapping
     public List<Utilisateur> getAllUsers() {
@@ -33,6 +39,11 @@ public class UserManagementController {
             Utilisateur u = user.get();
             u.setIsBlocked(false);
             utilisateurService.save(u);
+            Utilisateur manager = new Utilisateur();
+            manager.setId(1L);
+            Deblocage deblocage = new Deblocage("debloque par manager", u, manager);
+            deblocageService.save(deblocage);
+
             return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.notFound().build();

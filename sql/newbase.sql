@@ -2,7 +2,7 @@
 -- TABLE: SOURCES (authentification)
 -- =========================
 CREATE TABLE sources (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     libelle VARCHAR(50) NOT NULL,
     provider_type VARCHAR(20) NOT NULL, -- 'firebase_email', 'google', 'local'
     is_online BOOLEAN DEFAULT TRUE,     -- TRUE pour Firebase/Google, FALSE pour local
@@ -19,7 +19,7 @@ INSERT INTO sources (libelle, provider_type, is_online) VALUES
 -- TABLE: STATUS (statuts utilisateurs + signalements)
 -- =========================
 CREATE TABLE status (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
     libelle VARCHAR(50) NOT NULL
 );
@@ -41,7 +41,7 @@ INSERT INTO status (code, libelle) VALUES
 -- TABLE: ENTREPRISES
 -- =========================
 CREATE TABLE entreprises (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     nom VARCHAR(255) NOT NULL,
     contact_email VARCHAR(255),
     contact_telephone VARCHAR(50),
@@ -57,7 +57,7 @@ INSERT INTO entreprises (nom) VALUES ('Entreprise par défaut');
 -- TABLE: ROLES
 -- =========================
 CREATE TABLE roles (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     libelle VARCHAR(50) NOT NULL UNIQUE,
     niveau INTEGER NOT NULL  -- Pour l'ordre hiérarchique
 );
@@ -72,7 +72,7 @@ INSERT INTO roles (libelle, niveau) VALUES
 -- TABLE: UTILISATEURS
 -- =========================
 CREATE TABLE utilisateurs (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password TEXT,                    -- NULL pour Firebase/Google
     firebase_uid VARCHAR(128) UNIQUE, -- ID Firebase si en ligne
@@ -86,8 +86,8 @@ CREATE TABLE utilisateurs (
     last_failed_attempt TIMESTAMP,
     
     -- Références
-    id_source INTEGER NOT NULL REFERENCES sources(id),
-    id_status INTEGER NOT NULL REFERENCES status(id),
+    id_source BIGINT NOT NULL REFERENCES sources(id),
+    id_status BIGINT NOT NULL REFERENCES status(id),
     
     -- Synchronisation
     is_synced_to_firebase BOOLEAN DEFAULT FALSE,
@@ -97,13 +97,7 @@ CREATE TABLE utilisateurs (
     -- Timestamps
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
-    deleted_at TIMESTAMP,
-    
-    -- Contraintes
-    CONSTRAINT check_password_source CHECK (
-        (id_source IN (SELECT id FROM sources WHERE provider_type = 'local') AND password IS NOT NULL) OR
-        (id_source NOT IN (SELECT id FROM sources WHERE provider_type = 'local') AND password IS NULL)
-    )
+    deleted_at TIMESTAMP
 );
 
 -- Créer le compte manager par défaut (local)
@@ -115,15 +109,15 @@ VALUES (
     'Admin',
     'Manager',
     (SELECT id FROM sources WHERE provider_type = 'local'),
-    (SELECT id FROM status WHERE code = 'USER_ACTIF')
+    (SELECT id FROM status WHERE code = 'USR001')
 );
 
 -- =========================
 -- TABLE: USER_ROLES (liaison utilisateurs-rôles)
 -- =========================
 CREATE TABLE user_roles (
-    id_utilisateur INTEGER NOT NULL REFERENCES utilisateurs(id),
-    id_role INTEGER NOT NULL REFERENCES roles(id),
+    id_utilisateur BIGINT NOT NULL REFERENCES utilisateurs(id),
+    id_role BIGINT NOT NULL REFERENCES roles(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id_utilisateur, id_role)
 );
@@ -141,7 +135,7 @@ VALUES (
 CREATE TABLE sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     token TEXT UNIQUE NOT NULL,
-    id_utilisateur INTEGER NOT NULL REFERENCES utilisateurs(id),
+    id_utilisateur BIGINT NOT NULL REFERENCES utilisateurs(id),
     device_info TEXT,
     ip_address VARCHAR(45),
     
@@ -152,41 +146,58 @@ CREATE TABLE sessions (
     
     -- État
     is_valid BOOLEAN NOT NULL DEFAULT TRUE,
-    logout_at TIMESTAMP,
-    
-    -- Index pour performance
-    INDEX idx_sessions_user (id_utilisateur),
-    INDEX idx_sessions_expires (expires_at)
+    logout_at TIMESTAMP
 );
+
+-- Index pour sessions
+CREATE INDEX idx_sessions_user ON sessions (id_utilisateur);
+CREATE INDEX idx_sessions_expires ON sessions (expires_at);
 
 -- =========================
 -- TABLE: DEBLOCAGES
 -- =========================
 CREATE TABLE deblocages (
-    id SERIAL PRIMARY KEY,
-    id_utilisateur INTEGER NOT NULL REFERENCES utilisateurs(id),
-    id_manager INTEGER NOT NULL REFERENCES utilisateurs(id),
+    id BIGSERIAL PRIMARY KEY,
+    id_utilisateur BIGINT NOT NULL REFERENCES utilisateurs(id),
+    id_manager BIGINT NOT NULL REFERENCES utilisateurs(id),
     motif TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    -- Contrainte: le manager doit avoir le rôle Manager
-    CONSTRAINT fk_manager_role CHECK (
-        EXISTS (
-            SELECT 1 FROM user_roles ur 
-            JOIN roles r ON ur.id_role = r.id 
-            WHERE ur.id_utilisateur = id_manager AND r.libelle = 'Manager'
-        )
-    ),
-    
-    INDEX idx_deblocages_user (id_utilisateur),
-    INDEX idx_deblocages_manager (id_manager)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Index pour deblocages
+CREATE INDEX idx_deblocages_user ON deblocages (id_utilisateur);
+CREATE INDEX idx_deblocages_manager ON deblocages (id_manager);
+
+-- =========================
+-- TABLE: TYPES_SIGNALEMENT
+-- =========================
+CREATE TABLE types_signalement (
+    id BIGSERIAL PRIMARY KEY,
+    libelle VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT,
+    icone VARCHAR(100),              -- Nom de l'icône (ex: "pothole", "diversion")
+    couleur VARCHAR(20),             -- Couleur associée sur la carte
+    niveau_urgence INTEGER DEFAULT 2, -- 1=Urgent, 2=Normal, 3=Faible
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Types par défaut
+INSERT INTO types_signalement (libelle, description, icone, couleur, niveau_urgence) VALUES
+('Trou / Nid-de-poule', 'Dégradation de la chaussée avec creux', 'pothole', '#FF0000', 1),
+('Déviation / Chantier', 'Travaux en cours avec déviation', 'diversion', '#FFA500', 2),
+('Signalisation manquante', 'Panneau de signalisation absent ou endommagé', 'sign', '#FFFF00', 2),
+('Éclairage défaillant', 'Lampadaire public non fonctionnel', 'light', '#0000FF', 3),
+('Déchets sur la voie', 'Objets ou déchets obstruant la circulation', 'trash', '#808080', 2),
+('Inondation', 'Eau stagnante sur la chaussée', 'flood', '#0000FF', 1),
+('Revêtement dégradé', 'Chaussée abîmée mais sans trou', 'road', '#800000', 2),
+('Végétation envahissante', 'Arbres/plantes obstruant la voie', 'tree', '#008000', 3),
+('Autre', 'Autre type de problème non catégorisé', 'other', '#666666', 2);
 
 -- =========================
 -- TABLE: SIGNALEMENTS
 -- =========================
 CREATE TABLE signalements (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     
     -- Position
     latitude NUMERIC(10,6) NOT NULL,
@@ -201,9 +212,10 @@ CREATE TABLE signalements (
     budget NUMERIC(15,2),
     
     -- Références
-    id_entreprise INTEGER REFERENCES entreprises(id),
-    id_utilisateur INTEGER NOT NULL REFERENCES utilisateurs(id), -- Celui qui a signalé
-    id_status INTEGER NOT NULL REFERENCES status(id),            -- Statut courant
+    id_type_signalement BIGINT NOT NULL REFERENCES types_signalement(id),
+    id_entreprise BIGINT REFERENCES entreprises(id),
+    id_utilisateur BIGINT NOT NULL REFERENCES utilisateurs(id), -- Celui qui a signalé
+    id_status BIGINT NOT NULL REFERENCES status(id),            -- Statut courant
     
     -- Synchronisation Firebase
     is_synced_to_firebase BOOLEAN DEFAULT FALSE,
@@ -214,11 +226,6 @@ CREATE TABLE signalements (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
     
-    -- Index pour recherche géospatiale
-    INDEX idx_signalements_location (latitude, longitude),
-    INDEX idx_signalements_user (id_utilisateur),
-    INDEX idx_signalements_status (id_status),
-    
     -- Contraintes
     CONSTRAINT valid_latitude CHECK (latitude BETWEEN -90 AND 90),
     CONSTRAINT valid_longitude CHECK (longitude BETWEEN -180 AND 180),
@@ -226,26 +233,35 @@ CREATE TABLE signalements (
     CONSTRAINT positive_budget CHECK (budget IS NULL OR budget >= 0)
 );
 
+-- Index pour signalements
+CREATE INDEX idx_signalements_location ON signalements (latitude, longitude);
+CREATE INDEX idx_signalements_user ON signalements (id_utilisateur);
+CREATE INDEX idx_signalements_status ON signalements (id_status);
+CREATE INDEX idx_signalements_date ON signalements (created_at);
+CREATE INDEX idx_signalements_surface ON signalements (surface_m2) WHERE surface_m2 IS NOT NULL;
+CREATE INDEX idx_signalements_budget ON signalements (budget) WHERE budget IS NOT NULL;
+
 -- =========================
 -- TABLE: HISTORIQUES_STATUS_SIGNALEMENT
 -- =========================
 CREATE TABLE historiques_status_signalement (
-    id SERIAL PRIMARY KEY,
-    id_signalement INTEGER NOT NULL REFERENCES signalements(id),
-    id_status INTEGER NOT NULL REFERENCES status(id),
-    id_utilisateur INTEGER NOT NULL REFERENCES utilisateurs(id), -- Qui a changé le statut
+    id BIGSERIAL PRIMARY KEY,
+    id_signalement BIGINT NOT NULL REFERENCES signalements(id),
+    id_status BIGINT NOT NULL REFERENCES status(id),
+    id_utilisateur BIGINT NOT NULL REFERENCES utilisateurs(id), -- Qui a changé le statut
     commentaire TEXT,                                            -- Optionnel: pourquoi le changement
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    INDEX idx_historiques_signalement (id_signalement),
-    INDEX idx_historiques_date (created_at)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Index pour historiques
+CREATE INDEX idx_historiques_signalement ON historiques_status_signalement (id_signalement);
+CREATE INDEX idx_historiques_date ON historiques_status_signalement (created_at);
 
 -- =========================
 -- TABLE: CONFIGURATIONS (paramètres système)
 -- =========================
 CREATE TABLE configurations (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     cle VARCHAR(100) NOT NULL UNIQUE,
     valeur TEXT NOT NULL,
     description TEXT,
@@ -260,6 +276,17 @@ INSERT INTO configurations (cle, valeur, description) VALUES
 ('duree_blocage_minutes', '30', 'Durée du blocage après trop de tentatives'),
 ('sync_auto', 'false', 'Synchronisation automatique avec Firebase'),
 ('version_api', '1.0.0', 'Version actuelle de l''API');
+
+-- =========================
+-- INDEX SUPPLÉMENTAIRES
+-- =========================
+
+-- Pour les recherches textuelles
+CREATE INDEX idx_utilisateurs_email ON utilisateurs USING HASH (email);
+CREATE INDEX idx_utilisateurs_nom_prenom ON utilisateurs (nom, prenom);
+
+-- Pour la gestion des sessions expirées
+CREATE INDEX idx_sessions_validite ON sessions (is_valid, expires_at);
 
 -- =========================
 -- VUES UTILES
@@ -294,6 +321,9 @@ SELECT
     s.latitude,
     s.longitude,
     s.description,
+    ts.libelle as type_signalement,
+    ts.icone,
+    ts.couleur,
     s.surface_m2,
     s.budget,
     st.libelle as statut,
@@ -304,6 +334,7 @@ SELECT
     s.updated_at
 FROM signalements s
 JOIN status st ON s.id_status = st.id
+JOIN types_signalement ts ON s.id_type_signalement = ts.id
 LEFT JOIN entreprises e ON s.id_entreprise = e.id
 JOIN utilisateurs u ON s.id_utilisateur = u.id;
 
@@ -311,13 +342,30 @@ JOIN utilisateurs u ON s.id_utilisateur = u.id;
 CREATE VIEW vue_statistiques AS
 SELECT 
     COUNT(*) as total_signalements,
-    COUNT(CASE WHEN id_status = (SELECT id FROM status WHERE code = 'REPORT_NOUVEAU') THEN 1 END) as nouveaux,
-    COUNT(CASE WHEN id_status = (SELECT id FROM status WHERE code = 'REPORT_EN_COURS') THEN 1 END) as en_cours,
-    COUNT(CASE WHEN id_status = (SELECT id FROM status WHERE code = 'REPORT_TERMINE') THEN 1 END) as termines,
+    COUNT(CASE WHEN id_status = (SELECT id FROM status WHERE code = 'REPORT001') THEN 1 END) as nouveaux,
+    COUNT(CASE WHEN id_status = (SELECT id FROM status WHERE code = 'REPORT002') THEN 1 END) as en_cours,
+    COUNT(CASE WHEN id_status = (SELECT id FROM status WHERE code = 'REPORT003') THEN 1 END) as termines,
     COALESCE(SUM(surface_m2), 0) as surface_totale_m2,
     COALESCE(SUM(budget), 0) as budget_total,
     COALESCE(AVG(budget), 0) as budget_moyen
 FROM signalements;
+
+-- Vue: Statistiques par type
+CREATE VIEW vue_statistiques_par_type AS
+SELECT 
+    ts.libelle as type_signalement,
+    COUNT(s.id) as nombre,
+    COUNT(CASE WHEN st.code = 'REPORT001' THEN 1 END) as nouveaux,
+    COUNT(CASE WHEN st.code = 'REPORT002' THEN 1 END) as en_cours,
+    COUNT(CASE WHEN st.code = 'REPORT003' THEN 1 END) as termines,
+    COALESCE(SUM(s.surface_m2), 0) as surface_totale_m2,
+    COALESCE(SUM(s.budget), 0) as budget_total,
+    ROUND(COUNT(CASE WHEN st.code = 'REPORT003' THEN 1 END) * 100.0 / NULLIF(COUNT(s.id), 0), 1) as taux_achevement
+FROM signalements s
+JOIN types_signalement ts ON s.id_type_signalement = ts.id
+JOIN status st ON s.id_status = st.id
+GROUP BY ts.id, ts.libelle
+ORDER BY COUNT(s.id) DESC;
 
 -- =========================
 -- FONCTIONS ET TRIGGERS
@@ -355,7 +403,7 @@ BEGIN
         VALUES (
             NEW.id, 
             NEW.id_status, 
-            NEW.id_utilisateur,  -- Supposons que le manager qui modifie est dans le contexte
+            NEW.id_utilisateur,
             'Changement automatique via trigger'
         );
     END IF;
@@ -368,20 +416,58 @@ CREATE TRIGGER log_signalement_status_change
     FOR EACH ROW EXECUTE FUNCTION log_status_change();
 
 -- =========================
--- INDEX SUPPLÉMENTAIRES
+-- FONCTION: Validation password pour utilisateurs locaux
 -- =========================
+CREATE OR REPLACE FUNCTION validate_user_password()
+RETURNS TRIGGER AS $$
+DECLARE
+    src_type VARCHAR(20);
+BEGIN
+    -- Récupérer le type de provider
+    SELECT provider_type INTO src_type 
+    FROM sources 
+    WHERE id = NEW.id_source;
+    
+    -- Vérifier la cohérence password/source
+    IF src_type = 'local' AND NEW.password IS NULL THEN
+        RAISE EXCEPTION 'Un utilisateur local doit avoir un mot de passe';
+    END IF;
+    
+    IF src_type != 'local' AND NEW.password IS NOT NULL THEN
+        RAISE EXCEPTION 'Un utilisateur Firebase/Google ne doit pas avoir de mot de passe local';
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
 
--- Pour les recherches textuelles
-CREATE INDEX idx_utilisateurs_email ON utilisateurs USING HASH (email);
-CREATE INDEX idx_utilisateurs_nom_prenom ON utilisateurs (nom, prenom);
+CREATE TRIGGER check_user_password
+    BEFORE INSERT OR UPDATE ON utilisateurs
+    FOR EACH ROW EXECUTE FUNCTION validate_user_password();
 
--- Pour les rapports et statistiques
-CREATE INDEX idx_signalements_date ON signalements (created_at);
-CREATE INDEX idx_signalements_surface ON signalements (surface_m2) WHERE surface_m2 IS NOT NULL;
-CREATE INDEX idx_signalements_budget ON signalements (budget) WHERE budget IS NOT NULL;
+-- =========================
+-- FONCTION: Validation manager pour déblocages
+-- =========================
+CREATE OR REPLACE FUNCTION validate_manager_role()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Vérifier que l'utilisateur qui débloque a bien le rôle Manager
+    IF NOT EXISTS (
+        SELECT 1 FROM user_roles ur 
+        JOIN roles r ON ur.id_role = r.id 
+        WHERE ur.id_utilisateur = NEW.id_manager 
+        AND r.libelle = 'Manager'
+    ) THEN
+        RAISE EXCEPTION 'Seul un utilisateur avec le rôle Manager peut débloquer un compte';
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
 
--- Pour la gestion des sessions expirées
-CREATE INDEX idx_sessions_validite ON sessions (is_valid, expires_at);
+CREATE TRIGGER check_manager_role
+    BEFORE INSERT ON deblocages
+    FOR EACH ROW EXECUTE FUNCTION validate_manager_role();
 
 -- =========================
 -- COMMENTAIRES
@@ -398,89 +484,3 @@ COMMENT ON COLUMN utilisateurs.is_synced_to_firebase IS 'TRUE si synchronisé av
 COMMENT ON COLUMN signalements.firebase_id IS 'ID correspondant dans Firebase (pour sync)';
 COMMENT ON COLUMN signalements.is_synced_to_firebase IS 'TRUE si le signalement est synchronisé avec Firebase';
 COMMENT ON COLUMN configurations.cle IS 'Clé de configuration (ex: tentatives_max)';
-
--- =========================
--- TABLE: TYPES_SIGNALEMENT
--- =========================
-CREATE TABLE types_signalement (
-    id SERIAL PRIMARY KEY,
-    libelle VARCHAR(100) NOT NULL UNIQUE,
-    description TEXT,
-    icone VARCHAR(100),              -- Nom de l'icône (ex: "pothole", "diversion")
-    couleur VARCHAR(20),             -- Couleur associée sur la carte
-    niveau_urgence INTEGER DEFAULT 2, -- 1=Urgent, 2=Normal, 3=Faible
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Types par défaut
-INSERT INTO types_signalement (libelle, description, icone, couleur, niveau_urgence) VALUES
-('Trou / Nid-de-poule', 'Dégradation de la chaussée avec creux', 'pothole', '#FF0000', 1),
-('Déviation / Chantier', 'Travaux en cours avec déviation', 'diversion', '#FFA500', 2),
-('Signalisation manquante', 'Panneau de signalisation absent ou endommagé', 'sign', '#FFFF00', 2),
-('Éclairage défaillant', 'Lampadaire public non fonctionnel', 'light', '#0000FF', 3),
-('Déchets sur la voie', 'Objets ou déchets obstruant la circulation', 'trash', '#808080', 2),
-('Inondation', 'Eau stagnante sur la chaussée', 'flood', '#0000FF', 1),
-('Revêtement dégradé', 'Chaussée abîmée mais sans trou', 'road', '#800000', 2),
-('Végétation envahissante', 'Arbres/plantes obstruant la voie', 'tree', '#008000', 3),
-('Autre', 'Autre type de problème non catégorisé', 'other', '#666666', 2);
-
--- =========================
--- MODIFIER TABLE SIGNALEMENTS
--- =========================
-ALTER TABLE signalements 
-ADD COLUMN id_type_signalement INTEGER REFERENCES types_signalement(id);
-
--- Mettre à jour les signalements existants (optionnel)
-UPDATE signalements 
-SET id_type_signalement = (SELECT id FROM types_signalement WHERE libelle = 'Autre')
-WHERE id_type_signalement IS NULL;
-
--- Rendre la colonne obligatoire après migration
-ALTER TABLE signalements 
-ALTER COLUMN id_type_signalement SET NOT NULL;
-
--- =========================
--- METTRE À JOUR LA VUE
--- =========================
-DROP VIEW IF EXISTS vue_signalements_complets;
-CREATE VIEW vue_signalements_complets AS
-SELECT 
-    s.id,
-    s.latitude,
-    s.longitude,
-    s.description,
-    ts.libelle as type_signalement,
-    ts.icone,
-    ts.couleur,
-    s.surface_m2,
-    s.budget,
-    st.libelle as statut,
-    e.nom as entreprise,
-    CONCAT(u.prenom, ' ', u.nom) as signalant,
-    u.email as email_signalant,
-    s.created_at,
-    s.updated_at
-FROM signalements s
-JOIN status st ON s.id_status = st.id
-JOIN types_signalement ts ON s.id_type_signalement = ts.id
-LEFT JOIN entreprises e ON s.id_entreprise = e.id
-JOIN utilisateurs u ON s.id_utilisateur = u.id;
-
--- =========================
--- VUE: STATISTIQUES PAR TYPE
--- =========================
-CREATE VIEW vue_statistiques_par_type AS
-SELECT 
-    ts.libelle as type_signalement,
-    COUNT(s.id) as nombre,
-    COUNT(CASE WHEN st.code = 'REPORT_NOUVEAU' THEN 1 END) as nouveaux,
-    COUNT(CASE WHEN st.code = 'REPORT_EN_COURS' THEN 1 END) as en_cours,
-    COUNT(CASE WHEN st.code = 'REPORT_TERMINE' THEN 1 END) as termines,
-    COALESCE(SUM(s.surface_m2), 0) as surface_totale_m2,
-    COALESCE(SUM(s.budget), 0) as budget_total,
-    ROUND(COUNT(CASE WHEN st.code = 'REPORT_TERMINE' THEN 1 END) * 100.0 / COUNT(s.id), 1) as taux_achevement
-FROM signalements s
-JOIN types_signalement ts ON s.id_type_signalement = ts.id
-JOIN status st ON s.id_status = st.id
-GROUP BY ts.id, ts.libelle
-ORDER BY COUNT(s.id) DESC;

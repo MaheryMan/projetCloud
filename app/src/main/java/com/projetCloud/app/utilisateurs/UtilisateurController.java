@@ -45,6 +45,20 @@ public class UtilisateurController {
             @Parameter(description = "Données d'authentification", required = true)
             @RequestBody LoginRequest loginRequest) {
         Optional<Utilisateur> utilisateur = utilisateurService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
+        if (!utilisateur.<ResponseEntity<?>>map(ResponseEntity::ok).isPresent()) {
+            Optional<Utilisateur> user = utilisateurService.findByEmail(loginRequest.getEmail());
+            if (user.isPresent()) {
+                Utilisateur u = user.get();
+                
+                int attempts = u.getTentativesConnexion() != null ? u.getTentativesConnexion() : 0;
+                u.setTentativesConnexion(attempts + 1);
+                u.setLastFailedAttempt(java.time.LocalDateTime.now());
+                if (u.getTentativesConnexion() >= 3) {
+                    u.setIsBlocked(true);
+                }
+                utilisateurService.save(u);
+            }
+        }
         return utilisateur.<ResponseEntity<?>>map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.badRequest().body("Email ou mot de passe incorrect"));
     }
