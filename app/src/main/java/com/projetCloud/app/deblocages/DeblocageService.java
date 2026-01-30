@@ -28,8 +28,8 @@ public class DeblocageService {
         deblocageRepository.deleteById(id);
     }
 
-    public List<Deblocage> findByUtilisateurBloqueId(Long utilisateurId) {
-        return deblocageRepository.findByUtilisateurBloqueId(utilisateurId);
+    public List<Deblocage> findByUtilisateurId(Long utilisateurId) {
+        return deblocageRepository.findByUtilisateurId(utilisateurId);
     }
 
     public List<Deblocage> findByManagerId(Long managerId) {

@@ -17,14 +17,26 @@ public class Session {
     @Column(columnDefinition = "TEXT", unique = true, nullable = false)
     private String token;
 
-    @Column(name = "cree_le")
-    private LocalDateTime creeLe;
+    @Column(name = "device_info", columnDefinition = "TEXT")
+    private String deviceInfo;
 
-    @Column(name = "expire_le", nullable = false)
-    private LocalDateTime expireLe;
+    @Column(name = "ip_address", length = 45)
+    private String ipAddress;
 
-    @Column(name = "est_valide", nullable = false)
-    private Boolean estValide = true;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "expires_at", nullable = false)
+    private LocalDateTime expiresAt;
+
+    @Column(name = "last_activity")
+    private LocalDateTime lastActivity;
+
+    @Column(name = "is_valid", nullable = false)
+    private Boolean isValid = true;
+
+    @Column(name = "logout_at")
+    private LocalDateTime logoutAt;
 
     @ManyToOne
     @JoinColumn(name = "id_utilisateur", nullable = false)
@@ -33,9 +45,9 @@ public class Session {
     // Constructeurs
     public Session() {}
 
-    public Session(String token, LocalDateTime expireLe, Utilisateur utilisateur) {
+    public Session(String token, LocalDateTime expiresAt, Utilisateur utilisateur) {
         this.token = token;
-        this.expireLe = expireLe;
+        this.expiresAt = expiresAt;
         this.utilisateur = utilisateur;
     }
 
@@ -56,28 +68,60 @@ public class Session {
         this.token = token;
     }
 
-    public LocalDateTime getCreeLe() {
-        return creeLe;
+    public String getDeviceInfo() {
+        return deviceInfo;
     }
 
-    public void setCreeLe(LocalDateTime creeLe) {
-        this.creeLe = creeLe;
+    public void setDeviceInfo(String deviceInfo) {
+        this.deviceInfo = deviceInfo;
     }
 
-    public LocalDateTime getExpireLe() {
-        return expireLe;
+    public String getIpAddress() {
+        return ipAddress;
     }
 
-    public void setExpireLe(LocalDateTime expireLe) {
-        this.expireLe = expireLe;
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
     }
 
-    public Boolean getEstValide() {
-        return estValide;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setEstValide(Boolean estValide) {
-        this.estValide = estValide;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setExpiresAt(LocalDateTime expiresAt) {
+        this.expiresAt = expiresAt;
+    }
+
+    public LocalDateTime getLastActivity() {
+        return lastActivity;
+    }
+
+    public void setLastActivity(LocalDateTime lastActivity) {
+        this.lastActivity = lastActivity;
+    }
+
+    public Boolean getIsValid() {
+        return isValid;
+    }
+
+    public void setIsValid(Boolean isValid) {
+        this.isValid = isValid;
+    }
+
+    public LocalDateTime getLogoutAt() {
+        return logoutAt;
+    }
+
+    public void setLogoutAt(LocalDateTime logoutAt) {
+        this.logoutAt = logoutAt;
     }
 
     public Utilisateur getUtilisateur() {

@@ -1,19 +1,11 @@
 package com.projetCloud.app.niveauTravaux;
 
-import jakarta.persistence.*;
-
-@Entity
-@Table(name = "niveau_travaux")
 public class NiveauTravail {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 50)
     private String libelle;
 
-    @Column(nullable = false)
     private Integer niveau;
 
     // Constructeurs

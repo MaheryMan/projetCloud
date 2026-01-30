@@ -34,6 +34,31 @@ CREATE TABLE niveau_travaux (
     niveau INTEGER NOT NULL
 );
 
+ -- =========================
+ -- TABLE: TYPES_SIGNALEMENT
+ -- =========================
+ CREATE TABLE types_signalement (
+     id SERIAL PRIMARY KEY,
+     libelle VARCHAR(100) NOT NULL UNIQUE,
+     description TEXT,
+     icone VARCHAR(100),
+     couleur VARCHAR(20),
+     niveau_urgence INTEGER DEFAULT 2,
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+ );
+ 
+ -- Types par défaut
+ INSERT INTO types_signalement (libelle, description, icone, couleur, niveau_urgence) VALUES
+ ('Trou / Nid-de-poule', 'Dégradation de la chaussée avec creux', 'pothole', '#FF0000', 1),
+ ('Déviation / Chantier', 'Travaux en cours avec déviation', 'diversion', '#FFA500', 2),
+ ('Signalisation manquante', 'Panneau de signalisation absent ou endommagé', 'sign', '#FFFF00', 2),
+ ('Éclairage défaillant', 'Lampadaire public non fonctionnel', 'light', '#0000FF', 3),
+ ('Déchets sur la voie', 'Objets ou déchets obstruant la circulation', 'trash', '#808080', 2),
+ ('Inondation', 'Eau stagnante sur la chaussée', 'flood', '#0000FF', 1),
+ ('Revêtement dégradé', 'Chaussée abîmée mais sans trou', 'road', '#800000', 2),
+ ('Végétation envahissante', 'Arbres/plantes obstruant la voie', 'tree', '#008000', 3),
+ ('Autre', 'Autre type de problème non catégorisé', 'other', '#666666', 2);
+
 -- =========================
 -- TABLE UTILISATEURS
 -- =========================
@@ -96,12 +121,23 @@ CREATE TABLE signalements (
     date_signalement TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     description TEXT,
     id_niveau_travaux INTEGER NOT NULL,
+     id_type_signalement INTEGER,
     id_utilisateur INTEGER NOT NULL,
     CONSTRAINT fk_niveau_travaux
         FOREIGN KEY (id_niveau_travaux) REFERENCES niveau_travaux(id),
+     CONSTRAINT fk_type_signalement
+         FOREIGN KEY (id_type_signalement) REFERENCES types_signalement(id),
     CONSTRAINT fk_signalement_user
         FOREIGN KEY (id_utilisateur) REFERENCES utilisateurs(id)
 );
+
+ -- Migration: affecter le type 'Autre' aux signalements existants puis rendre obligatoire
+ UPDATE signalements
+ SET id_type_signalement = (SELECT id FROM types_signalement WHERE libelle = 'Autre')
+ WHERE id_type_signalement IS NULL;
+ 
+ ALTER TABLE signalements
+ ALTER COLUMN id_type_signalement SET NOT NULL;
 
 -- =========================
 -- TABLE HISTORIQUES_STATUS_SIGNALEMENT

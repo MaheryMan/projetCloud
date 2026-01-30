@@ -31,7 +31,7 @@ public class UtilisateurService {
     public Optional<Utilisateur> authenticate(String email, String password) {
         Optional<Utilisateur> utilisateur = utilisateurRepository.findByEmail(email);
         if (utilisateur.isPresent()
-                && utilisateur.get().getDeleteLe() == null) {
+                && utilisateur.get().getDeletedAt() == null) {
             String storedPassword = utilisateur.get().getPassword();
             boolean passwordMatches = false;
             if (storedPassword != null) {
@@ -58,7 +58,7 @@ public class UtilisateurService {
      */
     public Optional<Utilisateur> findByEmail(String email) {
         return utilisateurRepository.findByEmail(email)
-                .filter(u -> u.getDeleteLe() == null);
+                .filter(u -> u.getDeletedAt() == null);
     }
 
     /**
@@ -79,7 +79,7 @@ public class UtilisateurService {
      */
     public Optional<Utilisateur> findById(Long id) {
         return utilisateurRepository.findById(id)
-                .filter(u -> u.getDeleteLe() == null);
+                .filter(u -> u.getDeletedAt() == null);
     }
 
     /**
@@ -89,7 +89,7 @@ public class UtilisateurService {
      */
     public List<Utilisateur> findAll() {
         return utilisateurRepository.findAll().stream()
-                .filter(u -> u.getDeleteLe() == null)
+                .filter(u -> u.getDeletedAt() == null)
                 .collect(Collectors.toList());
     }
 
@@ -111,7 +111,7 @@ public class UtilisateurService {
      */
     public boolean isManager(Long utilisateurId) {
         List<String> roles = getUserRoles(utilisateurId);
-        return roles.contains("manager");
+        return roles.contains("Manager");
     }
 
     /**
@@ -137,7 +137,7 @@ public class UtilisateurService {
         Optional<Utilisateur> utilisateurOpt = utilisateurRepository.findById(id);
         if (utilisateurOpt.isPresent()) {
             Utilisateur utilisateur = utilisateurOpt.get();
-            utilisateur.setDeleteLe(LocalDateTime.now());
+            utilisateur.setDeletedAt(LocalDateTime.now());
             utilisateurRepository.save(utilisateur);
         }
     }

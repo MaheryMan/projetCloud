@@ -16,10 +16,14 @@ public class Utilisateur {
     @Column(unique = true)
     private String email;
 
-    @Column(name = "num_tel", unique = true)
+    @Column(name = "num_tel")
     private String numTel;
 
+    @Column(columnDefinition = "TEXT")
     private String password;
+
+    @Column(name = "firebase_uid", unique = true, length = 128)
+    private String firebaseUid;
 
     @Column(nullable = false)
     private String nom;
@@ -27,17 +31,14 @@ public class Utilisateur {
     @Column(nullable = false)
     private String prenom;
 
-    @Column(columnDefinition = "INTEGER DEFAULT 0")
-    private Integer tentatives = 0;
+    @Column(name = "tentatives_connexion")
+    private Integer tentativesConnexion = 0;
 
-    @Column(name = "cree_le")
-    private LocalDateTime creeLe;
+    @Column(name = "is_blocked")
+    private Boolean isBlocked = false;
 
-    @Column(name = "update_le")
-    private LocalDateTime updateLe;
-
-    @Column(name = "delete_le")
-    private LocalDateTime deleteLe;
+    @Column(name = "last_failed_attempt")
+    private LocalDateTime lastFailedAttempt;
 
     @Column(name = "id_source", nullable = false)
     private Integer idSource;
@@ -45,9 +46,27 @@ public class Utilisateur {
     @Column(name = "id_status", nullable = false)
     private Integer idStatus;
 
+    @Column(name = "is_synced_to_firebase")
+    private Boolean isSyncedToFirebase = false;
+
+    @Column(name = "last_synced_at")
+    private LocalDateTime lastSyncedAt;
+
+    @Column(name = "firebase_created_at")
+    private LocalDateTime firebaseCreatedAt;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @ManyToMany
     @JoinTable(
-        name = "users_roles",
+        name = "user_roles",
         joinColumns = @JoinColumn(name = "id_utilisateur"),
         inverseJoinColumns = @JoinColumn(name = "id_role")
     )
@@ -102,6 +121,14 @@ public class Utilisateur {
         this.password = password;
     }
 
+    public String getFirebaseUid() {
+        return firebaseUid;
+    }
+
+    public void setFirebaseUid(String firebaseUid) {
+        this.firebaseUid = firebaseUid;
+    }
+
     public String getNom() {
         return nom;
     }
@@ -118,36 +145,28 @@ public class Utilisateur {
         this.prenom = prenom;
     }
 
-    public Integer getTentatives() {
-        return tentatives;
+    public Integer getTentativesConnexion() {
+        return tentativesConnexion;
     }
 
-    public void setTentatives(Integer tentatives) {
-        this.tentatives = tentatives;
+    public void setTentativesConnexion(Integer tentativesConnexion) {
+        this.tentativesConnexion = tentativesConnexion;
     }
 
-    public LocalDateTime getCreeLe() {
-        return creeLe;
+    public Boolean getIsBlocked() {
+        return isBlocked;
     }
 
-    public void setCreeLe(LocalDateTime creeLe) {
-        this.creeLe = creeLe;
+    public void setIsBlocked(Boolean isBlocked) {
+        this.isBlocked = isBlocked;
     }
 
-    public LocalDateTime getUpdateLe() {
-        return updateLe;
+    public LocalDateTime getLastFailedAttempt() {
+        return lastFailedAttempt;
     }
 
-    public void setUpdateLe(LocalDateTime updateLe) {
-        this.updateLe = updateLe;
-    }
-
-    public LocalDateTime getDeleteLe() {
-        return deleteLe;
-    }
-
-    public void setDeleteLe(LocalDateTime deleteLe) {
-        this.deleteLe = deleteLe;
+    public void setLastFailedAttempt(LocalDateTime lastFailedAttempt) {
+        this.lastFailedAttempt = lastFailedAttempt;
     }
 
     public Integer getIdSource() {
@@ -164,6 +183,54 @@ public class Utilisateur {
 
     public void setIdStatus(Integer idStatus) {
         this.idStatus = idStatus;
+    }
+
+    public Boolean getIsSyncedToFirebase() {
+        return isSyncedToFirebase;
+    }
+
+    public void setIsSyncedToFirebase(Boolean isSyncedToFirebase) {
+        this.isSyncedToFirebase = isSyncedToFirebase;
+    }
+
+    public LocalDateTime getLastSyncedAt() {
+        return lastSyncedAt;
+    }
+
+    public void setLastSyncedAt(LocalDateTime lastSyncedAt) {
+        this.lastSyncedAt = lastSyncedAt;
+    }
+
+    public LocalDateTime getFirebaseCreatedAt() {
+        return firebaseCreatedAt;
+    }
+
+    public void setFirebaseCreatedAt(LocalDateTime firebaseCreatedAt) {
+        this.firebaseCreatedAt = firebaseCreatedAt;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 
     public Set<Role> getRoles() {

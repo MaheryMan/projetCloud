@@ -8,6 +8,6 @@ import java.util.List;
 @Repository
 public interface DeblocageRepository extends JpaRepository<Deblocage, Long> {
 
-    List<Deblocage> findByUtilisateurBloqueId(Long utilisateurId);
+    List<Deblocage> findByUtilisateurId(Long utilisateurId);
     List<Deblocage> findByManagerId(Long managerId);
 }

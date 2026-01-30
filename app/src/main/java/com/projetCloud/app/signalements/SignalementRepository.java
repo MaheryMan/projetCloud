@@ -9,5 +9,4 @@ import java.util.List;
 public interface SignalementRepository extends JpaRepository<Signalement, Long> {
 
     List<Signalement> findByUtilisateurId(Long utilisateurId);
-    List<Signalement> findByNiveauTravailId(Long niveauTravailId);
 }

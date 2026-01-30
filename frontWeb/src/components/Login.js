@@ -30,8 +30,8 @@ function Login({ onLogin }) {
       const data = await response.json();
       console.log('Connexion réussie:', data);
       
-      localStorage.setItem('token', data.token);
-      if (onLogin) onLogin(data.user);
+      localStorage.setItem('token', 'authenticated');
+      if (onLogin) onLogin(data);
       
       navigate('/dashboard');
       

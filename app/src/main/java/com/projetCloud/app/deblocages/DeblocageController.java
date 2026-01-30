@@ -36,11 +36,11 @@ public class DeblocageController {
 
     @PostMapping
     public ResponseEntity<Deblocage> createDeblocage(@RequestBody DeblocageRequest request) {
-        Optional<Utilisateur> utilisateurBloque = utilisateurService.findById(request.getIdUtilisateurBloque());
+        Optional<Utilisateur> utilisateur = utilisateurService.findById(request.getIdUtilisateur());
         Optional<Utilisateur> manager = utilisateurService.findById(request.getIdManager());
 
-        if (utilisateurBloque.isPresent() && manager.isPresent()) {
-            Deblocage deblocage = new Deblocage(request.getMotif(), utilisateurBloque.get(), manager.get());
+        if (utilisateur.isPresent() && manager.isPresent()) {
+            Deblocage deblocage = new Deblocage(request.getMotif(), utilisateur.get(), manager.get());
             return ResponseEntity.ok(deblocageService.save(deblocage));
         } else {
             return ResponseEntity.badRequest().build();
@@ -53,7 +53,7 @@ public class DeblocageController {
         if (deblocageOpt.isPresent()) {
             Deblocage deblocage = deblocageOpt.get();
             deblocage.setMotif(request.getMotif());
-            // Note: dateDeblocage is set automatically, utilisateurBloque and manager not updated in this example
+            // Note: dateDeblocage is set automatically, utilisateur and manager not updated in this example
             return ResponseEntity.ok(deblocageService.save(deblocage));
         } else {
             return ResponseEntity.notFound().build();
@@ -73,7 +73,7 @@ public class DeblocageController {
     // Classe interne pour la requête
     public static class DeblocageRequest {
         private String motif;
-        private Long idUtilisateurBloque;
+        private Long idUtilisateur;
         private Long idManager;
 
         public String getMotif() {
@@ -84,12 +84,12 @@ public class DeblocageController {
             this.motif = motif;
         }
 
-        public Long getIdUtilisateurBloque() {
-            return idUtilisateurBloque;
+        public Long getIdUtilisateur() {
+            return idUtilisateur;
         }
 
-        public void setIdUtilisateurBloque(Long idUtilisateurBloque) {
-            this.idUtilisateurBloque = idUtilisateurBloque;
+        public void setIdUtilisateur(Long idUtilisateur) {
+            this.idUtilisateur = idUtilisateur;
         }
 
         public Long getIdManager() {

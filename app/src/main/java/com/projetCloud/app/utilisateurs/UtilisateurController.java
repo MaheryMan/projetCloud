@@ -109,9 +109,9 @@ public class UtilisateurController {
             Utilisateur u = user.get();
             response.put("found", true);
             response.put("email", u.getEmail());
-            response.put("deleteLe", u.getDeleteLe());
+            response.put("deletedAt", u.getDeletedAt());
             response.put("passwordStartsWith", u.getPassword().substring(0, 10));
-            response.put("isDeleted", u.getDeleteLe() != null);
+            response.put("isDeleted", u.getDeletedAt() != null);
         } else {
             response.put("found", false);
         }

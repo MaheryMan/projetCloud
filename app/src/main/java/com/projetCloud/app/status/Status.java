@@ -10,8 +10,8 @@ public class Status {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "status_id", nullable = false, unique = true, length = 50)
-    private String statusId;
+    @Column(nullable = false, unique = true, length = 50)
+    private String code;
 
     @Column(nullable = false, length = 50)
     private String libelle;
@@ -19,8 +19,8 @@ public class Status {
     // Constructeurs
     public Status() {}
 
-    public Status(String statusId, String libelle) {
-        this.statusId = statusId;
+    public Status(String code, String libelle) {
+        this.code = code;
         this.libelle = libelle;
     }
 
@@ -33,12 +33,12 @@ public class Status {
         this.id = id;
     }
 
-    public String getStatusId() {
-        return statusId;
+    public String getCode() {
+        return code;
     }
 
-    public void setStatusId(String statusId) {
-        this.statusId = statusId;
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public String getLibelle() {

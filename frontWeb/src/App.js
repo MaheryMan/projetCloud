@@ -16,8 +16,13 @@ function App() {
   useEffect(() => {
     // Charger l'utilisateur depuis le localStorage
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    if (storedUser && storedUser !== 'undefined') {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Error parsing stored user:', e);
+        localStorage.removeItem('user');
+      }
     }
   }, []);
 
