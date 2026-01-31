@@ -45,7 +45,8 @@ public class AuthFilter extends OncePerRequestFilter {
             path.startsWith("/swagger") || 
             path.startsWith("/v3/api-docs") ||
             path.startsWith("/actuator") ||
-            ("POST".equalsIgnoreCase(method) && "/api/users".equals(path))) {
+            ("POST".equalsIgnoreCase(method) && "/api/users".equals(path)) ||
+            ("GET".equalsIgnoreCase(method) && path.startsWith("/api/signalements"))) {
             filterChain.doFilter(request, response);
             return;
         }
