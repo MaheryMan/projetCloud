@@ -18,8 +18,10 @@ function SignalementManagement() {
 
 const fetchEntreprises = async () => {
   try {
-    // N’envoie PAS de header Authorization pour ce endpoint public
-    const response = await fetch('http://localhost:8080/api/entreprises');
+    const token = localStorage.getItem('token');
+    const response = await fetch('http://localhost:8080/api/entreprises', {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    });
     if (!response.ok) throw new Error('Erreur de chargement des entreprises');
     const data = await response.json();
     setEntreprises(data);
@@ -41,11 +43,9 @@ const fetchEntreprises = async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8080/api/signalements', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
-      
       if (!response.ok) throw new Error('Erreur de chargement');
-      
       const data = await response.json();
       setSignalements(data);
     } catch (error) {
@@ -149,6 +149,29 @@ const fetchEntreprises = async () => {
     } catch (error) {
       console.error('Erreur:', error);
       alert('Erreur lors de la suppression');
+    }
+  };
+
+  const handleChangeStatus = async (signal, newStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      const payload = {
+        ...signal,
+        idStatus: newStatus
+      };
+      const response = await fetch(`http://localhost:8080/api/signalements/${signal.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error('Erreur lors du changement de statut');
+      await fetchSignalements();
+    } catch (error) {
+      alert('Erreur lors du changement de statut');
+      console.error(error);
     }
   };
 
@@ -261,9 +284,16 @@ const fetchEntreprises = async () => {
                     <td>#{signal.id}</td>
                     <td>{formatDate(signal.date)}</td>
                     <td>
-                      <span className={getStatusClass(signal.status)}>
-                        {getStatusLabel(signal.status)}
-                      </span>
+                      <select
+                        value={editForm.idStatus}
+                        onChange={(e) => setEditForm({ ...editForm, idStatus: parseInt(e.target.value) })}
+                        className="edit-select"
+                        style={{ minWidth: 110 }}
+                      >
+                        <option value={4}>Nouveau</option>
+                        <option value={5}>En cours</option>
+                        <option value={6}>Terminé</option>
+                      </select>
                     </td>
                     <td>
                       <input

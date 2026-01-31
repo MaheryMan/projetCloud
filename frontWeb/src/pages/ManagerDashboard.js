@@ -169,7 +169,11 @@ function ManagerDashboard() {
               {recentSignalements.map((signal) => (
                 <tr key={signal.id}>
                   <td>#{signal.id}</td>
-                  <td>{signal.created_at ? formatDate(signal.created_at) : ''}</td>
+                      <td>
+                    {signal.typeSignalement?.createdAt
+                      ? formatDate(signal.typeSignalement.createdAt)
+                      : ''}
+                  </td>
                   <td>
                     <div className="location">
                        {signal.latitude?.toFixed(4)}, {signal.longitude?.toFixed(4)}
