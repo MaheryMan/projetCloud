@@ -1,6 +1,7 @@
 package com.projetCloud.app.utilisateurs;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,8 +19,7 @@ public class UtilisateurService {
     @Autowired
     private UtilisateurRepository utilisateurRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     /**
      * Authentifie un utilisateur
@@ -35,7 +35,7 @@ public class UtilisateurService {
             String storedPassword = utilisateur.get().getPassword();
             boolean passwordMatches = false;
             if (storedPassword != null) {
-                if (storedPassword.startsWith("$2a$")) {
+                if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2y$") || storedPassword.startsWith("$2b$")) {
                     // Password is BCrypt hashed
                     passwordMatches = passwordEncoder.matches(password, storedPassword);
                 } else {
@@ -121,9 +121,12 @@ public class UtilisateurService {
      * @return l'utilisateur enregistré
      */
     public Utilisateur save(Utilisateur utilisateur) {
-        if (utilisateur.getPassword() != null && !utilisateur.getPassword().startsWith("$2a$")) {
-            // Encode plain text passwords
-            utilisateur.setPassword(passwordEncoder.encode(utilisateur.getPassword()));
+        if (utilisateur.getPassword() != null) {
+            String pwd = utilisateur.getPassword();
+            boolean alreadyBcrypt = pwd.startsWith("$2a$") || pwd.startsWith("$2y$") || pwd.startsWith("$2b$");
+            if (!alreadyBcrypt) {
+                utilisateur.setPassword(passwordEncoder.encode(pwd));
+            }
         }
         return utilisateurRepository.save(utilisateur);
     }

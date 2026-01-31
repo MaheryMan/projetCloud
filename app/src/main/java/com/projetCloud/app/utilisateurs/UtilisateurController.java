@@ -3,9 +3,6 @@ package com.projetCloud.app.utilisateurs;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,6 +24,9 @@ public class UtilisateurController {
     @Autowired
     private UtilisateurService utilisateurService;
 
+    @Autowired
+    private AuthService authService;
+
     /**
      * Endpoint pour la connexion des utilisateurs
      * @param loginRequest objet contenant l'email et le mot de passe de l'utilisateur
@@ -37,7 +37,7 @@ public class UtilisateurController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Authentification réussie",
                     content = @Content(mediaType = "application/json",
-                                     schema = @Schema(implementation = Utilisateur.class))),
+                                     schema = @Schema(implementation = AuthService.AuthResponse.class))),
         @ApiResponse(responseCode = "400", description = "Email ou mot de passe incorrect",
                     content = @Content(mediaType = "application/json",
                                      schema = @Schema(implementation = ErrorResponse.class)))
@@ -45,28 +45,34 @@ public class UtilisateurController {
     public ResponseEntity<?> login(
             @Parameter(description = "Données d'authentification", required = true)
             @RequestBody LoginRequest loginRequest) {
-        Optional<Utilisateur> utilisateur = utilisateurService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
-        return utilisateur.<ResponseEntity<?>>map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.badRequest().body(new ErrorResponse("Email ou mot de passe incorrect")));
-    }
+        // Récupérer deviceInfo et ipAddress depuis la requête (simplifié pour l'exemple)
+        String deviceInfo = "Web Browser"; // À adapter selon les besoins
+        String ipAddress = "127.0.0.1"; // À récupérer depuis HttpServletRequest
 
-    @Schema(description = "Erreur standard renvoyée par l'API")
-    public static class ErrorResponse {
-        @Schema(example = "Email ou mot de passe incorrect")
-        private String message;
+        Optional<AuthService.AuthResponse> authResponse = authService.login(
+            loginRequest.getEmail(), 
+            loginRequest.getPassword(), 
+            deviceInfo, 
+            ipAddress
+        );
 
-        public ErrorResponse() {}
-
-        public ErrorResponse(String message) {
-            this.message = message;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public void setMessage(String message) {
-            this.message = message;
+        if (authResponse.isPresent()) {
+            return ResponseEntity.ok(authResponse.get());
+        } else {
+            // Gestion des tentatives échouées (comme avant)
+            Optional<Utilisateur> user = utilisateurService.findByEmail(loginRequest.getEmail());
+            if (user.isPresent()) {
+                Utilisateur u = user.get();
+                
+                int attempts = u.getTentativesConnexion() != null ? u.getTentativesConnexion() : 0;
+                u.setTentativesConnexion(attempts + 1);
+                u.setLastFailedAttempt(java.time.LocalDateTime.now());
+                if (u.getTentativesConnexion() >= 3) {
+                    u.setIsBlocked(true);
+                }
+                utilisateurService.save(u);
+            }
+            return ResponseEntity.badRequest().body("Email ou mot de passe incorrect");
         }
     }
 
@@ -100,22 +106,22 @@ public class UtilisateurController {
         }
     }
 
-    @GetMapping("/debug-user/{email}")
-    public ResponseEntity<?> debugUser(@PathVariable String email) {
-        Optional<Utilisateur> user = utilisateurService.findByEmail(email);
-        
-        Map<String, Object> response = new HashMap<>();
-        if (user.isPresent()) {
-            Utilisateur u = user.get();
-            response.put("found", true);
-            response.put("email", u.getEmail());
-            response.put("deletedAt", u.getDeletedAt());
-            response.put("passwordStartsWith", u.getPassword().substring(0, 10));
-            response.put("isDeleted", u.getDeletedAt() != null);
-        } else {
-            response.put("found", false);
+    @PostMapping("/logout")
+    @Operation(summary = "Déconnecter un utilisateur", description = "Invalide la session de l'utilisateur")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Déconnexion réussie"),
+        @ApiResponse(responseCode = "400", description = "Token invalide")
+    })
+    public ResponseEntity<?> logout(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body("Token manquant ou invalide");
         }
-        
-        return ResponseEntity.ok(response);
+        String token = authHeader.substring(7); // Enlever "Bearer "
+        boolean success = authService.logout(token);
+        if (success) {
+            return ResponseEntity.ok().body("Déconnexion réussie");
+        } else {
+            return ResponseEntity.badRequest().body("Token invalide");
+        }
     }
 }
