@@ -54,11 +54,21 @@ public class TypeSignalementController {
         Optional<TypeSignalement> typeSignalement = typeSignalementService.findById(id);
         if (typeSignalement.isPresent()) {
             TypeSignalement updated = typeSignalement.get();
-            updated.setLibelle(typeSignalementDetails.getLibelle());
-            updated.setDescription(typeSignalementDetails.getDescription());
-            updated.setIcone(typeSignalementDetails.getIcone());
-            updated.setCouleur(typeSignalementDetails.getCouleur());
-            updated.setNiveauUrgence(typeSignalementDetails.getNiveauUrgence());
+            if (typeSignalementDetails.getLibelle() != null && !typeSignalementDetails.getLibelle().trim().isEmpty()) {
+                updated.setLibelle(typeSignalementDetails.getLibelle().trim());
+            }
+            if (typeSignalementDetails.getDescription() != null) {
+                updated.setDescription(typeSignalementDetails.getDescription());
+            }
+            if (typeSignalementDetails.getIcone() != null) {
+                updated.setIcone(typeSignalementDetails.getIcone());
+            }
+            if (typeSignalementDetails.getCouleur() != null) {
+                updated.setCouleur(typeSignalementDetails.getCouleur());
+            }
+            if (typeSignalementDetails.getNiveauUrgence() != null) {
+                updated.setNiveauUrgence(typeSignalementDetails.getNiveauUrgence());
+            }
             return ResponseEntity.ok(typeSignalementService.save(updated));
         } else {
             return ResponseEntity.notFound().build();

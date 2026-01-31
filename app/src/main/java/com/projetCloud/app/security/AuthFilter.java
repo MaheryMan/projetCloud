@@ -73,7 +73,9 @@ public class AuthFilter extends OncePerRequestFilter {
         List<String> roleLibelles = utilisateurService.getUserRoles(user.getId());
         if (roleLibelles != null) {
             authorities = roleLibelles.stream()
-                    .filter(r -> r != null && !r.trim().isEmpty())
+                    .filter(r -> r != null)
+                    .map(String::trim)
+                    .filter(r -> !r.isEmpty())
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toList());
         }

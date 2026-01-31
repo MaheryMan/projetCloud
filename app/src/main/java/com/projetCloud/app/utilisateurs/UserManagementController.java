@@ -114,11 +114,18 @@ public class UserManagementController {
         Optional<Utilisateur> utilisateur = utilisateurService.findById(id);
         if (utilisateur.isPresent()) {
             Utilisateur updatedUser = utilisateur.get();
-            updatedUser.setEmail(userDetails.getEmail());
-            updatedUser.setNom(userDetails.getNom());
-            updatedUser.setPrenom(userDetails.getPrenom());
-            updatedUser.setNumTel(userDetails.getNumTel());
-            // etc.
+            if (userDetails.getEmail() != null && !userDetails.getEmail().trim().isEmpty()) {
+                updatedUser.setEmail(userDetails.getEmail().trim());
+            }
+            if (userDetails.getNom() != null && !userDetails.getNom().trim().isEmpty()) {
+                updatedUser.setNom(userDetails.getNom().trim());
+            }
+            if (userDetails.getPrenom() != null && !userDetails.getPrenom().trim().isEmpty()) {
+                updatedUser.setPrenom(userDetails.getPrenom().trim());
+            }
+            if (userDetails.getNumTel() != null) {
+                updatedUser.setNumTel(userDetails.getNumTel());
+            }
             return ResponseEntity.ok(utilisateurService.save(updatedUser));
         } else {
             return ResponseEntity.notFound().build();

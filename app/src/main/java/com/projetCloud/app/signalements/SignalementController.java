@@ -155,13 +155,27 @@ public class SignalementController {
         Optional<Signalement> signalementOpt = signalementService.findById(id);
         if (signalementOpt.isPresent()) {
             Signalement signalement = signalementOpt.get();
-            signalement.setLatitude(request.getLatitude());
-            signalement.setLongitude(request.getLongitude());
-            signalement.setSurfaceM2(request.getSurfaceM2());
-            signalement.setBudget(request.getBudget());
-            signalement.setDescription(request.getDescription());
-            signalement.setPhotoUrl(request.getPhotoUrl());
-            signalement.setIdEntreprise(request.getIdEntreprise());
+            if (request.getLatitude() != null) {
+                signalement.setLatitude(request.getLatitude());
+            }
+            if (request.getLongitude() != null) {
+                signalement.setLongitude(request.getLongitude());
+            }
+            if (request.getSurfaceM2() != null) {
+                signalement.setSurfaceM2(request.getSurfaceM2());
+            }
+            if (request.getBudget() != null) {
+                signalement.setBudget(request.getBudget());
+            }
+            if (request.getDescription() != null && !request.getDescription().trim().isEmpty()) {
+                signalement.setDescription(request.getDescription());
+            }
+            if (request.getPhotoUrl() != null) {
+                signalement.setPhotoUrl(request.getPhotoUrl());
+            }
+            if (request.getIdEntreprise() != null) {
+                signalement.setIdEntreprise(request.getIdEntreprise());
+            }
             if (request.getIdStatus() != null) {
                 Optional<Status> status = statusService.findById(request.getIdStatus());
                 if (status.isEmpty()) {
