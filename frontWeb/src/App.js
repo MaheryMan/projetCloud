@@ -46,55 +46,75 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <Navbar user={user} onLogout={handleLogout} />
+        {/* ⭐ NAVBAR EN PREMIER - Toujours affichée si user connecté */}
+        {user && <Navbar user={user} onLogout={handleLogout} />}
         
-        <Routes>
-          {/* Route publique - Carte visiteur */}
-          <Route path="/" element={<VisitorMap />} />
-          
-          {/* Routes d'authentification */}
-          <Route 
-            path="/login" 
-            element={user ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />} 
-          />
-          <Route 
-            path="/register" 
-            element={user ? <Navigate to="/dashboard" /> : <Register />} 
-          />
-          
-          {/* Routes protégées Manager */}
-          <Route 
-            path="/dashboard" 
-            element={
-                <ManagerDashboard />
-            } 
-          />
-          <Route 
-            path="/signalements" 
-            element={
-              
-                <SignalementManagement />
-              
-            } 
-          />
-          <Route 
-            path="/users" 
-            element={
-                <UserManagement />
-            } 
-          />
-          <Route 
-            path="/sync" 
-            element={
-              <ProtectedRoute>
-                <Synchronization />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Redirection pour les routes non trouvées */}
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
+        {/* ⭐ CONTENU PRINCIPAL après la navbar */}
+        <main className="main-content">
+          <Routes>
+            {/* Route publique - Carte visiteur */}
+            <Route path="/" element={<VisitorMap />} />
+            
+            {/* Routes d'authentification - Avec wrapper pour centrage */}
+            <Route 
+              path="/login" 
+              element={
+                user ? <Navigate to="/dashboard" /> : (
+                  <div className="auth-page">
+                    <Login onLogin={handleLogin} />
+                  </div>
+                )
+              } 
+            />
+            <Route 
+              path="/register" 
+              element={
+                user ? <Navigate to="/dashboard" /> : (
+                  <div className="auth-page">
+                    <Register />
+                  </div>
+                )
+              } 
+            />
+            
+            {/* Routes protégées Manager */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <ManagerDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/signalements" 
+              element={
+                <ProtectedRoute>
+                  <SignalementManagement />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/users" 
+              element={
+                <ProtectedRoute>
+                  <UserManagement />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/sync" 
+              element={
+                <ProtectedRoute>
+                  <Synchronization />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Redirection pour les routes non trouvées */}
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </main>
       </div>
     </Router>
   );

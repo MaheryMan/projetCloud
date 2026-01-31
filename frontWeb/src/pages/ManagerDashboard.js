@@ -55,17 +55,29 @@ function ManagerDashboard() {
     return new Date(dateString).toLocaleDateString('fr-FR');
   };
 
-  const getStatusLabel = (status) => {
-    const labels = {
+  const getStatusLabel = (statusOrId) => {
+    const map = {
+      1: 'Actif',
+      2: 'Bloqué',
+      3: 'Inactif',
+      4: 'Nouveau',
+      5: 'En cours',
+      6: 'Terminé',
+      7: 'Annulé',
       'nouveau': 'Nouveau',
       'en_cours': 'En cours',
-      'termine': 'Terminé'
+      'termine': 'Terminé',
+      'annule': 'Annulé'
     };
-    return labels[status] || status;
+    return map[statusOrId] || statusOrId;
   };
 
   const getStatusClass = (status) => {
     return `status-badge status-${status}`;
+  };
+
+  const getEntrepriseName = (idEntreprise) => {
+    return idEntreprise ? idEntreprise : 'Non attribuée';
   };
 
   if (loading) {
@@ -157,20 +169,20 @@ function ManagerDashboard() {
               {recentSignalements.map((signal) => (
                 <tr key={signal.id}>
                   <td>#{signal.id}</td>
-                  <td>{formatDate(signal.date)}</td>
+                  <td>{signal.created_at ? formatDate(signal.created_at) : ''}</td>
                   <td>
                     <div className="location">
-                       {signal.latitude.toFixed(4)}, {signal.longitude.toFixed(4)}
+                       {signal.latitude?.toFixed(4)}, {signal.longitude?.toFixed(4)}
                     </div>
                   </td>
                   <td>
-                    <span className={getStatusClass(signal.status)}>
-                      {getStatusLabel(signal.status)}
+                    <span className={getStatusClass(signal.idStatus)}>
+                      {getStatusLabel(signal.idStatus)}
                     </span>
                   </td>
-                  <td>{signal.surface} m²</td>
+                  <td>{signal.surfaceM2} m²</td>
                   <td>{formatCurrency(signal.budget)}</td>
-                  <td>{signal.entreprise || 'Non attribuée'}</td>
+                  <td>{getEntrepriseName(signal.idEntreprise)}</td>
                 </tr>
               ))}
             </tbody>

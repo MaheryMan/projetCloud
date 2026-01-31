@@ -9,6 +9,25 @@ function SignalementManagement() {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [loading, setLoading] = useState(true);
+  const[entreprises, setEntreprises]=useState([]);
+
+
+  useEffect(() => {
+    fetchEntreprises();
+  }, []);
+
+const fetchEntreprises = async () => {
+  try {
+    // N’envoie PAS de header Authorization pour ce endpoint public
+    const response = await fetch('http://localhost:8080/api/entreprises');
+    if (!response.ok) throw new Error('Erreur de chargement des entreprises');
+    const data = await response.json();
+    setEntreprises(data);
+  } catch (error) {
+    console.error('Erreur:', error);
+  }
+};
+
 
   useEffect(() => {
     fetchSignalements();
@@ -40,13 +59,18 @@ function SignalementManagement() {
     let filtered = [...signalements];
 
     if (filterStatus !== 'all') {
-      filtered = filtered.filter(s => s.status === filterStatus);
+      filtered = filtered.filter(s => {
+        if (filterStatus === 'nouveau') return s.idStatus === 4;
+        if (filterStatus === 'en_cours') return s.idStatus === 5;
+        if (filterStatus === 'termine') return s.idStatus === 6;
+        return true;
+      });
     }
 
     if (searchTerm) {
       filtered = filtered.filter(s =>
         s.id.toString().includes(searchTerm) ||
-        (s.entreprise && s.entreprise.toLowerCase().includes(searchTerm.toLowerCase()))
+        (getEntrepriseName(s.idEntreprise).toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -55,7 +79,12 @@ function SignalementManagement() {
 
   const handleEdit = (signal) => {
     setEditingId(signal.id);
-    setEditForm({ ...signal });
+    setEditForm({
+      ...signal,
+      surfaceM2: signal.surfaceM2 ?? signal.surface ?? '',
+      idEntreprise: signal.idEntreprise ?? signal.entrepriseId ?? '',
+      idStatus: signal.idStatus ?? signal.status ?? '',
+    });
   };
 
   const handleCancelEdit = () => {
@@ -66,14 +95,30 @@ function SignalementManagement() {
   const handleSave = async (id) => {
     try {
       const token = localStorage.getItem('token');
+      // On ne garde que les champs attendus par le backend
+      const payload = {
+        latitude: editForm.latitude,
+        longitude: editForm.longitude,
+        surfaceM2: editForm.surfaceM2,
+        budget: editForm.budget,
+        description: editForm.description,
+        photoUrl: editForm.photoUrl,
+        idTypeSignalement: editForm.idTypeSignalement,
+        idStatus: editForm.idStatus,
+        idEntreprise: editForm.idEntreprise,
+        idUtilisateur: editForm.idUtilisateur,
+      };
       const response = await fetch(`http://localhost:8080/api/signalements/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify(payload)
       });
+      
+      const result = await response.json();
+      console.log('Réponse du backend:', result);
 
       if (!response.ok) throw new Error('Erreur de mise à jour');
 
@@ -119,17 +164,30 @@ function SignalementManagement() {
     }).format(amount);
   };
 
-  const getStatusLabel = (status) => {
-    const labels = {
+  const getStatusLabel = (statusOrId) => {
+    const map = {
+      1: 'Actif',
+      2: 'Bloqué',
+      3: 'Inactif',
+      4: 'Nouveau',
+      5: 'En cours',
+      6: 'Terminé',
+      7: 'Annulé',
       'nouveau': 'Nouveau',
       'en_cours': 'En cours',
-      'termine': 'Terminé'
+      'termine': 'Terminé',
+      'annule': 'Annulé'
     };
-    return labels[status] || status;
+    return map[statusOrId] || statusOrId;
   };
 
   const getStatusClass = (status) => {
     return `status-badge status-${status}`;
+  };
+
+  const getEntrepriseName = (idEntreprise) => {
+    const ent = entreprises.find(e => e.id === idEntreprise);
+    return ent ? ent.nom : 'Non attribuée';
   };
 
   if (loading) {
@@ -164,19 +222,19 @@ function SignalementManagement() {
             className={`filter-tab ${filterStatus === 'nouveau' ? 'active' : ''}`}
             onClick={() => setFilterStatus('nouveau')}
           >
-             Nouveaux ({signalements.filter(s => s.status === 'nouveau').length})
+             Nouveaux ({signalements.filter(s => s.idStatus === 4).length})
           </button>
           <button
             className={`filter-tab ${filterStatus === 'en_cours' ? 'active' : ''}`}
             onClick={() => setFilterStatus('en_cours')}
           >
-             En cours ({signalements.filter(s => s.status === 'en_cours').length})
+             En cours ({signalements.filter(s => s.idStatus === 5).length})
           </button>
           <button
             className={`filter-tab ${filterStatus === 'termine' ? 'active' : ''}`}
             onClick={() => setFilterStatus('termine')}
           >
-             Terminés ({signalements.filter(s => s.status === 'termine').length})
+             Terminés ({signalements.filter(s => s.idStatus === 6).length})
           </button>
         </div>
       </div>
@@ -203,40 +261,39 @@ function SignalementManagement() {
                     <td>#{signal.id}</td>
                     <td>{formatDate(signal.date)}</td>
                     <td>
-                      <select
-                        value={editForm.status}
-                        onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                        className="edit-select"
-                      >
-                        <option value="nouveau">Nouveau</option>
-                        <option value="en_cours">En cours</option>
-                        <option value="termine">Terminé</option>
-                      </select>
+                      <span className={getStatusClass(signal.status)}>
+                        {getStatusLabel(signal.status)}
+                      </span>
                     </td>
                     <td>
                       <input
                         type="number"
-                        value={editForm.surface}
-                        onChange={(e) => setEditForm({ ...editForm, surface: parseFloat(e.target.value) })}
+                        value={editForm.surfaceM2 ?? 0}
+                        onChange={(e) => setEditForm({ ...editForm, surfaceM2: parseFloat(e.target.value) })}
                         className="edit-input"
                       />
                     </td>
                     <td>
                       <input
                         type="number"
-                        value={editForm.budget}
+                        value={editForm.budget ?? 0}
                         onChange={(e) => setEditForm({ ...editForm, budget: parseFloat(e.target.value) })}
                         className="edit-input"
                       />
                     </td>
                     <td>
-                      <input
-                        type="text"
-                        value={editForm.entreprise || ''}
-                        onChange={(e) => setEditForm({ ...editForm, entreprise: e.target.value })}
-                        className="edit-input"
-                        placeholder="Nom entreprise"
-                      />
+                      <select
+                        value={editForm.idEntreprise ?? ''}
+                        onChange={(e) => setEditForm({ ...editForm, idEntreprise: parseInt(e.target.value) })}
+                        className="edit-select"
+                      >
+                        <option value="">Sélectionner une entreprise</option>
+                        {entreprises.map((ent) => (
+                          <option key={ent.id} value={ent.id}>
+                            {ent.nom}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="location-cell">
                       {signal.latitude.toFixed(4)}, {signal.longitude.toFixed(4)}
@@ -255,15 +312,15 @@ function SignalementManagement() {
                 ) : (
                   <>
                     <td>#{signal.id}</td>
-                    <td>{formatDate(signal.date)}</td>
+                    <td>{signal.updated_at ? formatDate(signal.updated_at) : ''}</td>
                     <td>
-                      <span className={getStatusClass(signal.status)}>
-                        {getStatusLabel(signal.status)}
+                      <span className={getStatusClass(signal.idStatus)}>
+                        {getStatusLabel(signal.idStatus)}
                       </span>
                     </td>
-                    <td>{signal.surface} m²</td>
+                    <td>{signal.surfaceM2} m²</td>
                     <td>{formatCurrency(signal.budget)}</td>
-                    <td>{signal.entreprise || 'Non attribuée'}</td>
+                    <td>{getEntrepriseName(signal.idEntreprise)}</td>
                     <td className="location-cell">
                        {signal.latitude.toFixed(4)}, {signal.longitude.toFixed(4)}
                     </td>

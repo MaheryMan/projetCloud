@@ -35,7 +35,11 @@ public class AuthFilter extends OncePerRequestFilter {
             path.startsWith("/v3/api-docs") ||
             path.startsWith("/actuator") ||
             path.startsWith("/api/deblocages") ||
-            path.startsWith("/api/users")) {  // Manager par défaut peut accéder sans session
+            path.startsWith("/api/users") ||  // Manager par défaut peut accéder sans session
+            path.startsWith("/api/types-signalement") ||  // Types de signalement publics pour tous
+            path.startsWith("/api/signalements")||
+            path.startsWith("/api/entreprises")) {
+            System.out.println("PASS ENTREPRISES FILTER");  // Tous les endpoints signalements publics (GET et POST)
             filterChain.doFilter(request, response);
             return;
         }

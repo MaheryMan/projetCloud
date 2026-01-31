@@ -28,6 +28,10 @@ public class CorsConfig {
         config.setAllowedHeaders(Arrays.asList("*"));
      
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+   
+        config.setAllowCredentials(true);
+   
+        config.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         
         source.registerCorsConfiguration("/**", config);
         

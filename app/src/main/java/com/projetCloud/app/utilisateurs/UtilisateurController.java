@@ -2,6 +2,7 @@ package com.projetCloud.app.utilisateurs;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
 import io.swagger.v3.oas.annotations.Operation;
