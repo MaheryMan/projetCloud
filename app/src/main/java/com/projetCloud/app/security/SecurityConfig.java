@@ -27,10 +27,20 @@ public class SecurityConfig {
                     "/api/auth/register",
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
-                    "/actuator/**",
-                    "/api/deblocages/**",
-                    "/api/users/**"
+                    "/actuator/**"
                 ).permitAll()
+                // Mobile_User: accès limité
+                .requestMatchers(org.springframework.http.HttpMethod.GET,
+                        "/api/signalements/**",
+                        "/api/types-signalement/**",
+                        "/api/entreprises/**"
+                ).hasAnyAuthority("Mobile_User", "Manager")
+                .requestMatchers(org.springframework.http.HttpMethod.POST,
+                        "/api/signalements",
+                        "/api/entreprises"
+                ).hasAnyAuthority("Mobile_User", "Manager")
+                // Manager: accès total au reste de l'API
+                .requestMatchers("/api/**").hasAuthority("Manager")
                 // Tous les autres endpoints nécessitent une authentification
                 .anyRequest().authenticated()
             )

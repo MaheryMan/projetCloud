@@ -5,12 +5,13 @@ import com.projetCloud.app.status.StatusService;
 import com.projetCloud.app.typesSignalement.TypeSignalement;
 import com.projetCloud.app.typesSignalement.TypeSignalementService;
 import com.projetCloud.app.utilisateurs.Utilisateur;
-import com.projetCloud.app.utilisateurs.UtilisateurService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -32,9 +33,6 @@ public class SignalementController {
 
     @Autowired
     private SignalementService signalementService;
-
-    @Autowired
-    private UtilisateurService utilisateurService;
 
     @Autowired
     private StatusService statusService;
@@ -117,10 +115,13 @@ public class SignalementController {
     })
     public ResponseEntity<Signalement> createSignalement(
             @Parameter(description = "Données du signalement à créer", required = true)
-            @RequestBody SignalementRequest request) {
-        Optional<Utilisateur> utilisateur = utilisateurService.findById(request.getIdUtilisateur());
+            @RequestBody SignalementRequest request,
+            HttpServletRequest httpServletRequest) {
+        Object currentUserAttr = httpServletRequest.getAttribute("currentUser");
+        Utilisateur currentUser = currentUserAttr instanceof Utilisateur ? (Utilisateur) currentUserAttr : null;
+        Optional<Utilisateur> utilisateur = currentUser != null ? Optional.of(currentUser) : Optional.empty();
         Optional<TypeSignalement> typeSignalement = typeSignalementService.findById(request.getIdTypeSignalement());
-        Optional<Status> status = statusService.findById(request.getIdStatus());
+        Optional<Status> status = statusService.findByCode("REPORT_NOUVEAU");
 
         if (utilisateur.isPresent() && typeSignalement.isPresent() && status.isPresent()) {
             Signalement signalement = new Signalement(
@@ -131,7 +132,7 @@ public class SignalementController {
                 request.getDescription(),
                 request.getPhotoUrl(),
                 request.getIdEntreprise(),
-                request.getIdStatus(),
+                status.get().getId(),
                 typeSignalement.get(),
                 utilisateur.get()
             );

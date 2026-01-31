@@ -2,16 +2,23 @@ package com.projetCloud.app.security;
 
 import com.projetCloud.app.utilisateurs.AuthService;
 import com.projetCloud.app.utilisateurs.Utilisateur;
+import com.projetCloud.app.utilisateurs.UtilisateurService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Filtre d'authentification pour vérifier les tokens de session
@@ -21,6 +28,9 @@ public class AuthFilter extends OncePerRequestFilter {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private UtilisateurService utilisateurService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -33,9 +43,7 @@ public class AuthFilter extends OncePerRequestFilter {
             path.startsWith("/api/auth/register") || 
             path.startsWith("/swagger") || 
             path.startsWith("/v3/api-docs") ||
-            path.startsWith("/actuator") ||
-            path.startsWith("/api/deblocages") ||
-            path.startsWith("/api/users")) {  // Manager par défaut peut accéder sans session
+            path.startsWith("/actuator")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -58,8 +66,22 @@ public class AuthFilter extends OncePerRequestFilter {
             return;
         }
 
+        Utilisateur user = userOpt.get();
+
+        // Déclarer l'utilisateur comme authentifié pour Spring Security
+        List<SimpleGrantedAuthority> authorities = Collections.emptyList();
+        List<String> roleLibelles = utilisateurService.getUserRoles(user.getId());
+        if (roleLibelles != null) {
+            authorities = roleLibelles.stream()
+                    .filter(r -> r != null && !r.trim().isEmpty())
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+        }
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(user, null, authorities);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
         // Stocker l'utilisateur dans la requête pour les contrôleurs
-        request.setAttribute("currentUser", userOpt.get());
+        request.setAttribute("currentUser", user);
 
         filterChain.doFilter(request, response);
     }
