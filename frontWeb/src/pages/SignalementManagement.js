@@ -312,7 +312,11 @@ const fetchEntreprises = async () => {
                 ) : (
                   <>
                     <td>#{signal.id}</td>
-                    <td>{signal.updated_at ? formatDate(signal.updated_at) : ''}</td>
+                  <td>
+                    {signal.typeSignalement?.createdAt
+                      ? formatDate(signal.typeSignalement.createdAt)
+                      : ''}
+                  </td>
                     <td>
                       <span className={getStatusClass(signal.idStatus)}>
                         {getStatusLabel(signal.idStatus)}

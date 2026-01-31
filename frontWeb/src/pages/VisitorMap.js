@@ -51,13 +51,27 @@ function VisitorMap() {
   });
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [typesSignalement, setTypesSignalement] = useState([]);
+  const [entreprises, setEntreprises] = useState([]);
 
   // Centre sur Antananarivo
   const position = [-18.8792, 47.5079];
 
+  // Place cette fonction AVANT le useEffect qui l'utilise :
+  const fetchEntreprises = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/entreprises');
+      if (!response.ok) throw new Error('Erreur de chargement des entreprises');
+      const data = await response.json();
+      setEntreprises(data);
+    } catch (error) {
+      console.error('Erreur:', error);
+    }
+  };
+
   useEffect(() => {
     fetchSignalements();
     fetchTypesSignalement();
+    fetchEntreprises();
   }, []);
 
   const fetchTypesSignalement = async () => {
@@ -189,6 +203,11 @@ const handleSubmitSignalement = async () => {
     return null;
   };
 
+  const getEntrepriseName = (idEntreprise) => {
+    const ent = entreprises.find(e => e.id === idEntreprise);
+    return ent ? ent.nom : 'Non attribuée';
+  };
+
   return (
     <div className="visitor-map-container">
       <header className="map-header">
@@ -259,21 +278,21 @@ const handleSubmitSignalement = async () => {
             
             <MapClickHandler />
             
-            {signalements.map((signal) => (
+            {signalements.filter(signal => signal.idStatus === 4).map((signal) => (
               <Marker
                 key={signal.id}
                 position={[signal.latitude, signal.longitude]}
-                icon={getMarkerIcon(signal.status)}
+                icon={getMarkerIcon('nouveau')}
               >
                 <Popup>
                   <div className="popup-content">
                     <h3>Signalement #{signal.id}</h3>
                     <div className="popup-info">
-                      <p><strong>Date:</strong> {formatDate(signal.date)}</p>
-                      <p><strong>Statut:</strong> <span className={getStatusClass(signal.status)}>{getStatusLabel(signal.status)}</span></p>
-                      <p><strong>Surface:</strong> {signal.surface} m²</p>
+                      <p><strong>Date:</strong> {formatDate(signal.created_at)}</p>
+                      <p><strong>Statut:</strong> <span className={getStatusClass('nouveau')}>{getStatusLabel('nouveau')}</span></p>
+                      <p><strong>Surface:</strong> {signal.surfaceM2} m²</p>
                       <p><strong>Budget:</strong> {formatCurrency(signal.budget)}</p>
-                      <p><strong>Entreprise:</strong> {signal.entreprise || 'Non attribuée'}</p>
+                      <p><strong>Entreprise:</strong> {getEntrepriseName(signal.idEntreprise)}</p>
                     </div>
                   </div>
                 </Popup>
