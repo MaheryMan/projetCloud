@@ -1,8 +1,9 @@
 services:
 
   postgres:
-    image: postgres:latest
+    image: postgres:16
     container_name: pg-auth
+    platform: linux/amd64
     environment:
       POSTGRES_DB: cloud
       POSTGRES_USER: cloud
@@ -10,10 +11,15 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql
+      - pgdata:/var/lib/postgresql/data
       - ./sql/newbase.sql:/docker-entrypoint-initdb.d/01_newbase.sql:ro
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloud -d cloud -h 127.0.0.1 -p 5432"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
     restart: unless-stopped
 
   api:
@@ -21,7 +27,8 @@ services:
       context: ./app
     container_name: cloud-api
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     ports:
       - "8080:8080"
     environment:

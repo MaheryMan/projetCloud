@@ -1,5 +1,6 @@
 package com.projetCloud.app.deblocages;
 
+import com.projetCloud.app.configurations.ConfigurationService;
 import com.projetCloud.app.utilisateurs.Utilisateur;
 import com.projetCloud.app.utilisateurs.UtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,9 @@ public class DeblocageController {
     @Autowired
     private UtilisateurService utilisateurService;
 
+    @Autowired
+    private ConfigurationService configurationService;
+
     @GetMapping
     public List<Deblocage> getAllDeblocages() {
         return deblocageService.findAll();
@@ -37,10 +41,26 @@ public class DeblocageController {
     @PostMapping
     public ResponseEntity<Deblocage> createDeblocage(@RequestBody DeblocageRequest request) {
         Optional<Utilisateur> utilisateur = utilisateurService.findById(request.getIdUtilisateur());
-        Optional<Utilisateur> manager = utilisateurService.findById(request.getIdManager());
+        
+        Utilisateur manager;
+        if (request.getIdManager() != null) {
+            Optional<Utilisateur> managerOpt = utilisateurService.findById(request.getIdManager());
+            if (managerOpt.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            manager = managerOpt.get();
+        } else {
+            // Utiliser le manager par défaut
+            String defaultManagerEmail = configurationService.getDefaultManagerEmail();
+            Optional<Utilisateur> defaultManagerOpt = utilisateurService.findByEmail(defaultManagerEmail);
+            if (defaultManagerOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(null); // Manager par défaut non trouvé
+            }
+            manager = defaultManagerOpt.get();
+        }
 
-        if (utilisateur.isPresent() && manager.isPresent()) {
-            Deblocage deblocage = new Deblocage(request.getMotif(), utilisateur.get(), manager.get());
+        if (utilisateur.isPresent()) {
+            Deblocage deblocage = new Deblocage(request.getMotif(), utilisateur.get(), manager);
             return ResponseEntity.ok(deblocageService.save(deblocage));
         } else {
             return ResponseEntity.badRequest().build();

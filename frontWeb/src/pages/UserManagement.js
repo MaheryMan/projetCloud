@@ -6,6 +6,7 @@ function UserManagement() {
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [filterType, setFilterType] = useState('blocked');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -14,6 +15,13 @@ function UserManagement() {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
+
+      if (!token) {
+        setError("Non connecté : connecte-toi pour accéder aux utilisateurs.");
+        setUsers([]);
+        setBlockedUsers([]);
+        return;
+      }
       
       const [allUsersRes, blockedUsersRes] = await Promise.all([
         fetch('http://localhost:8080/api/users', {
@@ -24,13 +32,29 @@ function UserManagement() {
         })
       ]);
 
+      if (!allUsersRes.ok || !blockedUsersRes.ok) {
+        const status = !allUsersRes.ok ? allUsersRes.status : blockedUsersRes.status;
+        setError(
+          status === 401 || status === 403
+            ? "Accès refusé (token invalide/expiré). Reconnecte-toi."
+            : `Erreur API (HTTP ${status}) lors du chargement des utilisateurs.`
+        );
+        setUsers([]);
+        setBlockedUsers([]);
+        return;
+      }
+
       const allUsers = await allUsersRes.json();
       const blocked = await blockedUsersRes.json();
 
-      setUsers(allUsers);
-      setBlockedUsers(blocked);
+      setError('');
+      setUsers(Array.isArray(allUsers) ? allUsers : []);
+      setBlockedUsers(Array.isArray(blocked) ? blocked : []);
     } catch (error) {
       console.error('Erreur:', error);
+      setError("Impossible de contacter l'API (backend arrêté ou CORS).");
+      setUsers([]);
+      setBlockedUsers([]);
     } finally {
       setLoading(false);
     }
@@ -105,6 +129,17 @@ function UserManagement() {
 
   if (loading) {
     return <div className="loading">Chargement...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="user-management">
+        <header className="page-header">
+          <h1>Gestion des Utilisateurs</h1>
+          <p>{error}</p>
+        </header>
+      </div>
+    );
   }
 
   return (
