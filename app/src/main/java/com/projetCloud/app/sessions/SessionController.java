@@ -58,12 +58,24 @@ public class SessionController {
         Optional<Session> sessionOpt = sessionService.findById(id);
         if (sessionOpt.isPresent()) {
             Session session = sessionOpt.get();
-            session.setToken(request.getToken());
-            session.setExpiresAt(request.getExpiresAt());
-            session.setIsValid(request.getIsValid());
-            session.setDeviceInfo(request.getDeviceInfo());
-            session.setIpAddress(request.getIpAddress());
-            session.setLogoutAt(request.getLogoutAt());
+            if (request.getToken() != null && !request.getToken().trim().isEmpty()) {
+                session.setToken(request.getToken().trim());
+            }
+            if (request.getExpiresAt() != null) {
+                session.setExpiresAt(request.getExpiresAt());
+            }
+            if (request.getIsValid() != null) {
+                session.setIsValid(request.getIsValid());
+            }
+            if (request.getDeviceInfo() != null) {
+                session.setDeviceInfo(request.getDeviceInfo());
+            }
+            if (request.getIpAddress() != null) {
+                session.setIpAddress(request.getIpAddress());
+            }
+            if (request.getLogoutAt() != null) {
+                session.setLogoutAt(request.getLogoutAt());
+            }
             // utilisateur not updated
             return ResponseEntity.ok(sessionService.save(session));
         } else {

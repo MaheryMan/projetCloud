@@ -40,10 +40,25 @@ public class AuthService {
         // Récupérer les rôles
         List<String> roles = utilisateurService.getUserRoles(user.getId());
 
-        // Le manager/admin ne doit pas avoir de session persistée
+        // Le manager/admin a un token (opaque) sans expiration (expiration très lointaine)
         if (roles.contains("Manager")) {
+            String token = UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "");
+            LocalDateTime expiresAt = LocalDateTime.now().plusYears(100);
+
+            Session session = new Session();
+            session.setToken(token);
+            session.setUtilisateur(user);
+            session.setCreatedAt(LocalDateTime.now());
+            session.setExpiresAt(expiresAt);
+            session.setLastActivity(LocalDateTime.now());
+            session.setIsValid(true);
+            session.setDeviceInfo(deviceInfo);
+            session.setIpAddress(ipAddress);
+
+            sessionRepository.save(session);
+
             AuthResponse response = new AuthResponse();
-            response.setToken(null);
+            response.setToken(token);
             response.setUser(user);
             response.setRoles(roles);
             return Optional.of(response);

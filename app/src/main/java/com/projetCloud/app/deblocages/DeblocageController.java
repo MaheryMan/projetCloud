@@ -68,13 +68,14 @@ public class DeblocageController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Deblocage> updateDeblocage(@PathVariable Long id, @RequestBody DeblocageRequest request) {
-        Optional<Deblocage> deblocageOpt = deblocageService.findById(id);
-        if (deblocageOpt.isPresent()) {
-            Deblocage deblocage = deblocageOpt.get();
-            deblocage.setMotif(request.getMotif());
-            // Note: dateDeblocage is set automatically, utilisateur and manager not updated in this example
-            return ResponseEntity.ok(deblocageService.save(deblocage));
+    public ResponseEntity<Deblocage> updateDeblocage(@PathVariable Long id, @RequestBody Deblocage deblocageDetails) {
+        Optional<Deblocage> deblocage = deblocageService.findById(id);
+        if (deblocage.isPresent()) {
+            Deblocage updatedDeblocage = deblocage.get();
+            if (deblocageDetails.getMotif() != null) {
+                updatedDeblocage.setMotif(deblocageDetails.getMotif());
+            }
+            return ResponseEntity.ok(deblocageService.save(updatedDeblocage));
         } else {
             return ResponseEntity.notFound().build();
         }
