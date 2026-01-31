@@ -41,12 +41,14 @@ public class AuthFilter extends OncePerRequestFilter {
 
         // Exclure les endpoints publics et ceux du manager par défaut
         if (path.startsWith("/api/auth/login") || 
-            path.startsWith("/api/auth/register") || 
+            path.startsWith("/api/auth/register") ||
+            path.startsWith("/api/auth/register/") ||
             path.startsWith("/swagger") || 
             path.startsWith("/v3/api-docs") ||
             path.startsWith("/actuator") ||
             ("POST".equalsIgnoreCase(method) && "/api/users".equals(path)) ||
             ("GET".equalsIgnoreCase(method) && path.startsWith("/api/signalements"))) {
+             System.out.println("YUP C EST REGISTER ");
             filterChain.doFilter(request, response);
             return;
         }

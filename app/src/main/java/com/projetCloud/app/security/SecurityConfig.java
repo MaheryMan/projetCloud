@@ -32,6 +32,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/auth/login",
                     "/api/auth/register",
+                    "/api/auth/register/",
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
                     "/actuator/**"
@@ -40,6 +41,7 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/users").permitAll()
                 // Lecture des signalements publique
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/signalements/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/types-signalement").permitAll()
                 // Mobile_User: accès limité
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/signalements").hasAnyAuthority("Mobile_User", "Manager")
                 .requestMatchers(org.springframework.http.HttpMethod.GET,
