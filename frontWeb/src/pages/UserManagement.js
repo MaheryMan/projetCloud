@@ -218,7 +218,7 @@ function UserManagement() {
                 <td>{formatDate(user.updateLe)}</td>
                 <td>
                   <div className="action-buttons">
-                    {user.tentatives >= 3 && (
+                    {(filterType === 'blocked') && (
                       <button
                         className="btn-unblock"
                         onClick={() => handleUnblock(user.id)}

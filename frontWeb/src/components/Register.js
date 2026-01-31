@@ -83,108 +83,130 @@ function Register() {
 
   return (
     <div className="register-container">
-      <div className="register-card">
-        <h1 className="register-title">Inscription</h1>
-        <p className="register-subtitle">Créez votre compte</p>
-        
-        <form onSubmit={handleSubmit} className="register-form">
-          {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
+      <div className="register-wrapper">
+        {/* Left Side - Visual Section */}
+        <div className="register-visual">
+          <div className="visual-content">
+            <div className="visual-icon">🚧</div>
+            <h2 className="visual-title">Rejoignez-nous</h2>
+            <p className="visual-description">
+              Créez votre compte et commencez à gérer les travaux routiers efficacement
+            </p>
+            <div className="visual-benefits">
+              <div className="benefit-item">Accès complet à la plateforme</div>
+              <div className="benefit-item">Signalement en temps réel</div>
+              <div className="benefit-item">Tableaux de bord personnalisés</div>
+              <div className="benefit-item">Support technique 24/7</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side - Form Section */}
+        <div className="register-card">
+          <div className="register-header">
+            <h1 className="register-title">Inscription</h1>
+            <p className="register-subtitle">Créez votre compte professionnel</p>
+          </div>
           
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="nom">Nom *</label>
-              <input
-                type="text"
-                id="nom"
-                name="nom"
-                value={formData.nom}
-                onChange={handleChange}
-                placeholder="Votre nom"
-                required
-                disabled={loading}
-              />
+          <form onSubmit={handleSubmit} className="register-form">
+            {error && <div className="error-message">{error}</div>}
+            {success && <div className="success-message">{success}</div>}
+            
+            <div className="form-row">
+              <div className="form-group">
+                <input
+                  type="text"
+                  id="nom"
+                  name="nom"
+                  value={formData.nom}
+                  onChange={handleChange}
+                  placeholder="Votre nom"
+                  required
+                  disabled={loading}
+                />
+                <label htmlFor="nom">Nom *</label>
+              </div>
+
+              <div className="form-group">
+                <input
+                  type="text"
+                  id="prenom"
+                  name="prenom"
+                  value={formData.prenom}
+                  onChange={handleChange}
+                  placeholder="Votre prénom"
+                  required
+                  disabled={loading}
+                />
+                <label htmlFor="prenom">Prénom *</label>
+              </div>
             </div>
 
             <div className="form-group">
-              <label htmlFor="prenom">Prénom *</label>
               <input
-                type="text"
-                id="prenom"
-                name="prenom"
-                value={formData.prenom}
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
-                placeholder="Votre prénom"
+                placeholder="votre@email.com"
                 required
                 disabled={loading}
               />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="email">Email *</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="votre@email.com"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="numTel">Numéro de téléphone</label>
-            <input
-              type="tel"
-              id="numTel"
-              name="numTel"
-              value={formData.numTel}
-              onChange={handleChange}
-              placeholder="+261 34 00 000 00"
-              disabled={loading}
-            />
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="password">Mot de passe *</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                required
-                disabled={loading}
-              />
+              <label htmlFor="email">Email *</label>
             </div>
 
             <div className="form-group">
-              <label htmlFor="confirmPassword">Confirmer *</label>
               <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
+                type="tel"
+                id="numTel"
+                name="numTel"
+                value={formData.numTel}
                 onChange={handleChange}
-                placeholder="••••••••"
-                required
+                placeholder="+261 34 00 000 00"
                 disabled={loading}
               />
+              <label htmlFor="numTel">Numéro de téléphone</label>
             </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  required
+                  disabled={loading}
+                />
+                <label htmlFor="password">Mot de passe *</label>
+              </div>
+
+              <div className="form-group">
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  required
+                  disabled={loading}
+                />
+                <label htmlFor="confirmPassword">Confirmer *</label>
+              </div>
+            </div>
+
+            <button type="submit" className="register-button" disabled={loading}>
+              {loading ? 'Inscription...' : 'S\'inscrire'}
+            </button>
+          </form>
+
+          <div className="login-link">
+            Déjà un compte ? <a href="/login">Se connecter</a>
           </div>
-
-          <button type="submit" className="register-button" disabled={loading}>
-            {loading ? 'Inscription...' : 'S\'inscrire'}
-          </button>
-        </form>
-
-        <div className="login-link">
-          Déjà un compte ? <a href="/login">Se connecter</a>
         </div>
       </div>
     </div>

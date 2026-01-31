@@ -46,22 +46,53 @@ function VisitorMap() {
     latitude: 0,
     longitude: 0,
     description: '',
-    surface: 0
+    surface: 0,
+    idTypeSignalement: ''
   });
   const [isAddingMode, setIsAddingMode] = useState(false);
+  const [typesSignalement, setTypesSignalement] = useState([]);
+  const [entreprises, setEntreprises] = useState([]);
 
-  // Centre sur Antananarivo
   const position = [-18.8792, 47.5079];
+
+  const fetchEntreprises = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const response = await fetch('http://localhost:8080/api/entreprises', { headers });
+      if (!response.ok) throw new Error('Erreur de chargement des entreprises');
+      const data = await response.json();
+      setEntreprises(data);
+    } catch (error) {
+      console.error('Erreur:', error);
+    }
+  };
 
   useEffect(() => {
     fetchSignalements();
+    fetchTypesSignalement();
+    fetchEntreprises();
   }, []);
+
+  const fetchTypesSignalement = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const response = await fetch('http://localhost:8080/api/types-signalement', { headers });
+      if (!response.ok) throw new Error('Erreur de chargement des types');
+      const data = await response.json();
+      setTypesSignalement(data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des types:', error);
+    }
+  };
 
   const fetchSignalements = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/signalements');
+      const token = localStorage.getItem('token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const response = await fetch('http://localhost:8080/api/signalements', { headers });
       if (!response.ok) throw new Error('Erreur de chargement');
-      
       const data = await response.json();
       setSignalements(data);
       calculateStats(data);
@@ -118,32 +149,52 @@ function VisitorMap() {
     }
   };
 
-  const handleSubmitSignalement = async () => {
+const handleSubmitSignalement = async () => {
     try {
+      // Récupérer l'ID utilisateur depuis localStorage (si connecté)
       const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('user');
+      
+      // Préparer les headers
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      // Ajouter le token si l'utilisateur est connecté
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch('http://localhost:8080/api/signalements', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: headers,
         body: JSON.stringify({
-          ...newSignalement,
-          status: 'nouveau',
-          date: new Date().toISOString()
+          latitude: newSignalement.latitude,
+          longitude: newSignalement.longitude,
+          description: newSignalement.description,
+          surfaceM2: newSignalement.surface || 0,
+          budget: 0, // Budget par défaut
+          idTypeSignalement: newSignalement.idTypeSignalement,
+          idStatus: 1, // Statut "nouveau" par défaut
+          idEntreprise: null,
+          // Utiliser l'ID de l'utilisateur connecté OU l'ID anonyme (1)
+          idUtilisateur: userId ? parseInt(userId) : 1
         })
       });
 
-      if (!response.ok) throw new Error('Erreur lors de l\'ajout');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erreur ${response.status}: ${errorText}`);
+      }
 
       alert('✅ Signalement ajouté avec succès !');
       setShowModal(false);
       setIsAddingMode(false);
-      setNewSignalement({ latitude: 0, longitude: 0, description: '', surface: 0 });
+      setNewSignalement({ latitude: 0, longitude: 0, description: '', surface: 0, idTypeSignalement: '' });
       await fetchSignalements();
     } catch (error) {
       console.error('Erreur:', error);
-      alert('❌ Erreur lors de l\'ajout du signalement');
+      alert('❌ Erreur lors de l\'ajout du signalement: ' + error.message);
     }
   };
 
@@ -152,6 +203,11 @@ function VisitorMap() {
       click: handleMapClick
     });
     return null;
+  };
+
+  const getEntrepriseName = (idEntreprise) => {
+    const ent = entreprises.find(e => e.id === idEntreprise);
+    return ent ? ent.nom : 'Non attribuée';
   };
 
   return (
@@ -164,12 +220,12 @@ function VisitorMap() {
           className={`add-signalement-btn ${isAddingMode ? 'active' : ''}`}
           onClick={() => setIsAddingMode(!isAddingMode)}
         >
-          {isAddingMode ? '❌ Annuler' : '➕ Ajouter un signalement'}
+          {isAddingMode ? ' Annuler' : ' Ajouter un signalement'}
         </button>
         
         {isAddingMode && (
           <div className="add-mode-info">
-            📍 Cliquez sur la carte pour placer un signalement
+             Cliquez sur la carte pour placer un signalement
           </div>
         )}
       </header>
@@ -224,26 +280,35 @@ function VisitorMap() {
             
             <MapClickHandler />
             
-            {signalements.map((signal) => (
-              <Marker
-                key={signal.id}
-                position={[signal.latitude, signal.longitude]}
-                icon={getMarkerIcon(signal.status)}
-              >
-                <Popup>
-                  <div className="popup-content">
-                    <h3>Signalement #{signal.id}</h3>
-                    <div className="popup-info">
-                      <p><strong>Date:</strong> {formatDate(signal.date)}</p>
-                      <p><strong>Statut:</strong> <span className={getStatusClass(signal.status)}>{getStatusLabel(signal.status)}</span></p>
-                      <p><strong>Surface:</strong> {signal.surface} m²</p>
-                      <p><strong>Budget:</strong> {formatCurrency(signal.budget)}</p>
-                      <p><strong>Entreprise:</strong> {signal.entreprise || 'Non attribuée'}</p>
-                    </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+            {signalements
+              .filter(signal => [4, 5, 6].includes(signal.idStatus))
+              .map((signal) => {
+                let statusKey = '';
+                if (signal.idStatus === 4) statusKey = 'nouveau';
+                else if (signal.idStatus === 5) statusKey = 'en_cours';
+                else if (signal.idStatus === 6) statusKey = 'termine';
+                else statusKey = 'inconnu';
+                return (
+                  <Marker
+                    key={signal.id}
+                    position={[signal.latitude, signal.longitude]}
+                    icon={getMarkerIcon(statusKey)}
+                  >
+                    <Popup>
+                      <div className="popup-content">
+                        <h3>Signalement #{signal.id}</h3>
+                        <div className="popup-info">
+                          <p><strong>Date:</strong> {formatDate(signal.created_at)}</p>
+                          <p><strong>Statut:</strong> <span className={getStatusClass(statusKey)}>{getStatusLabel(statusKey)}</span></p>
+                          <p><strong>Surface:</strong> {signal.surfaceM2} m²</p>
+                          <p><strong>Budget:</strong> {formatCurrency(signal.budget)}</p>
+                          <p><strong>Entreprise:</strong> {getEntrepriseName(signal.idEntreprise)}</p>
+                        </div>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
           </MapContainer>
         )}
       </div>
@@ -272,12 +337,28 @@ function VisitorMap() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Nouveau Signalement</h2>
             <p className="modal-coords">
-              📍 Position: {newSignalement.latitude.toFixed(5)}, {newSignalement.longitude.toFixed(5)}
+               Position: {newSignalement.latitude.toFixed(5)}, {newSignalement.longitude.toFixed(5)}
             </p>
             
             <div className="modal-form">
               <div className="form-group">
-                <label>Description du problème *</label>
+                <label>Type de signalement *</label>
+                <select
+                  value={newSignalement.idTypeSignalement}
+                  onChange={(e) => setNewSignalement({...newSignalement, idTypeSignalement: e.target.value})}
+                  required
+                >
+                  <option value="">Sélectionnez un type</option>
+                  {typesSignalement.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.libelle}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Type de probleme *</label>
                 <textarea
                   value={newSignalement.description}
                   onChange={(e) => setNewSignalement({...newSignalement, description: e.target.value})}
@@ -305,7 +386,7 @@ function VisitorMap() {
                 <button 
                   className="btn-submit" 
                   onClick={handleSubmitSignalement}
-                  disabled={!newSignalement.description}
+                  disabled={!newSignalement.description || !newSignalement.idTypeSignalement}
                 >
                   Confirmer
                 </button>
