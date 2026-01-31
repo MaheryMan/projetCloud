@@ -39,7 +39,8 @@ public class UtilisateurController {
                     content = @Content(mediaType = "application/json",
                                      schema = @Schema(implementation = AuthService.AuthResponse.class))),
         @ApiResponse(responseCode = "400", description = "Email ou mot de passe incorrect",
-                    content = @Content(mediaType = "text/plain"))
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<?> login(
             @Parameter(description = "Données d'authentification", required = true)
@@ -75,9 +76,6 @@ public class UtilisateurController {
         }
     }
 
-    /**
-     * Classe interne pour la requête de connexion
-     */
     @Schema(description = "Requête d'authentification contenant les informations de connexion", example = """
             {
               "email": "user@example.com",
