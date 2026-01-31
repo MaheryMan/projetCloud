@@ -36,14 +36,17 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     "/actuator/**"
                 ).permitAll()
+                // Création d'utilisateur publique
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/users").permitAll()
+                // Lecture des signalements publique
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/signalements/**").permitAll()
                 // Mobile_User: accès limité
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/signalements").hasAnyAuthority("Mobile_User", "Manager")
                 .requestMatchers(org.springframework.http.HttpMethod.GET,
-                        "/api/signalements/**",
                         "/api/types-signalement/**",
                         "/api/entreprises/**"
                 ).hasAnyAuthority("Mobile_User", "Manager")
                 .requestMatchers(org.springframework.http.HttpMethod.POST,
-                        "/api/signalements",
                         "/api/entreprises"
                 ).hasAnyAuthority("Mobile_User", "Manager")
                 // Manager: accès total au reste de l'API

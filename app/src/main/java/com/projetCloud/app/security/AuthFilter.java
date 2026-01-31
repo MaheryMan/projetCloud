@@ -37,13 +37,16 @@ public class AuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
+        String method = request.getMethod();
 
         // Exclure les endpoints publics et ceux du manager par défaut
         if (path.startsWith("/api/auth/login") || 
             path.startsWith("/api/auth/register") || 
             path.startsWith("/swagger") || 
             path.startsWith("/v3/api-docs") ||
-            path.startsWith("/actuator")) {
+            path.startsWith("/actuator") ||
+            ("POST".equalsIgnoreCase(method) && "/api/users".equals(path)) ||
+            ("GET".equalsIgnoreCase(method) && path.startsWith("/api/signalements"))) {
             filterChain.doFilter(request, response);
             return;
         }
