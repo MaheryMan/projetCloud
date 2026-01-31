@@ -17,7 +17,7 @@ public class FirebaseConfig {
     @Bean
     public Firestore firestore() throws IOException {
         if (FirebaseApp.getApps().isEmpty()) {
-            InputStream serviceAccount = getClass().getClassLoader().getResourceAsStream("s5-routier-firebase-adminsdk-fbsvc-8905a768c1.json");
+            InputStream serviceAccount = getClass().getClassLoader().getResourceAsStream("firebase-sdk.json");
 
             if (serviceAccount == null) {
                 throw new IOException("Firebase service account file not found in classpath");

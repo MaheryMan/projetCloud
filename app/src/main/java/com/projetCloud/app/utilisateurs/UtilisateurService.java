@@ -1,12 +1,20 @@
 package com.projetCloud.app.utilisateurs;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.UserRecord;
+import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.DocumentReference;
+import com.projetCloud.app.config.ConnectivityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -18,6 +26,12 @@ public class UtilisateurService {
 
     @Autowired
     private UtilisateurRepository utilisateurRepository;
+
+    @Autowired
+    private ConnectivityService connectivityService;
+
+    @Autowired
+    private Firestore firestore;
 
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -115,13 +129,78 @@ public class UtilisateurService {
     }
 
     /**
+     * Inscrit un nouvel utilisateur
+     * Si online, crée dans Firebase Auth et localement
+     * Si offline, crée seulement localement
+     *
+     * @param email email de l'utilisateur
+     * @param password mot de passe
+     * @param nom nom
+     * @param prenom prénom
+     * @param numTel numéro de téléphone (optionnel)
+     * @return l'utilisateur créé
+     * @throws Exception si l'inscription échoue
+     */
+    public Utilisateur register(String email, String password, String nom, String prenom, String numTel) throws Exception {
+        // Vérifier si l'email existe déjà
+        if (utilisateurRepository.findByEmail(email).isPresent()) {
+            throw new Exception("Un utilisateur avec cet email existe déjà");
+        }
+
+        boolean isOnline = connectivityService.isFirebaseOnline();
+        String firebaseUid = null;
+        LocalDateTime firebaseCreatedAt = null;
+
+        if (isOnline) {
+            try {
+                // Créer l'utilisateur dans Firebase Auth
+                UserRecord.CreateRequest request = new UserRecord.CreateRequest()
+                        .setEmail(email)
+                        .setPassword(password)
+                        .setDisplayName(nom + " " + prenom)
+                        .setEmailVerified(false);
+
+                UserRecord userRecord = FirebaseAuth.getInstance().createUser(request);
+                firebaseUid = userRecord.getUid();
+                firebaseCreatedAt = LocalDateTime.now();
+
+                // Créer le document Firestore
+                createFirestoreUserDocument(userRecord, nom, prenom, email);
+
+            } catch (FirebaseAuthException e) {
+                throw new Exception("Erreur lors de la création dans Firebase: " + e.getMessage());
+            } catch (Exception e) {
+                throw new Exception("Erreur lors de la création du document Firestore: " + e.getMessage());
+            }
+        }
+
+        // Créer l'utilisateur localement
+        Utilisateur utilisateur = new Utilisateur();
+        utilisateur.setEmail(email);
+        if (!isOnline) {
+            utilisateur.setPassword(password); // Mot de passe seulement pour utilisateurs locaux
+        }
+        utilisateur.setNom(nom);
+        utilisateur.setPrenom(prenom);
+        utilisateur.setNumTel(numTel);
+        utilisateur.setFirebaseUid(firebaseUid);
+        utilisateur.setIdSource(isOnline ? 1 : 3); // 1 = firebase_email, 3 = local
+        utilisateur.setIdStatus(1); // Actif
+        utilisateur.setIsSyncedToFirebase(isOnline);
+        utilisateur.setFirebaseCreatedAt(firebaseCreatedAt);
+        utilisateur.setCreatedAt(LocalDateTime.now());
+
+        return save(utilisateur);
+    }
+
+    /**
      * Enregistre un utilisateur
      *
      * @param utilisateur l'utilisateur à enregistrer
      * @return l'utilisateur enregistré
      */
     public Utilisateur save(Utilisateur utilisateur) {
-        if (utilisateur.getPassword() != null) {
+        if (utilisateur.getPassword() != null && !utilisateur.getPassword().isEmpty()) {
             String pwd = utilisateur.getPassword();
             boolean alreadyBcrypt = pwd.startsWith("$2a$") || pwd.startsWith("$2y$") || pwd.startsWith("$2b$");
             if (!alreadyBcrypt) {
@@ -143,5 +222,26 @@ public class UtilisateurService {
             utilisateur.setDeletedAt(LocalDateTime.now());
             utilisateurRepository.save(utilisateur);
         }
+    }
+
+    /**
+     * Crée un document Firestore pour l'utilisateur
+     */
+    private void createFirestoreUserDocument(UserRecord userRecord, String nom, String prenom, String email) throws Exception {
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("uid", userRecord.getUid());
+        userData.put("email", email);
+        userData.put("name", nom + " " + prenom);
+        userData.put("provider", "email"); // ou "google" selon le cas
+        userData.put("role", "driver"); // rôle par défaut, peut être modifié
+        userData.put("createdAt", com.google.cloud.Timestamp.now());
+
+        // Ajouter photoURL si disponible (null pour l'instant)
+        if (userRecord.getPhotoUrl() != null) {
+            userData.put("photoURL", userRecord.getPhotoUrl());
+        }
+
+        DocumentReference docRef = firestore.collection("users").document(userRecord.getUid());
+        docRef.set(userData).get(); // .get() pour attendre la completion
     }
 }

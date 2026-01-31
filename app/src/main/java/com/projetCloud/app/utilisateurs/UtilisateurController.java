@@ -126,6 +126,58 @@ public class UtilisateurController {
         }
     }
 
+    /**
+     * Endpoint pour l'inscription d'un nouvel utilisateur
+     * @param registerRequest objet contenant les données d'inscription
+     * @return ResponseEntity contenant l'utilisateur créé ou une erreur
+     */
+    @PostMapping("/register")
+    @Operation(summary = "Inscrire un nouvel utilisateur", description = "Permet à un utilisateur de s'inscrire avec email, mot de passe, nom et prénom")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Inscription réussie",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = Utilisateur.class))),
+        @ApiResponse(responseCode = "400", description = "Données invalides ou utilisateur existe déjà",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<?> register(
+            @Parameter(description = "Données d'inscription", required = true)
+            @RequestBody RegisterRequest registerRequest) {
+        try {
+            Utilisateur utilisateur = utilisateurService.register(
+                registerRequest.getEmail(),
+                registerRequest.getPassword(),
+                registerRequest.getNom(),
+                registerRequest.getPrenom(),
+                registerRequest.getNumTel()
+            );
+            return ResponseEntity.status(201).body(utilisateur);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
+
+    public static class RegisterRequest {
+        private String email;
+        private String password;
+        private String nom;
+        private String prenom;
+        private String numTel;
+
+        // Getters et setters
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
+        public String getNom() { return nom; }
+        public void setNom(String nom) { this.nom = nom; }
+        public String getPrenom() { return prenom; }
+        public void setPrenom(String prenom) { this.prenom = prenom; }
+        public String getNumTel() { return numTel; }
+        public void setNumTel(String numTel) { this.numTel = numTel; }
+    }
+
     public static class ErrorResponse {
         private String message;
 

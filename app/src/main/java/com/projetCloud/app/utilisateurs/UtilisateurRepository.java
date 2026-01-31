@@ -13,6 +13,9 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     Optional<Utilisateur> findById(Long id);
     Optional<Utilisateur> findByEmail(String email);
 
+    // Méthodes pour la synchronisation
+    List<Utilisateur> findByIsSyncedToFirebaseFalse();
+
     @Query("SELECT r.libelle FROM Utilisateur u JOIN u.roles r WHERE u.id = ?1")
     List<String> findRoleLibellesByUtilisateurId(Long utilisateurId);
 }
