@@ -355,6 +355,7 @@ const fetchEntreprises = async () => {
                     <td>{signal.surfaceM2} m²</td>
                     <td>{formatCurrency(signal.budget)}</td>
                     <td>{getEntrepriseName(signal.idEntreprise)}</td>
+                    
                     <td className="location-cell">
                        {signal.latitude.toFixed(4)}, {signal.longitude.toFixed(4)}
                     </td>

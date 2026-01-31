@@ -57,7 +57,9 @@ function VisitorMap() {
 
   const fetchEntreprises = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/entreprises');
+      const token = localStorage.getItem('token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const response = await fetch('http://localhost:8080/api/entreprises', { headers });
       if (!response.ok) throw new Error('Erreur de chargement des entreprises');
       const data = await response.json();
       setEntreprises(data);
@@ -74,9 +76,10 @@ function VisitorMap() {
 
   const fetchTypesSignalement = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/types-signalement');
+      const token = localStorage.getItem('token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const response = await fetch('http://localhost:8080/api/types-signalement', { headers });
       if (!response.ok) throw new Error('Erreur de chargement des types');
-      
       const data = await response.json();
       setTypesSignalement(data);
     } catch (error) {
@@ -86,9 +89,10 @@ function VisitorMap() {
 
   const fetchSignalements = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/signalements');
+      const token = localStorage.getItem('token');
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const response = await fetch('http://localhost:8080/api/signalements', { headers });
       if (!response.ok) throw new Error('Erreur de chargement');
-      
       const data = await response.json();
       setSignalements(data);
       calculateStats(data);

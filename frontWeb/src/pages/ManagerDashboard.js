@@ -187,6 +187,7 @@ function ManagerDashboard() {
                   <td>{signal.surfaceM2} m²</td>
                   <td>{formatCurrency(signal.budget)}</td>
                   <td>{getEntrepriseName(signal.idEntreprise)}</td>
+                    
                 </tr>
               ))}
             </tbody>
