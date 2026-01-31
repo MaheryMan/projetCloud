@@ -55,8 +55,12 @@ public class StatusController {
         Optional<Status> status = statusService.findById(id);
         if (status.isPresent()) {
             Status updatedStatus = status.get();
-            updatedStatus.setCode(statusDetails.getCode());
-            updatedStatus.setLibelle(statusDetails.getLibelle());
+            if (statusDetails.getCode() != null && !statusDetails.getCode().trim().isEmpty()) {
+                updatedStatus.setCode(statusDetails.getCode().trim());
+            }
+            if (statusDetails.getLibelle() != null && !statusDetails.getLibelle().trim().isEmpty()) {
+                updatedStatus.setLibelle(statusDetails.getLibelle().trim());
+            }
             return ResponseEntity.ok(statusService.save(updatedStatus));
         } else {
             return ResponseEntity.notFound().build();

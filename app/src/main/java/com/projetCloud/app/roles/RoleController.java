@@ -53,8 +53,12 @@ public class RoleController {
         Optional<Role> role = roleService.findById(id);
         if (role.isPresent()) {
             Role updatedRole = role.get();
-            updatedRole.setLibelle(roleDetails.getLibelle());
-            updatedRole.setNiveau(roleDetails.getNiveau());
+            if (roleDetails.getLibelle() != null && !roleDetails.getLibelle().trim().isEmpty()) {
+                updatedRole.setLibelle(roleDetails.getLibelle().trim());
+            }
+            if (roleDetails.getNiveau() != null) {
+                updatedRole.setNiveau(roleDetails.getNiveau());
+            }
             return ResponseEntity.ok(roleService.save(updatedRole));
         } else {
             return ResponseEntity.notFound().build();

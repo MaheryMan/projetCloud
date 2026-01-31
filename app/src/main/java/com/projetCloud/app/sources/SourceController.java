@@ -47,15 +47,17 @@ public class SourceController {
     public ResponseEntity<Source> updateSource(@PathVariable Long id, @RequestBody Source sourceDetails) {
         Optional<Source> source = sourceService.findById(id);
         if (source.isPresent()) {
-            Source updatedSource = source.get();
-            updatedSource.setLibelle(sourceDetails.getLibelle());
-            if (sourceDetails.getProviderType() != null) {
-                updatedSource.setProviderType(sourceDetails.getProviderType());
+            Source updated = source.get();
+            if (sourceDetails.getLibelle() != null && !sourceDetails.getLibelle().trim().isEmpty()) {
+                updated.setLibelle(sourceDetails.getLibelle().trim());
+            }
+            if (sourceDetails.getProviderType() != null && !sourceDetails.getProviderType().trim().isEmpty()) {
+                updated.setProviderType(sourceDetails.getProviderType().trim());
             }
             if (sourceDetails.getIsOnline() != null) {
-                updatedSource.setIsOnline(sourceDetails.getIsOnline());
+                updated.setIsOnline(sourceDetails.getIsOnline());
             }
-            return ResponseEntity.ok(sourceService.save(updatedSource));
+            return ResponseEntity.ok(sourceService.save(updated));
         } else {
             return ResponseEntity.notFound().build();
         }

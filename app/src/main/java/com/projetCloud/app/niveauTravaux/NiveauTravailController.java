@@ -50,10 +50,14 @@ public class NiveauTravailController {
     public ResponseEntity<NiveauTravail> updateNiveauTravail(@PathVariable Long id, @RequestBody NiveauTravail niveauTravailDetails) {
         Optional<NiveauTravail> niveauTravail = niveauTravailService.findById(id);
         if (niveauTravail.isPresent()) {
-            NiveauTravail updatedNiveauTravail = niveauTravail.get();
-            updatedNiveauTravail.setLibelle(niveauTravailDetails.getLibelle());
-            updatedNiveauTravail.setNiveau(niveauTravailDetails.getNiveau());
-            return ResponseEntity.ok(niveauTravailService.save(updatedNiveauTravail));
+            NiveauTravail updated = niveauTravail.get();
+            if (niveauTravailDetails.getLibelle() != null && !niveauTravailDetails.getLibelle().trim().isEmpty()) {
+                updated.setLibelle(niveauTravailDetails.getLibelle().trim());
+            }
+            if (niveauTravailDetails.getNiveau() != null) {
+                updated.setNiveau(niveauTravailDetails.getNiveau());
+            }
+            return ResponseEntity.ok(niveauTravailService.save(updated));
         } else {
             return ResponseEntity.notFound().build();
         }
