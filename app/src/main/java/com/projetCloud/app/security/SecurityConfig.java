@@ -35,7 +35,8 @@ public class SecurityConfig {
                     "/api/auth/register/",
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
-                    "/actuator/**"
+                    "/actuator/**",
+                    "/api/connectivity/**"
                 ).permitAll()
                 // Création d'utilisateur publique
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/users").permitAll()
