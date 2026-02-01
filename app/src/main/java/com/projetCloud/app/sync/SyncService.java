@@ -38,6 +38,7 @@ public class SyncService {
 
     /**
      * Synchronise les utilisateurs locaux non synchronisés vers Firebase
+     * Gère aussi le cas où l'utilisateur existe déjà dans Firebase
      * @return nombre d'utilisateurs synchronisés
      * @throws TimeoutException 
      */
@@ -51,6 +52,29 @@ public class SyncService {
 
         for (Utilisateur user : unsyncedUsers) {
             try {
+                // Vérifier si l'utilisateur existe déjà dans Firebase par email
+                UserRecord existingFirebaseUser = null;
+                try {
+                    existingFirebaseUser = FirebaseAuth.getInstance().getUserByEmail(user.getEmail());
+                } catch (Exception e) {
+                    // Utilisateur n'existe pas dans Firebase, continuer
+                }
+
+                if (existingFirebaseUser != null) {
+                    // L'utilisateur existe déjà dans Firebase
+                    // Utiliser son UID et le marquer comme synchronisé
+                    System.out.println("L'utilisateur " + user.getEmail() + " existe déjà dans Firebase avec UID: " + existingFirebaseUser.getUid());
+                    user.setFirebaseUid(existingFirebaseUser.getUid());
+                    user.setIsSyncedToFirebase(true);
+                    user.setLastSyncedAt(LocalDateTime.now());
+                    user.setFirebaseCreatedAt(LocalDateTime.now());
+                    user.setTempPassword(null); // Supprimer le mot de passe temporaire
+                    utilisateurRepository.save(user);
+                    syncedCount++;
+                    continue;
+                }
+
+                // L'utilisateur n'existe pas dans Firebase, le créer
                 // Vérifier si on a le mot de passe en clair (stocké temporairement)
                 String plainPassword = getPlainPasswordForUser(user);
                 if (plainPassword == null || plainPassword.isEmpty()) {
@@ -109,6 +133,7 @@ public class SyncService {
     /**
      * Synchronise les utilisateurs de Firebase vers PostgreSQL
      * Utile pour récupérer les comptes créés directement sur Firebase
+     * Gère aussi le cas où l'email existe déjà dans PostgreSQL sans firebase_uid
      * @return nombre d'utilisateurs synchronisés
      * @throws TimeoutException 
      */
@@ -123,26 +148,60 @@ public class SyncService {
 
             int syncedCount = 0;
             for (com.google.firebase.auth.ExportedUserRecord firebaseUser : firebaseUsers) {
-                // Vérifier si l'utilisateur existe déjà dans PostgreSQL
-                Optional<Utilisateur> existingUserOpt = utilisateurRepository.findByFirebaseUid(firebaseUser.getUid());
-                if (!existingUserOpt.isPresent()) {
-                    // Créer l'utilisateur dans PostgreSQL
-                    Utilisateur newUser = new Utilisateur();
-                    newUser.setEmail(firebaseUser.getEmail());
-                    newUser.setFirebaseUid(firebaseUser.getUid());
-                    newUser.setNom(firebaseUser.getDisplayName() != null ? firebaseUser.getDisplayName().split(" ")[0] : "Unknown");
-                    newUser.setPrenom(firebaseUser.getDisplayName() != null && firebaseUser.getDisplayName().split(" ").length > 1 ?
-                                     firebaseUser.getDisplayName().split(" ")[1] : "Unknown");
-                    newUser.setIdSource(1); // Source Firebase
-                    newUser.setIdStatus(1); // Actif par défaut
-                    newUser.setIsSyncedToFirebase(true);
-                    newUser.setFirebaseCreatedAt(firebaseUser.getUserMetadata() != null ?
-                                                LocalDateTime.ofInstant(java.time.Instant.ofEpochSecond(firebaseUser.getUserMetadata().getCreationTimestamp() / 1000),
-                                                                       java.time.ZoneId.systemDefault()) : LocalDateTime.now());
-
-                    utilisateurRepository.save(newUser);
-                    syncedCount++;
+                // Vérifier si l'utilisateur existe déjà avec le firebase_uid
+                Optional<Utilisateur> existingByUid = utilisateurRepository.findByFirebaseUid(firebaseUser.getUid());
+                
+                if (existingByUid.isPresent()) {
+                    // Utilisateur déjà synchronisé, passer au suivant
+                    continue;
                 }
+                
+                // Vérifier si l'email existe déjà dans PostgreSQL (cas de création locale)
+                Optional<Utilisateur> existingByEmail = utilisateurRepository.findByEmail(firebaseUser.getEmail());
+                
+                Utilisateur userToUpdate;
+                if (existingByEmail.isPresent()) {
+                    // L'utilisateur existe en local sans firebase_uid
+                    // Mettre à jour avec le firebase_uid de Firebase
+                    userToUpdate = existingByEmail.get();
+                    System.out.println("Synchronisation de l'utilisateur existant " + firebaseUser.getEmail() + " avec firebase_uid: " + firebaseUser.getUid());
+                } else {
+                    // Créer un nouvel utilisateur
+                    userToUpdate = new Utilisateur();
+                    userToUpdate.setEmail(firebaseUser.getEmail());
+                    System.out.println("Création du nouvel utilisateur " + firebaseUser.getEmail() + " depuis Firebase");
+                }
+                
+                // Mettre à jour les champs
+                userToUpdate.setFirebaseUid(firebaseUser.getUid());
+                userToUpdate.setIsSyncedToFirebase(true);
+                userToUpdate.setLastSyncedAt(LocalDateTime.now());
+                
+                // Mettre à jour les infos de profil seulement si pas déjà rempli
+                if (userToUpdate.getNom() == null || userToUpdate.getNom().isEmpty()) {
+                    userToUpdate.setNom(firebaseUser.getDisplayName() != null ? firebaseUser.getDisplayName().split(" ")[0] : "Unknown");
+                }
+                if (userToUpdate.getPrenom() == null || userToUpdate.getPrenom().isEmpty()) {
+                    userToUpdate.setPrenom(firebaseUser.getDisplayName() != null && firebaseUser.getDisplayName().split(" ").length > 1 ?
+                                         firebaseUser.getDisplayName().split(" ")[1] : "");
+                }
+                
+                // Définir source et statut si pas déjà défini
+                if (userToUpdate.getIdSource() == null) {
+                    userToUpdate.setIdSource(1); // Source Firebase
+                }
+                if (userToUpdate.getIdStatus() == null) {
+                    userToUpdate.setIdStatus(1); // Actif par défaut
+                }
+                
+                if (userToUpdate.getFirebaseCreatedAt() == null) {
+                    userToUpdate.setFirebaseCreatedAt(firebaseUser.getUserMetadata() != null ?
+                                                    LocalDateTime.ofInstant(java.time.Instant.ofEpochSecond(firebaseUser.getUserMetadata().getCreationTimestamp() / 1000),
+                                                                           java.time.ZoneId.systemDefault()) : LocalDateTime.now());
+                }
+
+                utilisateurRepository.save(userToUpdate);
+                syncedCount++;
             }
 
             return syncedCount;

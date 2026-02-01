@@ -47,6 +47,49 @@ public class SyncController {
     }
 
     /**
+     * Endpoint pour synchroniser les utilisateurs depuis Firebase vers PostgreSQL
+     * Gère la fusion automatique des utilisateurs existants par email
+     * @return ResponseEntity avec le résultat de la synchronisation
+     */
+    @PostMapping("/users/from-firebase")
+    @Operation(summary = "Synchroniser depuis Firebase", description = "Synchronise les utilisateurs Firebase vers PostgreSQL, y compris la fusion des utilisateurs existants par email")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Synchronisation réussie",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = SyncResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Erreur lors de la synchronisation")
+    })
+    public ResponseEntity<?> syncUsersFromFirebase() {
+        try {
+            int syncedCount = syncService.syncUsersFromFirebase();
+            return ResponseEntity.ok(new SyncResponse("Synchronisation depuis Firebase réussie", syncedCount));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new SyncResponse("Erreur: " + e.getMessage(), 0));
+        }
+    }
+
+    /**
+     * Endpoint pour synchroniser les modifications hors ligne
+     * @return ResponseEntity avec le résultat de la synchronisation
+     */
+    @PostMapping("/users/offline-changes")
+    @Operation(summary = "Synchroniser les modifications hors ligne", description = "Synchronise les modifications effectuées hors ligne vers Firebase")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Synchronisation réussie",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = SyncResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Erreur lors de la synchronisation")
+    })
+    public ResponseEntity<?> syncOfflineModifications() {
+        try {
+            int syncedCount = syncService.syncOfflineModifications();
+            return ResponseEntity.ok(new SyncResponse("Synchronisation des modifications réussie", syncedCount));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new SyncResponse("Erreur: " + e.getMessage(), 0));
+        }
+    }
+
+    /**
      * Endpoint pour vérifier s'il y a des données en attente de synchronisation
      * @return ResponseEntity avec l'état de la synchronisation
      */

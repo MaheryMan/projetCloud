@@ -104,11 +104,21 @@ CREATE TABLE utilisateurs (
     -- Timestamps
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
-    deleted_at TIMESTAMP
+    deleted_at TIMESTAMP,
+    
+    -- Synchronisation avancée
+    modified_offline BOOLEAN DEFAULT FALSE,
+    last_modified_at TIMESTAMP,
+    temp_password TEXT                -- Mot de passe temporaire pour sync offline
 );
 
 -- Créer le compte manager par défaut (local)
-INSERT INTO utilisateurs (email, password, nom, prenom, id_source, id_status) 
+-- IMPORTANT: Si cet utilisateur existe déjà dans Firebase:
+-- 1. Le script crée d'abord l'utilisateur dans PostgreSQL sans firebase_uid
+-- 2. Au démarrage de l'application, syncUsersToFirebase() détectera que manager@admin.com existe dans Firebase
+-- 3. Il récupérera le firebase_uid de Firebase et l'ajoutera à PostgreSQL
+-- 4. L'utilisateur sera marqué comme isSyncedToFirebase = TRUE
+INSERT INTO utilisateurs (email, password, nom, prenom, id_source, id_status, temp_password) 
 VALUES (
     'manager@admin.com',
     -- Mot de passe hashé: 'admin123' (à changer en production)
@@ -116,7 +126,8 @@ VALUES (
     'Admin',
     'Manager',
     (SELECT id FROM sources WHERE provider_type = 'local'),
-    (SELECT id FROM status WHERE code = 'USR001')
+    (SELECT id FROM status WHERE code = 'USR001'),
+    'admin123'  -- Temporairement stocker le mot de passe en clair pour la sync
 );
 
 -- =========================
@@ -467,19 +478,6 @@ $$ language 'plpgsql';
 CREATE TRIGGER check_manager_role
     BEFORE INSERT ON deblocages
     FOR EACH ROW EXECUTE FUNCTION validate_manager_role();
-
--- =========================
--- ALTER TABLES POUR SYNCHRONISATION
--- =========================
-
--- Ajouter les colonnes pour la gestion des modifications hors ligne
-ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS modified_offline BOOLEAN DEFAULT FALSE;
-ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS last_modified_at TIMESTAMP;
-ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS temp_password TEXT;
-
-UPDATE utilisateurs 
-SET temp_password = 'admin123' 
-WHERE email = 'manager@admin.com' AND temp_password IS NULL;
 
 -- =========================
 -- COMMENTAIRES
