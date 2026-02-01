@@ -29,6 +29,12 @@ public class TypeSignalement {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "is_synced_to_firebase")
+    private Boolean isSyncedToFirebase = false;
+
+    @Column(name = "last_synced_at")
+    private LocalDateTime lastSyncedAt;
+
     public TypeSignalement() {}
 
     public Long getId() {
@@ -85,5 +91,21 @@ public class TypeSignalement {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Boolean getIsSyncedToFirebase() {
+        return isSyncedToFirebase;
+    }
+
+    public void setIsSyncedToFirebase(Boolean isSyncedToFirebase) {
+        this.isSyncedToFirebase = isSyncedToFirebase;
+    }
+
+    public LocalDateTime getLastSyncedAt() {
+        return lastSyncedAt;
+    }
+
+    public void setLastSyncedAt(LocalDateTime lastSyncedAt) {
+        this.lastSyncedAt = lastSyncedAt;
     }
 }

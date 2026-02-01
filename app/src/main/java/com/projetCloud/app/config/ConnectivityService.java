@@ -28,7 +28,7 @@ public class ConnectivityService {
             ApiFuture<DocumentSnapshot> future = firestore.collection("test").document("ping").get();
 
             // Timeout 3 secondes
-            future.get(3, TimeUnit.SECONDS);
+            future.get(50, TimeUnit.SECONDS);
 
             return true;
         } catch (TimeoutException e) {
