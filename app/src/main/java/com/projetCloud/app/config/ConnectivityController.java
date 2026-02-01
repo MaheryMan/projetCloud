@@ -1,5 +1,7 @@
 package com.projetCloud.app.config;
 
+import java.util.concurrent.TimeoutException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,7 +15,7 @@ public class ConnectivityController {
     private ConnectivityService connectivityService;
 
     @GetMapping("/firebase")
-    public boolean checkFirebaseConnectivity() {
+    public boolean checkFirebaseConnectivity() throws TimeoutException {
         return connectivityService.isFirebaseOnline();
     }
 }

@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Service pour synchroniser les données entre PostgreSQL et Firebase
@@ -38,8 +39,9 @@ public class SyncService {
     /**
      * Synchronise les utilisateurs locaux non synchronisés vers Firebase
      * @return nombre d'utilisateurs synchronisés
+     * @throws TimeoutException 
      */
-    public int syncUsersToFirebase() throws RuntimeException {
+    public int syncUsersToFirebase() throws RuntimeException, TimeoutException {
         if (!connectivityService.isFirebaseOnline()) {
             throw new RuntimeException("Firebase n'est pas accessible");
         }
@@ -108,8 +110,9 @@ public class SyncService {
      * Synchronise les utilisateurs de Firebase vers PostgreSQL
      * Utile pour récupérer les comptes créés directement sur Firebase
      * @return nombre d'utilisateurs synchronisés
+     * @throws TimeoutException 
      */
-    public int syncUsersFromFirebase() throws RuntimeException {
+    public int syncUsersFromFirebase() throws RuntimeException, TimeoutException {
         if (!connectivityService.isFirebaseOnline()) {
             throw new RuntimeException("Firebase n'est pas accessible");
         }
@@ -191,8 +194,9 @@ public class SyncService {
      * @param nom Nom
      * @param prenom Prénom
      * @return Utilisateur créé
+     * @throws TimeoutException 
      */
-    public Utilisateur createUserOnline(String email, String password, String nom, String prenom) throws RuntimeException {
+    public Utilisateur createUserOnline(String email, String password, String nom, String prenom) throws RuntimeException, TimeoutException {
         if (!connectivityService.isFirebaseOnline()) {
             throw new RuntimeException("Firebase n'est pas accessible pour la création en ligne");
         }
@@ -285,8 +289,9 @@ public class SyncService {
     /**
      * Met à jour un utilisateur en ligne : synchronise vers Firebase
      * @param user Utilisateur à mettre à jour
+     * @throws TimeoutException 
      */
-    public void updateUserOnline(Utilisateur user) throws RuntimeException {
+    public void updateUserOnline(Utilisateur user) throws RuntimeException, TimeoutException {
         if (!connectivityService.isFirebaseOnline()) {
             throw new RuntimeException("Firebase n'est pas accessible pour la mise à jour");
         }
@@ -330,8 +335,9 @@ public class SyncService {
     /**
      * Synchronise les modifications hors ligne vers Firebase
      * @return nombre d'utilisateurs synchronisés
+     * @throws TimeoutException 
      */
-    public int syncOfflineModifications() throws RuntimeException {
+    public int syncOfflineModifications() throws RuntimeException, TimeoutException {
         if (!connectivityService.isFirebaseOnline()) {
             throw new RuntimeException("Firebase n'est pas accessible");
         }

@@ -1,10 +1,16 @@
 package com.projetCloud.app.config;
 
+import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
+
+import io.grpc.netty.shaded.io.netty.handler.timeout.TimeoutException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class ConnectivityService {
@@ -15,15 +21,26 @@ public class ConnectivityService {
     /**
      * Vérifie la connectivité à Firebase en essayant de lire un document test.
      * Retourne true si connecté, false sinon.
+     * @throws java.util.concurrent.TimeoutException 
      */
-    public boolean isFirebaseOnline() {
+    public boolean isFirebaseOnline() throws java.util.concurrent.TimeoutException {
         try {
-            // Essayer de lire un document fictif pour tester la connexion
-            firestore.collection("test").document("ping").get().get();
+            ApiFuture<DocumentSnapshot> future = firestore.collection("test").document("ping").get();
+
+            // Timeout 3 secondes
+            future.get(3, TimeUnit.SECONDS);
+
             return true;
-        } catch (InterruptedException | ExecutionException e) {
-            // En cas d'erreur (pas de connexion, etc.), considérer comme offline
+        } catch (TimeoutException e) {
+            // Firebase injoignable
             return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (ExecutionException e) {
+            // Ici Firebase est joignable MAIS erreur logique possible
+            // ex: permission denied, document absent
+            return true;
         }
     }
 }
