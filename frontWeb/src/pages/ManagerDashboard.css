@@ -82,3 +82,17 @@
   background: var(--pro-blue);
   box-shadow: 0 0 15px rgba(37, 99, 235, 0.3);
 }
+
+.progress-info {
+  margin-bottom: 1rem;
+  padding: 12px;
+  background: #f0f7ff;
+  border-radius: 8px;
+  border-left: 4px solid var(--pro-blue);
+}
+
+.progress-label {
+  font-size: 14px;
+  color: var(--slate-600);
+  font-weight: 500;
+}
