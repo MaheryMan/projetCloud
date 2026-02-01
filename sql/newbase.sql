@@ -435,9 +435,7 @@ BEGIN
         RAISE EXCEPTION 'Un utilisateur local doit avoir un mot de passe';
     END IF;
     
-    IF src_type != 'local' AND NEW.password IS NOT NULL THEN
-        RAISE EXCEPTION 'Un utilisateur Firebase/Google ne doit pas avoir de mot de passe local';
-    END IF;
+    -- Pour Firebase/Google, permettre password hashé pour fallback local
     
     RETURN NEW;
 END;

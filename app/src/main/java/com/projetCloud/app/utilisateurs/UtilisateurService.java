@@ -1,11 +1,13 @@
 package com.projetCloud.app.utilisateurs;
 
+import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.Firestore;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
-import com.google.cloud.firestore.Firestore;
-import com.google.cloud.firestore.DocumentReference;
 import com.projetCloud.app.config.ConnectivityService;
+import com.projetCloud.app.roles.Role;
+import com.projetCloud.app.roles.RoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,6 +28,9 @@ public class UtilisateurService {
 
     @Autowired
     private UtilisateurRepository utilisateurRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
 
     @Autowired
     private ConnectivityService connectivityService;
@@ -190,9 +195,20 @@ public class UtilisateurService {
 
         if (!isOnline) {
             utilisateur.setTempPassword(password); // Stocker en clair pour la sync future
+        } else {
+            utilisateur.setTempPassword(null); // Pas de temp pour online, déjà sync
         }
 
-        return save(utilisateur);
+        Utilisateur savedUser = save(utilisateur);
+
+        // Assigner le rôle Mobile_User par défaut
+        Optional<Role> mobileUserRole = roleRepository.findByLibelle("Mobile_User");
+        if (mobileUserRole.isPresent()) {
+            savedUser.getRoles().add(mobileUserRole.get());
+            utilisateurRepository.save(savedUser);
+        }
+
+        return savedUser;
     }
 
     /**
