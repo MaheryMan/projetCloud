@@ -8,7 +8,10 @@ import com.google.cloud.firestore.DocumentReference;
 import com.projetCloud.app.config.ConnectivityService;
 import com.projetCloud.app.utilisateurs.Utilisateur;
 import com.projetCloud.app.utilisateurs.UtilisateurRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

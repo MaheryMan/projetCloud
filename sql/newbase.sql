@@ -480,6 +480,10 @@ ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS modified_offline BOOLEAN DEFAU
 ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS last_modified_at TIMESTAMP;
 ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS temp_password TEXT;
 
+UPDATE utilisateurs 
+SET temp_password = 'admin123' 
+WHERE email = 'manager@admin.com' AND temp_password IS NULL;
+
 -- =========================
 -- COMMENTAIRES
 -- =========================

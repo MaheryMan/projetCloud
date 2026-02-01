@@ -177,9 +177,7 @@ public class UtilisateurService {
         // Créer l'utilisateur localement
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setEmail(email);
-        if (!isOnline) {
-            utilisateur.setPassword(password); // Mot de passe seulement pour utilisateurs locaux
-        }
+        utilisateur.setPassword(password); // Toujours hasher le mot de passe localement
         utilisateur.setNom(nom);
         utilisateur.setPrenom(prenom);
         utilisateur.setNumTel(numTel);
@@ -189,6 +187,10 @@ public class UtilisateurService {
         utilisateur.setIsSyncedToFirebase(isOnline);
         utilisateur.setFirebaseCreatedAt(firebaseCreatedAt);
         utilisateur.setCreatedAt(LocalDateTime.now());
+
+        if (!isOnline) {
+            utilisateur.setTempPassword(password); // Stocker en clair pour la sync future
+        }
 
         return save(utilisateur);
     }
