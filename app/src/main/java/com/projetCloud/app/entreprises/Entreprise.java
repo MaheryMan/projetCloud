@@ -29,6 +29,12 @@ public class Entreprise {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "is_synced_to_firebase")
+    private Boolean isSyncedToFirebase = false;
+
+    @Column(name = "last_synced_at")
+    private LocalDateTime lastSyncedAt;
+
     public Entreprise() {
     }
 
@@ -102,5 +108,21 @@ public class Entreprise {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getIsSyncedToFirebase() {
+        return isSyncedToFirebase;
+    }
+
+    public void setIsSyncedToFirebase(Boolean isSyncedToFirebase) {
+        this.isSyncedToFirebase = isSyncedToFirebase;
+    }
+
+    public LocalDateTime getLastSyncedAt() {
+        return lastSyncedAt;
+    }
+
+    public void setLastSyncedAt(LocalDateTime lastSyncedAt) {
+        this.lastSyncedAt = lastSyncedAt;
     }
 }

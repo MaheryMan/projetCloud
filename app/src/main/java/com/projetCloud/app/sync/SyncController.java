@@ -25,6 +25,9 @@ public class SyncController {
     @Autowired
     private SyncService syncService;
 
+    @Autowired
+    private SyncMetadataService syncMetadataService;
+
     /**
      * Endpoint pour synchroniser les utilisateurs locaux vers Firebase
      * @return ResponseEntity avec le résultat de la synchronisation
@@ -84,6 +87,27 @@ public class SyncController {
         try {
             int syncedCount = syncService.syncOfflineModifications();
             return ResponseEntity.ok(new SyncResponse("Synchronisation des modifications réussie", syncedCount));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new SyncResponse("Erreur: " + e.getMessage(), 0));
+        }
+    }
+
+    /**
+     * Endpoint pour synchroniser les métadonnées (status, entreprises, types_signalement)
+     * @return ResponseEntity avec le résultat de la synchronisation
+     */
+    @PostMapping("/metadata")
+    @Operation(summary = "Synchroniser les métadonnées", description = "Synchronise les métadonnées (status, entreprises, types_signalement) entre PostgreSQL et Firebase")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Synchronisation réussie",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = SyncResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Erreur lors de la synchronisation")
+    })
+    public ResponseEntity<?> syncMetadata() {
+        try {
+            int syncedCount = syncMetadataService.syncAllMetadata();
+            return ResponseEntity.ok(new SyncResponse("Synchronisation des métadonnées réussie", syncedCount));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new SyncResponse("Erreur: " + e.getMessage(), 0));
         }

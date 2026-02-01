@@ -480,6 +480,22 @@ CREATE TRIGGER check_manager_role
     FOR EACH ROW EXECUTE FUNCTION validate_manager_role();
 
 -- =========================
+-- COLONNES DE SYNCHRONISATION FIREBASE
+-- =========================
+
+-- Ajouter colonnes de sync pour status
+ALTER TABLE status ADD COLUMN IF NOT EXISTS is_synced_to_firebase BOOLEAN DEFAULT FALSE;
+ALTER TABLE status ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMP;
+
+-- Ajouter colonnes de sync pour entreprises
+ALTER TABLE entreprises ADD COLUMN IF NOT EXISTS is_synced_to_firebase BOOLEAN DEFAULT FALSE;
+ALTER TABLE entreprises ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMP;
+
+-- Ajouter colonnes de sync pour types_signalement
+ALTER TABLE types_signalement ADD COLUMN IF NOT EXISTS is_synced_to_firebase BOOLEAN DEFAULT FALSE;
+ALTER TABLE types_signalement ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMP;
+
+-- =========================
 -- COMMENTAIRES
 -- =========================
 

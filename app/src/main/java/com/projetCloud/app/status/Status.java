@@ -16,6 +16,12 @@ public class Status {
     @Column(nullable = false, length = 50)
     private String libelle;
 
+    @Column(name = "is_synced_to_firebase")
+    private Boolean isSyncedToFirebase = false;
+
+    @Column(name = "last_synced_at")
+    private java.time.LocalDateTime lastSyncedAt;
+
     // Constructeurs
     public Status() {}
 
@@ -47,5 +53,21 @@ public class Status {
 
     public void setLibelle(String libelle) {
         this.libelle = libelle;
+    }
+
+    public Boolean getIsSyncedToFirebase() {
+        return isSyncedToFirebase;
+    }
+
+    public void setIsSyncedToFirebase(Boolean isSyncedToFirebase) {
+        this.isSyncedToFirebase = isSyncedToFirebase;
+    }
+
+    public java.time.LocalDateTime getLastSyncedAt() {
+        return lastSyncedAt;
+    }
+
+    public void setLastSyncedAt(java.time.LocalDateTime lastSyncedAt) {
+        this.lastSyncedAt = lastSyncedAt;
     }
 }
