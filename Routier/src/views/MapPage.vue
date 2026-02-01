@@ -664,7 +664,7 @@ onMounted(async () => {
       isUserInteracting.value = true;
     });
 
-    reportMap.map.value?.on('zoomend moveend', () => {
+    reportMap.map.value?.on('moveend', () => {
       setTimeout(() => {
         isUserInteracting.value = false;
 
@@ -672,6 +672,15 @@ onMounted(async () => {
           applyLocationUpdate(pendingLocationUpdate.value);
           pendingLocationUpdate.value = null;
         }
+      }, 150);
+    });
+
+    reportMap.map.value?.on('zoomend', () => {
+      setTimeout(() => {
+        isUserInteracting.value = false;
+        // Ne pas appliquer les mises à jour GPS en attente après un zoom
+        // pour éviter que la carte ne se recentre automatiquement
+        pendingLocationUpdate.value = null;
       }, 150);
     });
   } catch (error) {

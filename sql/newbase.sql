@@ -37,7 +37,8 @@ INSERT INTO status (code, libelle) VALUES
 ('REPORT001', 'Nouveau'),
 ('REPORT002', 'En cours'),
 ('REPORT003', 'Terminé'),
-('REPORT004', 'Annulé');
+('REPORT004', 'Annulé'),
+('REPORT005', 'Créé');
 
 -- =========================
 -- TABLE: ENTREPRISES
