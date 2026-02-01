@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Bloquer par défaut
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Collection 'users' - Documents créés par le web via API backend uniquement
+    match /users/{userId} {
+      // Lecture : authentifié ET le document appartient à l'utilisateur connecté
+      allow read: if request.auth.uid == userId;
+      
+      // Création/Modification : interdite (seul le backend peut le faire)
+      allow create, update, delete: if false;
+    }
+  }
+}

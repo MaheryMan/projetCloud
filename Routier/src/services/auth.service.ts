@@ -8,7 +8,8 @@ import {
     updateProfile,
     GoogleAuthProvider,
     signInWithCredential,
-    signInWithPopup
+    signInWithPopup,
+    deleteUser
 } from 'firebase/auth'
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
 import { Capacitor } from '@capacitor/core'
@@ -75,13 +76,24 @@ export async function loginWithGoogle(): Promise<User> {
         user = result.user
     }
 
-    // Vérifier si le profil Firestore existe (doit avoir été créé par le back)
+    // Vérifier si le profil Firestore existe (doit avoir été créé par le web)
     const userRef = doc(db, 'users', user.uid)
     const snap = await getDoc(userRef)
 
     if (!snap.exists()) {
-        // Profil inexistant : déconnecter et lever une erreur
-        await signOut(auth)
+        // Profil inexistant : nettoyer
+        try {
+            // 1. D'abord se déconnecter
+            await signOut(auth)
+            
+            // 2. Puis supprimer l'utilisateur de Firebase Auth
+            await deleteUser(user)
+        } catch (e) {
+            console.error('Erreur nettoyage compte Firebase:', e)
+            // Continuer même si la suppression échoue
+        }
+        
+        // 3. Lever l'erreur
         throw new Error('Compte non autorisé. Veuillez contacter l\'administrateur pour créer votre compte.')
     }
 

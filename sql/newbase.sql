@@ -54,7 +54,11 @@ CREATE TABLE entreprises (
 );
 
 -- Entreprise par défaut
-INSERT INTO entreprises (nom) VALUES ('Entreprise par défaut');
+INSERT INTO entreprises (nom, contact_email, contact_telephone, adresse) VALUES 
+('Entreprise par défaut', 'default@entreprise.com', '+261 34 12 345 67', 'Adresse par défaut, Ville, Pays'),
+('Magic', 'contact@magic.com', '+261 34 98 765 43', '123 Rue Magique, Antananarivo, Madagascar'),
+('Colas', 'info@colas.com', '+261 34 56 789 01', '456 Avenue Colas, Toamasina, Madagascar');
+
 
 -- =========================
 -- TABLE: ROLES
@@ -186,14 +190,8 @@ CREATE TABLE types_signalement (
 
 -- Types par défaut
 INSERT INTO types_signalement (libelle, description, icone, couleur, niveau_urgence) VALUES
-('Trou / Nid-de-poule', 'Dégradation de la chaussée avec creux', 'pothole', '#FF0000', 1),
-('Déviation / Chantier', 'Travaux en cours avec déviation', 'diversion', '#FFA500', 2),
-('Signalisation manquante', 'Panneau de signalisation absent ou endommagé', 'sign', '#FFFF00', 2),
-('Éclairage défaillant', 'Lampadaire public non fonctionnel', 'light', '#0000FF', 3),
-('Déchets sur la voie', 'Objets ou déchets obstruant la circulation', 'trash', '#808080', 2),
-('Inondation', 'Eau stagnante sur la chaussée', 'flood', '#0000FF', 1),
-('Revêtement dégradé', 'Chaussée abîmée mais sans trou', 'road', '#800000', 2),
-('Végétation envahissante', 'Arbres/plantes obstruant la voie', 'tree', '#008000', 3),
+('Trou', 'Dégradation de la chaussée avec creux', 'pothole', '#FF0000', 1),
+('Chantier', 'Travaux en cours avec déviation', 'diversion', '#FFA500', 2),
 ('Autre', 'Autre type de problème non catégorisé', 'other', '#666666', 2);
 
 -- =========================
