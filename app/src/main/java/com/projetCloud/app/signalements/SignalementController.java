@@ -65,24 +65,60 @@ public class SignalementController {
     }
 
     @GetMapping("/stats")
-    @Operation(summary = "Récupérer les statistiques des signalements", description = "Retourne les statistiques globales")
+    @Operation(summary = "Récupérer les statistiques des signalements", description = "Retourne les statistiques globales avec calcul d'avancement correct")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Statistiques récupérées avec succès",
                     content = @Content(mediaType = "application/json"))
     })
     public ResponseEntity<?> getStats() {
         List<Signalement> all = signalementService.findAll();
-        int total = all.size();
-        // For simplicity, assume some counts
-        // In real app, would query by status
+        
+        // Compter par statut (4=Nouveau, 5=En cours, 6=Terminé)
+        // Ignorer les statuts utilisateurs (1, 2, 3)
+        long nouveau = all.stream().filter(s -> s.getIdStatus() != null && s.getIdStatus() == 4).count();
+        long enCours = all.stream().filter(s -> s.getIdStatus() != null && s.getIdStatus() == 5).count();
+        long termine = all.stream().filter(s -> s.getIdStatus() != null && s.getIdStatus() == 6).count();
+        
+        // Total = seulement les signalements avec statuts valides (4, 5, 6)
+        long total = nouveau + enCours + termine;
+        long totalSignalements = all.size(); // Total incluant les mal catégorisés
+        
+        // Calculer surface totale
+        double surfaceTotal = all.stream()
+            .map(Signalement::getSurfaceM2)
+            .filter(s -> s != null)
+            .mapToDouble(BigDecimal::doubleValue)
+            .sum();
+        
+        // Calculer chiffre d'affaire (somme de tous les budgets)
+        double chiffreAffaire = all.stream()
+            .map(Signalement::getBudget)
+            .filter(b -> b != null)
+            .mapToDouble(BigDecimal::doubleValue)
+            .sum();
+        
+        // Calculer avancement: formule pondérée
+        // Nouveau = 0%, En cours = 50%, Terminé = 100%
+        // Avancement = ((En cours × 0.5) + Terminé) / Total × 100
+        int avancement = 0;
+        if (total > 0) {
+            double avancementDouble = ((enCours * 0.5) + termine) / (double) total * 100.0;
+            avancement = (int) Math.round(avancementDouble);
+        }
+        
+        System.out.println("Stats Debug - Total valides: " + total + 
+                          ", Nouveau: " + nouveau + ", En cours: " + enCours + ", Terminé: " + termine + 
+                          ", Calcul: ((" + enCours + " * 0.5) + " + termine + ") / " + total + " * 100 = " + 
+                          ((enCours * 0.5) + termine) + " / " + total + " * 100 = " + avancement + "%");
+        
         return ResponseEntity.ok(Map.of(
-            "totalSignalements", total,
-            "nouveau", total / 4,
-            "enCours", total / 4,
-            "termine", total / 4,
-            "surfaceTotal", 1000.0,
-            "budgetTotal", 50000.0,
-            "avancement", 50
+            "totalSignalements", totalSignalements,
+            "nouveau", nouveau,
+            "enCours", enCours,
+            "termine", termine,
+            "surfaceTotal", surfaceTotal,
+            "chiffreAffaire", chiffreAffaire,
+            "avancement", avancement
         ));
     }
 

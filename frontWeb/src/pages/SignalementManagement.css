@@ -149,3 +149,113 @@
 
 .btn-edit:hover { background: var(--info-bg); color: var(--accent); }
 .btn-delete:hover { background: var(--danger-bg); color: var(--danger-text); }
+
+/* --- PHOTO UPLOAD STYLES --- */
+.photo-cell {
+  text-align: center;
+  max-width: 120px;
+}
+
+.photo-upload-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60px;
+}
+
+.photo-preview {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--slate-200);
+  box-shadow: var(--shadow-subtle);
+}
+
+.photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-remove-photo {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-remove-photo:hover {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.photo-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  border: 2px dashed var(--slate-200);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--slate-50);
+  width: 100%;
+}
+
+.photo-upload-label:hover {
+  border-color: var(--accent);
+  background: #eff6ff;
+}
+
+.photo-upload-label:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.upload-icon {
+  font-size: 24px;
+}
+
+.upload-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--slate-500);
+  text-align: center;
+}
+
+.photo-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.photo-link:hover {
+  background: var(--info-bg);
+  text-decoration: underline;
+}
+
+.no-photo {
+  color: var(--slate-500);
+  font-size: 12px;
+  font-style: italic;
+}

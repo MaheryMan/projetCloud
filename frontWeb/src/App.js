@@ -8,6 +8,7 @@ import ManagerDashboard from './pages/ManagerDashboard';
 import SignalementManagement from './pages/SignalementManagement';
 import UserManagement from './pages/UserManagement';
 import Synchronization from './pages/Synchronization';
+import Settings from './pages/Settings';
 import './App.css';
 
 function App() {
@@ -107,6 +108,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Synchronization />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedRoute>
+                  <Settings />
                 </ProtectedRoute>
               } 
             />

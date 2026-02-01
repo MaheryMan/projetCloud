@@ -8,8 +8,8 @@ function ManagerDashboard() {
     enCours: 0,
     termine: 0,
     surfaceTotal: 0,
-    budgetTotal: 0,
-    avancement: 0
+    chiffreAffaire: 0, // Somme totale de tous les budgets
+    avancement: 0 // (terminés / (en cours + terminés)) * 100
   });
   const [recentSignalements, setRecentSignalements] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,8 +34,32 @@ function ManagerDashboard() {
       const signalementsData = await signalementsRes.json();
       const statsData = await statsRes.json();
 
+      // Debug - afficher les statuts des signalements
+      console.log('Tous les signalements:', signalementsData);
+      signalementsData.forEach(s => {
+        console.log(`Signalement #${s.id}: statut=${s.idStatus}`);
+      });
+
+      // Debug
+      console.log('Stats reçues:', statsData);
+
+      // Convertir les valeurs en nombres
+      const processedStats = {
+        totalSignalements: parseInt(statsData.totalSignalements) || 0,
+        nouveau: parseInt(statsData.nouveau) || 0,
+        enCours: parseInt(statsData.enCours) || 0,
+        termine: parseInt(statsData.termine) || 0,
+        surfaceTotal: parseFloat(statsData.surfaceTotal) || 0,
+        chiffreAffaire: parseFloat(statsData.chiffreAffaire) || 0,
+        avancement: parseInt(statsData.avancement) || 0
+      };
+
+      console.log('Stats traitées:', processedStats);
+      console.log('Formule avancement: ((', processedStats.enCours, ' × 0.5) + ', processedStats.termine, ') / ', 
+        (processedStats.nouveau + processedStats.enCours + processedStats.termine), ' × 100 = ', processedStats.avancement, '%');
+
       setRecentSignalements(signalementsData);
-      setStats(statsData);
+      setStats(processedStats);
     } catch (error) {
       console.error('Erreur:', error);
     } finally {
@@ -135,14 +159,21 @@ function ManagerDashboard() {
         <div className="stat-card purple">
           <div className="stat-icon"></div>
           <div className="stat-content">
-            <h3>Budget Total</h3>
-            <div className="stat-value">{formatCurrency(stats.budgetTotal)}</div>
+            <h3>Chiffre d'affaire</h3>
+            <div className="stat-value">{formatCurrency(stats.chiffreAffaire)}</div>
           </div>
         </div>
       </div>
 
       <div className="progress-section">
         <h2>Avancement global</h2>
+        <div className="progress-info">
+          <span className="progress-label">
+            {stats.nouveau + stats.enCours + stats.termine > 0 
+              ? `${stats.enCours} en cours · ${stats.termine} terminés · ${stats.nouveau} nouveaux`
+              : 'Aucun signalement'}
+          </span>
+        </div>
         <div className="progress-bar-container">
           <div className="progress-bar" style={{ width: `${stats.avancement}%` }}>
             <span className="progress-text">{stats.avancement}%</span>

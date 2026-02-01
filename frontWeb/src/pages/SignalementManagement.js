@@ -9,7 +9,10 @@ function SignalementManagement() {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [loading, setLoading] = useState(true);
-  const[entreprises, setEntreprises]=useState([]);
+  const [entreprises, setEntreprises] = useState([]);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
 
   useEffect(() => {
@@ -29,6 +32,62 @@ const fetchEntreprises = async () => {
     console.error('Erreur:', error);
   }
 };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Vérifier la taille (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La photo ne doit pas dépasser 5MB');
+        return;
+      }
+
+      // Vérifier le type
+      if (!file.type.startsWith('image/')) {
+        alert('Le fichier doit être une image');
+        return;
+      }
+
+      setPhotoFile(file);
+
+      // Créer une préview
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setPhotoPreview(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadPhotoToServer = async (file) => {
+    try {
+      setUploadingPhoto(true);
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('http://localhost:8080/api/upload/photo', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de l\'upload');
+      }
+
+      const data = await response.json();
+      return data.photoUrl || data.url; // Adapter selon la réponse du backend
+    } catch (error) {
+      console.error('Erreur upload:', error);
+      alert('Erreur lors du téléchargement de la photo');
+      return null;
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
 
   useEffect(() => {
@@ -90,11 +149,23 @@ const fetchEntreprises = async () => {
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditForm({});
+    setPhotoFile(null);
+    setPhotoPreview(null);
   };
 
   const handleSave = async (id) => {
     try {
       const token = localStorage.getItem('token');
+
+      // Upload la photo si une nouvelle a été sélectionnée
+      let photoUrl = editForm.photoUrl;
+      if (photoFile) {
+        photoUrl = await uploadPhotoToServer(photoFile);
+        if (!photoUrl) {
+          throw new Error('Impossible d\'uploader la photo');
+        }
+      }
+
       // On ne garde que les champs attendus par le backend
       const payload = {
         latitude: editForm.latitude,
@@ -102,7 +173,7 @@ const fetchEntreprises = async () => {
         surfaceM2: editForm.surfaceM2,
         budget: editForm.budget,
         description: editForm.description,
-        photoUrl: editForm.photoUrl,
+        photoUrl: photoUrl,
         idTypeSignalement: editForm.idTypeSignalement,
         idStatus: editForm.idStatus,
         idEntreprise: editForm.idEntreprise,
@@ -125,6 +196,8 @@ const fetchEntreprises = async () => {
       await fetchSignalements();
       setEditingId(null);
       setEditForm({});
+      setPhotoFile(null);
+      setPhotoPreview(null);
     } catch (error) {
       console.error('Erreur:', error);
       alert('Erreur lors de la mise à jour');
@@ -269,6 +342,7 @@ const fetchEntreprises = async () => {
               <th>ID</th>
               <th>Date</th>
               <th>Statut</th>
+              <th>Photo</th>
               <th>Surface (m²)</th>
               <th>Budget</th>
               <th>Entreprise</th>
@@ -294,6 +368,52 @@ const fetchEntreprises = async () => {
                         <option value={5}>En cours</option>
                         <option value={6}>Terminé</option>
                       </select>
+                    </td>
+                    <td className="photo-cell">
+                      <div className="photo-upload-section">
+                        {photoPreview ? (
+                          <div className="photo-preview">
+                            <img src={photoPreview} alt="Aperçu" />
+                            <button
+                              type="button"
+                              className="btn-remove-photo"
+                              onClick={() => {
+                                setPhotoFile(null);
+                                setPhotoPreview(null);
+                              }}
+                              title="Supprimer la photo"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : editForm.photoUrl ? (
+                          <div className="photo-preview">
+                            <img src={editForm.photoUrl} alt="Signalement" />
+                            <button
+                              type="button"
+                              className="btn-remove-photo"
+                              onClick={() => setEditForm({ ...editForm, photoUrl: null })}
+                              title="Supprimer la photo"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="photo-upload-label">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handlePhotoChange}
+                              disabled={uploadingPhoto}
+                              style={{ display: 'none' }}
+                            />
+                            <span className="upload-icon">📷</span>
+                            <span className="upload-text">
+                              {uploadingPhoto ? 'Upload...' : 'Ajouter photo'}
+                            </span>
+                          </label>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <input
@@ -351,6 +471,15 @@ const fetchEntreprises = async () => {
                       <span className={getStatusClass(signal.idStatus)}>
                         {getStatusLabel(signal.idStatus)}
                       </span>
+                    </td>
+                    <td className="photo-cell">
+                      {signal.photoUrl ? (
+                        <a href={signal.photoUrl} target="_blank" rel="noopener noreferrer" className="photo-link">
+                          📷 Voir photo
+                        </a>
+                      ) : (
+                        <span className="no-photo">Aucune photo</span>
+                      )}
                     </td>
                     <td>{signal.surfaceM2} m²</td>
                     <td>{formatCurrency(signal.budget)}</td>
