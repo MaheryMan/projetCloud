@@ -472,6 +472,15 @@ CREATE TRIGGER check_manager_role
     FOR EACH ROW EXECUTE FUNCTION validate_manager_role();
 
 -- =========================
+-- ALTER TABLES POUR SYNCHRONISATION
+-- =========================
+
+-- Ajouter les colonnes pour la gestion des modifications hors ligne
+ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS modified_offline BOOLEAN DEFAULT FALSE;
+ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS last_modified_at TIMESTAMP;
+ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS temp_password TEXT;
+
+-- =========================
 -- COMMENTAIRES
 -- =========================
 

@@ -12,9 +12,11 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
 
     Optional<Utilisateur> findById(Long id);
     Optional<Utilisateur> findByEmail(String email);
+    Optional<Utilisateur> findByFirebaseUid(String firebaseUid);
 
     // Méthodes pour la synchronisation
     List<Utilisateur> findByIsSyncedToFirebaseFalse();
+    List<Utilisateur> findByModifiedOfflineTrue();
 
     @Query("SELECT r.libelle FROM Utilisateur u JOIN u.roles r WHERE u.id = ?1")
     List<String> findRoleLibellesByUtilisateurId(Long utilisateurId);

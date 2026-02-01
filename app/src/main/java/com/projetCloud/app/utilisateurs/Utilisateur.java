@@ -55,6 +55,15 @@ public class Utilisateur {
     @Column(name = "firebase_created_at")
     private LocalDateTime firebaseCreatedAt;
 
+    @Column(name = "modified_offline")
+    private Boolean modifiedOffline = false;
+
+    @Column(name = "last_modified_at")
+    private LocalDateTime lastModifiedAt;
+
+    @Column(name = "temp_password", columnDefinition = "TEXT")
+    private String tempPassword; // Mot de passe temporaire pour sync offline
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -207,6 +216,30 @@ public class Utilisateur {
 
     public void setFirebaseCreatedAt(LocalDateTime firebaseCreatedAt) {
         this.firebaseCreatedAt = firebaseCreatedAt;
+    }
+
+    public Boolean getModifiedOffline() {
+        return modifiedOffline;
+    }
+
+    public void setModifiedOffline(Boolean modifiedOffline) {
+        this.modifiedOffline = modifiedOffline;
+    }
+
+    public LocalDateTime getLastModifiedAt() {
+        return lastModifiedAt;
+    }
+
+    public void setLastModifiedAt(LocalDateTime lastModifiedAt) {
+        this.lastModifiedAt = lastModifiedAt;
+    }
+
+    public String getTempPassword() {
+        return tempPassword;
+    }
+
+    public void setTempPassword(String tempPassword) {
+        this.tempPassword = tempPassword;
     }
 
     public LocalDateTime getCreatedAt() {
