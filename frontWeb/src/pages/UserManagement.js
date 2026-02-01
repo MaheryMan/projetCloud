@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './UserManagement.css';
+import { auth, googleProvider } from '../firebase';
+import { signInWithPopup } from 'firebase/auth';
 
 function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -101,6 +103,45 @@ function UserManagement() {
     } catch (error) {
       console.error('Erreur:', error);
       alert('Erreur lors de la réinitialisation');
+    }
+  };
+
+  const handleCreateGoogleAccount = async () => {
+    try {
+      // Ouvrir popup Google Sign-In
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const idToken = await user.getIdToken();
+
+      // Appeler l'API back avec le token
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/auth/register-google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          idToken: idToken,
+          nom: user.displayName?.split(' ')[0] || '',
+          prenom: user.displayName?.split(' ')[1] || ''
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response status:', response.status, 'Body:', errorText);
+        throw new Error(errorText || 'Erreur lors de la création');
+      }
+
+      const responseText = await response.text();
+      console.log('Response text:', responseText);
+      const newUser = responseText ? JSON.parse(responseText) : {};
+      alert(`Compte Google créé avec succès pour ${newUser.email}`);
+      await fetchUsers(); // Rafraîchir la liste
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de la création du compte Google: ' + error.message);
     }
   };
 
@@ -258,6 +299,13 @@ function UserManagement() {
           <li>Le bouton "Reset" génère un mot de passe temporaire pour l'utilisateur</li>
           <li>Les utilisateurs peuvent se débloquer après un certain délai (configurable dans les paramètres)</li>
         </ul>
+        <button
+          className="btn-create-google"
+          onClick={handleCreateGoogleAccount}
+          title="Créer un compte Google"
+        >
+          ➕ Créer compte Google
+        </button>
       </div>
     </div>
   );

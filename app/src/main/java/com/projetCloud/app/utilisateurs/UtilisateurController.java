@@ -158,6 +158,54 @@ public class UtilisateurController {
         }
     }
 
+    /**
+     * Endpoint pour l'inscription via Google OAuth
+     * @param registerGoogleRequest objet contenant le token Google et données optionnelles
+     * @return ResponseEntity contenant l'utilisateur créé ou une erreur
+     */
+    @PostMapping("/register-google")
+    @Operation(summary = "Inscrire un nouvel utilisateur via Google", description = "Permet à un utilisateur de s'inscrire avec un token Google ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Inscription réussie",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = Utilisateur.class))),
+        @ApiResponse(responseCode = "400", description = "Données invalides ou utilisateur existe déjà",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<?> registerWithGoogle(
+            @Parameter(description = "Données d'inscription Google", required = true)
+            @RequestBody RegisterGoogleRequest registerGoogleRequest) {
+        try {
+            Utilisateur utilisateur = utilisateurService.registerWithGoogle(
+                registerGoogleRequest.getIdToken(),
+                registerGoogleRequest.getNom(),
+                registerGoogleRequest.getPrenom(),
+                registerGoogleRequest.getNumTel()
+            );
+            return ResponseEntity.status(201).body(utilisateur);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+        }
+    }
+
+    public static class RegisterGoogleRequest {
+        private String idToken;
+        private String nom;
+        private String prenom;
+        private String numTel;
+
+        // Getters et setters
+        public String getIdToken() { return idToken; }
+        public void setIdToken(String idToken) { this.idToken = idToken; }
+        public String getNom() { return nom; }
+        public void setNom(String nom) { this.nom = nom; }
+        public String getPrenom() { return prenom; }
+        public void setPrenom(String prenom) { this.prenom = prenom; }
+        public String getNumTel() { return numTel; }
+        public void setNumTel(String numTel) { this.numTel = numTel; }
+    }
+
     public static class RegisterRequest {
         private String email;
         private String password;

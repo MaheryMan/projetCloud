@@ -75,21 +75,14 @@ export async function loginWithGoogle(): Promise<User> {
         user = result.user
     }
 
-    // Création du profil Firestore si inexistant
+    // Vérifier si le profil Firestore existe (doit avoir été créé par le back)
     const userRef = doc(db, 'users', user.uid)
     const snap = await getDoc(userRef)
 
     if (!snap.exists()) {
-        await setDoc(userRef, {
-            uid: user.uid,
-            email: user.email,
-            name: user.displayName,
-            photoURL: user.photoURL,
-            provider: 'google',
-            role: 'driver', // valeur par défaut
-            createdAt: serverTimestamp()
-        })
-        console.log('🔥 Firestore user créé (Google)')
+        // Profil inexistant : déconnecter et lever une erreur
+        await signOut(auth)
+        throw new Error('Compte non autorisé. Veuillez contacter l\'administrateur pour créer votre compte.')
     }
 
     return user

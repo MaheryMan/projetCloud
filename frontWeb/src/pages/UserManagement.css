@@ -343,3 +343,20 @@
     width: 100%;
   }
 }
+
+.btn-create-google {
+  background: #4285f4;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 16px;
+  transition: background-color 0.2s;
+}
+
+.btn-create-google:hover {
+  background: #3367d6;
+}

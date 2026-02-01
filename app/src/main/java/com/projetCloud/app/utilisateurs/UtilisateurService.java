@@ -4,6 +4,7 @@ import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import com.google.firebase.auth.UserRecord;
 import com.projetCloud.app.config.ConnectivityService;
 import com.projetCloud.app.roles.Role;
@@ -212,6 +213,80 @@ public class UtilisateurService {
     }
 
     /**
+     * Inscrit un nouvel utilisateur via Google OAuth
+     * Vérifie le token Google, crée dans Firebase si nécessaire, puis dans PostgreSQL
+     *
+     * @param idToken token Google ID
+     * @param nom nom (optionnel, pris de Google)
+     * @param prenom prénom (optionnel, pris de Google)
+     * @param numTel numéro de téléphone (optionnel)
+     * @return l'utilisateur créé
+     * @throws Exception si l'inscription échoue
+     */
+    public Utilisateur registerWithGoogle(String idToken, String nom, String prenom, String numTel) throws Exception {
+        if (!connectivityService.isFirebaseOnline()) {
+            throw new Exception("Firebase n'est pas accessible pour l'authentification Google");
+        }
+
+        // Vérifier le token Google
+        FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+        String uid = decodedToken.getUid();
+        String email = decodedToken.getEmail();
+        String name = decodedToken.getName();
+        String picture = decodedToken.getPicture();
+
+        // Vérifier si l'utilisateur existe déjà dans PostgreSQL
+        Optional<Utilisateur> existingUser = utilisateurRepository.findByEmail(email);
+        if (existingUser.isPresent()) {
+            throw new Exception("Un utilisateur avec cet email existe déjà");
+        }
+
+        // Vérifier si l'utilisateur existe dans Firebase (devrait exister via Google)
+        UserRecord userRecord;
+        try {
+            userRecord = FirebaseAuth.getInstance().getUser(uid);
+        } catch (FirebaseAuthException e) {
+            throw new Exception("Utilisateur Google non trouvé dans Firebase: " + e.getMessage());
+        }
+
+        // Créer le document Firestore si inexistant
+        createFirestoreUserDocumentForGoogle(userRecord, name, email, picture);
+
+        // Extraire nom et prénom de name si non fournis
+        if (nom == null || nom.isEmpty()) {
+            String[] nameParts = name != null ? name.split(" ", 2) : new String[]{"", ""};
+            nom = nameParts.length > 0 ? nameParts[0] : "";
+            prenom = nameParts.length > 1 ? nameParts[1] : "";
+        }
+
+        // Créer l'utilisateur dans PostgreSQL
+        Utilisateur utilisateur = new Utilisateur();
+        utilisateur.setEmail(email);
+        utilisateur.setNom(nom);
+        utilisateur.setPrenom(prenom);
+        utilisateur.setNumTel(numTel);
+        utilisateur.setFirebaseUid(uid);
+        utilisateur.setIdSource(2); // Google OAuth
+        utilisateur.setIdStatus(1); // Actif
+        utilisateur.setIsSyncedToFirebase(true);
+        utilisateur.setFirebaseCreatedAt(userRecord.getUserMetadata() != null ? 
+            LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(userRecord.getUserMetadata().getCreationTimestamp()), 
+                java.time.ZoneId.systemDefault()) : LocalDateTime.now());
+        utilisateur.setCreatedAt(LocalDateTime.now());
+
+        Utilisateur savedUser = save(utilisateur);
+
+        // Assigner le rôle Mobile_User par défaut
+        Optional<Role> mobileUserRole = roleRepository.findByLibelle("Mobile_User");
+        if (mobileUserRole.isPresent()) {
+            savedUser.getRoles().add(mobileUserRole.get());
+            utilisateurRepository.save(savedUser);
+        }
+
+        return savedUser;
+    }
+
+    /**
      * Enregistre un utilisateur
      *
      * @param utilisateur l'utilisateur à enregistrer
@@ -239,6 +314,29 @@ public class UtilisateurService {
             Utilisateur utilisateur = utilisateurOpt.get();
             utilisateur.setDeletedAt(LocalDateTime.now());
             utilisateurRepository.save(utilisateur);
+        }
+    }
+
+    /**
+     * Crée un document Firestore pour l'utilisateur Google
+     */
+    private void createFirestoreUserDocumentForGoogle(UserRecord userRecord, String name, String email, String picture) {
+        try {
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("uid", userRecord.getUid());
+            userData.put("email", email);
+            userData.put("name", name);
+            userData.put("photoURL", picture);
+            userData.put("provider", "google");
+            userData.put("role", "driver"); // valeur par défaut
+            userData.put("createdAt", com.google.cloud.Timestamp.now());
+
+            DocumentReference docRef = firestore.collection("users").document(userRecord.getUid());
+            docRef.set(userData); // Asynchrone, pas de .get()
+            System.out.println("Firestore document creation initiated for " + email);
+        } catch (Exception e) {
+            System.out.println("Erreur lors de la création Firestore: " + e.getMessage());
+            // Ne pas throw, pour ne pas bloquer la création DB
         }
     }
 
