@@ -510,3 +510,37 @@ COMMENT ON COLUMN utilisateurs.is_synced_to_firebase IS 'TRUE si synchronisé av
 COMMENT ON COLUMN signalements.firebase_id IS 'ID correspondant dans Firebase (pour sync)';
 COMMENT ON COLUMN signalements.is_synced_to_firebase IS 'TRUE si le signalement est synchronisé avec Firebase';
 COMMENT ON COLUMN configurations.cle IS 'Clé de configuration (ex: tentatives_max)';
+
+-- PATCH : Correction migration pour Hibernate
+-- 1. Supprimer la vue avant modification
+DROP VIEW IF EXISTS vue_utilisateurs_complets;
+
+-- 2. Modifier la colonne num_tel (exemple : changer le type)
+ALTER TABLE utilisateurs ALTER COLUMN num_tel TYPE varchar(255);
+
+-- 3. Ajouter une colonne NOT NULL à status (exemple)
+ALTER TABLE status ADD COLUMN IF NOT EXISTS status_id varchar(50);
+UPDATE status SET status_id = 'default' WHERE status_id IS NULL;
+ALTER TABLE status ALTER COLUMN status_id SET NOT NULL;
+
+-- 4. Recréer la vue après modification
+CREATE VIEW vue_utilisateurs_complets AS
+SELECT 
+    u.id,
+    u.email,
+    u.nom,
+    u.prenom,
+    u.num_tel,
+    u.tentatives_connexion,
+    u.is_blocked,
+    s.libelle as source_auth,
+    st.libelle as statut_utilisateur,
+    STRING_AGG(r.libelle, ', ') as roles,
+    u.created_at,
+    u.updated_at
+FROM utilisateurs u
+JOIN sources s ON u.id_source = s.id
+JOIN status st ON u.id_status = st.id
+LEFT JOIN user_roles ur ON u.id = ur.id_utilisateur
+LEFT JOIN roles r ON ur.id_role = r.id
+GROUP BY u.id, s.libelle, st.libelle;

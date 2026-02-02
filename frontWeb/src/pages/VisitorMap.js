@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { auth } from '../firebase';
+import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -33,6 +35,7 @@ const getMarkerIcon = (status) => {
 };
 
 function VisitorMap() {
+  const navigate = useNavigate();
   const [signalements, setSignalements] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -55,9 +58,17 @@ function VisitorMap() {
 
   const position = [-18.8792, 47.5079];
 
+  const getAuthToken = async () => {
+    // Prend le token Firebase si connecté, sinon fallback sur le token backend
+    if (auth.currentUser) {
+      return await auth.currentUser.getIdToken();
+    }
+    return localStorage.getItem('token');
+  };
+
   const fetchEntreprises = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = await getAuthToken();
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
       const response = await fetch('http://localhost:8080/api/entreprises', { headers });
       if (!response.ok) throw new Error('Erreur de chargement des entreprises');
@@ -76,7 +87,7 @@ function VisitorMap() {
 
   const fetchTypesSignalement = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = await getAuthToken();
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
       const response = await fetch('http://localhost:8080/api/types-signalement', { headers });
       if (!response.ok) throw new Error('Erreur de chargement des types');
@@ -89,7 +100,7 @@ function VisitorMap() {
 
   const fetchSignalements = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = await getAuthToken();
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
       const response = await fetch('http://localhost:8080/api/signalements', { headers });
       if (!response.ok) throw new Error('Erreur de chargement');
@@ -140,31 +151,38 @@ function VisitorMap() {
 
   const handleMapClick = (e) => {
     if (isAddingMode) {
-      setNewSignalement({
-        ...newSignalement,
-        latitude: e.latlng.lat,
-        longitude: e.latlng.lng
+      // Vérifier si l'utilisateur est connecté (token présent)
+      getAuthToken().then(token => {
+        if (!token) {
+          setIsAddingMode(false);
+          setShowModal(false);
+          alert('Vous devez être connecté pour ajouter un signalement.');
+          navigate('/login');
+        } else {
+          setNewSignalement({
+            ...newSignalement,
+            latitude: e.latlng.lat,
+            longitude: e.latlng.lng
+          });
+          setShowModal(true);
+        }
       });
-      setShowModal(true);
     }
   };
 
 const handleSubmitSignalement = async () => {
     try {
       // Récupérer l'ID utilisateur depuis localStorage (si connecté)
-      const token = localStorage.getItem('token');
+      const token = await getAuthToken();
       const userId = localStorage.getItem('user');
-      
       // Préparer les headers
       const headers = {
         'Content-Type': 'application/json'
       };
-      
       // Ajouter le token si l'utilisateur est connecté
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-      
       const response = await fetch('http://localhost:8080/api/signalements', {
         method: 'POST',
         headers: headers,

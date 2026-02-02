@@ -25,6 +25,8 @@ services:
   api:
     build:
       context: ./app
+      args:
+        MAVEN_CONFIG: /root/.m2
     container_name: cloud-api
     depends_on:
       postgres:

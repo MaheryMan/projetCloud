@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Navbar from './components/Navbar';
+import FirebaseStatusBubble from './components/FirebaseStatusBubble';
 import Login from './components/Login';
 import Register from './components/Register';
 import VisitorMap from './pages/VisitorMap';
@@ -47,9 +47,7 @@ function App() {
   return (
     <Router>
       <div className="App">
-        {/* ⭐ NAVBAR EN PREMIER - Toujours affichée si user connecté */}
-        {user && <Navbar user={user} onLogout={handleLogout} />}
-        
+        <FirebaseStatusBubble />
         {/* ⭐ CONTENU PRINCIPAL après la navbar */}
         <main className="main-content">
           <Routes>

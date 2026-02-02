@@ -116,9 +116,9 @@ function Login({ onLogin }) {
             </button>
           </form>
 
-          <div className="signup-link">
+          {/* <div className="signup-link">
             Pas encore de compte ? <a href="/register">S'inscrire</a>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
