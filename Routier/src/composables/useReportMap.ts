@@ -3,6 +3,8 @@ import L from 'leaflet'
 import { getAllReports, getReportsByUser } from '@/services/report.service'
 import { computeReportMetrics } from '@/utils/reportMetrics'
 import type { Report } from '@/types/report.types'
+import { useMetadataStore } from '@/stores/metadata.store'
+import { normalizeString, compareNormalized, findNormalized } from '@/utils/stringNormalization'
 
 type LatLng = L.LatLng
 
@@ -24,6 +26,7 @@ export interface UseReportMapOptions {
 export function useReportMap(options: UseReportMapOptions) {
   const map = ref<L.Map | null>(null)
   const markers: L.Marker[] = []
+  const metadataStore = useMetadataStore()
 
   const totalReports = ref(0)
   const approvedReports = ref(0)
@@ -50,23 +53,55 @@ export function useReportMap(options: UseReportMapOptions) {
   }
 
   const getMarkerIcon = (type: string, status: string) => {
-    const statusColors: Record<string, string> = {
-      nouveau: '#3b82f6',
-      en_cours: '#f59e0b',
-      termine: '#22c55e'
+    // Couleurs mappées par code de statut
+    const colorsByCode: Record<string, string> = {
+      'nouveau': '#3b82f6',      // Bleu
+      'en_cours': '#f59e0b',     // Orange
+      'termine': '#22c55e'       // Vert
     }
 
-    const icons: Record<string, string> = {
-      trou: '!',
-      chantier: '⚙',
-      deviation: '↔'
+    // Normaliser le statut
+    const normalizedStatus = normalizeString(status)
+    
+    // Trouver la couleur du statut
+    let statusColor = colorsByCode[normalizedStatus] || '#64748b'
+    
+    if (!colorsByCode[normalizedStatus]) {
+      // Sinon, chercher en matchant le libellé du statut avec les codes
+      const matchingStatus = findNormalized(metadataStore.statuses, status, (s) => s.libelle)
+      if (matchingStatus && matchingStatus.code) {
+        const normalizedCode = normalizeString(matchingStatus.code)
+        statusColor = colorsByCode[normalizedCode] || '#64748b'
+      }
     }
+
+    // Trouver l'icône et la couleur du type depuis la metadata
+    let typeIcon = '?'
+    let typeColor = '#64748b'
+    
+    // Chercher par libellé (nouveau style)
+    const matchingType = findNormalized(metadataStore.types, type, (t) => t.libelle)
+    if (matchingType) {
+      // Utiliser la première lettre du libellé comme icône ou la couleur si disponible
+      typeIcon = matchingType.libelle.charAt(0).toUpperCase()
+      typeColor = matchingType.couleur || typeColor
+    } else {
+      // Fallback sur codes (ancien style) - mapping personnalisé
+      const iconMapping: Record<string, string> = {
+        'trou': '!',
+        'chantier': '⚙',
+        'deviation': '↔',
+        'autre': '?'
+      }
+      typeIcon = iconMapping[normalizeString(type)] || '?'
+    }
+
 
     return L.divIcon({
       html: `
-        <div class="custom-marker" style="--marker-color: ${statusColors[status] || '#64748b'}">
+        <div class="custom-marker" style="--marker-color: ${statusColor}; --type-color: ${typeColor}">
           <div class="marker-pin">
-            <span class="marker-icon">${icons[type] || '?'}</span>
+            <span class="marker-icon">${typeIcon}</span>
           </div>
           <div class="marker-shadow"></div>
         </div>
@@ -90,9 +125,31 @@ export function useReportMap(options: UseReportMapOptions) {
   }
 
   const setReportStatsFromReports = (reports: Report[]) => {
-    const approved = reports.filter((r) => r.status === 'termine').length
-    const pending = reports.filter((r) => r.status === 'nouveau').length
-    const inProgress = reports.filter((r) => r.status === 'en_cours').length
+    // Chercher les libellés des statuts depuis la metadata
+    const getStatusLibelles = () => {
+      const libelles: Record<string, string> = {}
+      metadataStore.statuses.forEach((s) => {
+        if (s.code) libelles[s.code] = s.libelle
+      })
+      return libelles
+    }
+
+    const statusLibelles = getStatusLibelles()
+    
+    // Compter par code d'abord, puis par libellé pour compatibilité
+    const terminéStatus = statusLibelles['termine'] || 'Terminé'
+    const nouveauStatus = statusLibelles['nouveau'] || 'Nouveau'
+    const enCoursStatus = statusLibelles['en_cours'] || 'En cours'
+
+    const approved = reports.filter((r) => 
+      r.status === 'termine' || r.status === terminéStatus
+    ).length
+    const pending = reports.filter((r) => 
+      r.status === 'nouveau' || r.status === nouveauStatus
+    ).length
+    const inProgress = reports.filter((r) => 
+      r.status === 'en_cours' || r.status === enCoursStatus
+    ).length
 
     totalReports.value = reports.length
     approvedReports.value = approved
@@ -115,7 +172,7 @@ export function useReportMap(options: UseReportMapOptions) {
         <div class="custom-popup">
           <div class="popup-header">
             <span class="popup-type ${report.type}">${report.type}</span>
-            <span class="popup-status">${report.status}</span>
+            <span class="popup-status ${report.status.toLowerCase().replace(/\s+/g, '_')}">${report.status}</span>
           </div>
           <p class="popup-description">${report.description}</p>
           ${report.photo ? `<div class="popup-photo"><img src="${report.photo}" alt="Photo du signalement" /></div>` : ''}

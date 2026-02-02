@@ -202,7 +202,7 @@ CREATE TABLE types_signalement (
 -- Types par défaut
 INSERT INTO types_signalement (libelle, description, icone, couleur, niveau_urgence) VALUES
 ('Trou', 'Dégradation de la chaussée avec creux', 'pothole', '#FF0000', 1),
-('Chantier', 'Travaux en cours avec déviation', 'diversion', '#FFA500', 2),
+('Chantier', 'Travaux en cours avec déviation', 'construction', '#FFA500', 2),
 ('Autre', 'Autre type de problème non catégorisé', 'other', '#666666', 2);
 
 -- =========================

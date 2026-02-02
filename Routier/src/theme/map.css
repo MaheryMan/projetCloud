@@ -1167,9 +1167,29 @@
   font-size: 10px;
   font-weight: 600;
   padding: 3px 8px;
+  border-radius: 10px;
   background: #dcfce7;
   color: #166534;
-  border-radius: 10px;
+}
+
+:global(.popup-status.nouveau) {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+:global(.popup-status.en_cours) {
+  background: #fef3c7;
+  color: #a16207;
+}
+
+:global(.popup-status.termine) {
+  background: #dcfce7;
+  color: #166534;
+}
+
+:global(.popup-status.créé) {
+  background: #f3e8ff;
+  color: #6b21a8;
 }
 
 :global(.popup-description) {

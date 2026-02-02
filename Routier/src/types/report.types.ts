@@ -1,12 +1,8 @@
 import type { Id, Timestamp } from './common.types'
 
-export type ReportStatus = 'nouveau' | 'en_cours' | 'termine'
+export type ReportStatus = string
 
-export type ReportType =
-  | 'trou'
-  | 'chantier'
-  | 'deviation'
-  | 'autre'
+export type ReportType = string
 
 export interface Report {
   id?: Id
