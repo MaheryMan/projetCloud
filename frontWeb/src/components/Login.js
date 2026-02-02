@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { auth, googleProvider } from '../firebase';
+import { signInWithPopup } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
 
@@ -48,6 +50,39 @@ function Login({ onLogin }) {
     }
   };
 
+  // Connexion via Google
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const idToken = await user.getIdToken();
+      // Appel backend pour login/register Google
+      const response = await fetch('http://localhost:8080/api/auth/register-google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken })
+      });
+      if (!response.ok) {
+        throw new Error('Erreur lors de la connexion Google');
+      }
+      const data = await response.json();
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user.id));
+      if (onLogin) onLogin(data);
+      if (data.user.roles && data.user.roles.some(role => role.libelle === 'Manager')) {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
+    } catch (err) {
+      setError(err.message || 'Erreur Google Auth');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="login-container">
       <div className="login-wrapper">
@@ -76,7 +111,6 @@ function Login({ onLogin }) {
           
           <form onSubmit={handleSubmit} className="login-form">
             {error && <div className="error-message">{error}</div>}
-            
             <div className="form-group">
               <input
                 type="email"
@@ -89,7 +123,6 @@ function Login({ onLogin }) {
               />
               <label htmlFor="email">Email</label>
             </div>
-
             <div className="form-group">
               <input
                 type="password"
@@ -102,7 +135,6 @@ function Login({ onLogin }) {
               />
               <label htmlFor="password">Mot de passe</label>
             </div>
-
             <div className="form-options">
               <label className="remember-me">
                 <input type="checkbox" />
@@ -110,11 +142,16 @@ function Login({ onLogin }) {
               </label>
               <a href="#forgot" className="forgot-password">Mot de passe oublié ?</a>
             </div>
-
             <button type="submit" className="login-button" disabled={loading}>
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
           </form>
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <button type="button" className="login-google-btn" onClick={handleGoogleLogin} disabled={loading}>
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{ width: 22, height: 22, marginRight: 10, background: 'none', verticalAlign: 'middle' }} />
+              Se connecter avec Google
+            </button>
+          </div>
 
           {/* <div className="signup-link">
             Pas encore de compte ? <a href="/register">S'inscrire</a>
