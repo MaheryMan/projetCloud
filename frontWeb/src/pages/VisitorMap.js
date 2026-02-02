@@ -53,7 +53,7 @@ function VisitorMap() {
   const [typesSignalement, setTypesSignalement] = useState([]);
   const [entreprises, setEntreprises] = useState([]);
 
-  const position = [-18.8792, 47.5079];
+  const position = [-18.909855, 47.525637];
 
   const fetchEntreprises = async () => {
     try {
@@ -270,12 +270,12 @@ const handleSubmitSignalement = async () => {
         ) : (
           <MapContainer
             center={position}
-            zoom={13}
+            zoom={17}
             style={{ height: '600px', width: '100%', borderRadius: '10px' }}
           >
             <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="http://localhost:8081/styles/osm-bright/{z}/{x}/{y}.png"
+              attribution='&copy; Carte locale Antananarivo'
             />
             
             <MapClickHandler />
