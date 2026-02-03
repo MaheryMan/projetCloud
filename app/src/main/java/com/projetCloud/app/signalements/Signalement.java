@@ -1,5 +1,6 @@
 package com.projetCloud.app.signalements;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.projetCloud.app.typesSignalement.TypeSignalement;
 import com.projetCloud.app.utilisateurs.Utilisateur;
 import jakarta.persistence.*;
@@ -51,6 +52,11 @@ public class Signalement {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    // Champ transient pour la date de dernière mise à jour depuis historique
+    @Transient
+    @JsonProperty("lastHistoriqueDate")
+    private LocalDateTime lastHistoriqueDate;
 
     // Constructeurs
     public Signalement() {}
@@ -171,5 +177,30 @@ public class Signalement {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getLastHistoriqueDate() {
+        return lastHistoriqueDate;
+    }
+
+    public void setLastHistoriqueDate(LocalDateTime lastHistoriqueDate) {
+        this.lastHistoriqueDate = lastHistoriqueDate;
+    }
+
+    // Méthode appelée automatiquement avant l'insertion en base
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (this.updatedAt == null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    // Méthode appelée automatiquement avant la mise à jour en base
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

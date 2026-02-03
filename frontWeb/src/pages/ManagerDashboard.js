@@ -199,9 +199,11 @@ function ManagerDashboard() {
               {recentSignalements.map((signal) => (
                 <tr key={signal.id}>
                       <td>
-                    {signal.typeSignalement?.createdAt
-                      ? formatDate(signal.typeSignalement.createdAt)
-                      : ''}
+                    {signal.lastHistoriqueDate
+                      ? formatDate(signal.lastHistoriqueDate)
+                      : signal.createdAt
+                      ? formatDate(signal.createdAt)
+                      : 'N/A'}
                   </td>
                   <td>
                     <div className="location">
@@ -224,20 +226,6 @@ function ManagerDashboard() {
         </div>
       </div>
 
-      <div className="quick-actions">
-        <h2>Actions rapides</h2>
-        <div className="action-buttons">
-          <button className="action-btn" onClick={() => window.location.href = '/signalements'}>
-             Gérer les signalements
-          </button>
-          <button className="action-btn" onClick={() => window.location.href = '/users'}>
-             Gérer les utilisateurs
-          </button>
-          <button className="action-btn" onClick={() => window.location.href = '/sync'}>
-            Synchroniser
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

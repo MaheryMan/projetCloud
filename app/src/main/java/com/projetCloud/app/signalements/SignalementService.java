@@ -1,8 +1,10 @@
 package com.projetCloud.app.signalements;
 
+import com.projetCloud.app.historiques.HistoriqueStatusSignalementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,12 +14,20 @@ public class SignalementService {
     @Autowired
     private SignalementRepository signalementRepository;
 
+    @Autowired
+    private HistoriqueStatusSignalementService historiqueService;
+
     public List<Signalement> findAll() {
-        return signalementRepository.findAll();
+        List<Signalement> signalements = signalementRepository.findAll();
+        // Enrichir chaque signalement avec la date de dernière mise à jour depuis historique
+        signalements.forEach(this::enrichWithHistoriqueDate);
+        return signalements;
     }
 
     public Optional<Signalement> findById(Long id) {
-        return signalementRepository.findById(id);
+        Optional<Signalement> signalement = signalementRepository.findById(id);
+        signalement.ifPresent(this::enrichWithHistoriqueDate);
+        return signalement;
     }
 
     public Signalement save(Signalement signalement) {
@@ -29,6 +39,18 @@ public class SignalementService {
     }
 
     public List<Signalement> findByUtilisateurId(Long utilisateurId) {
-        return signalementRepository.findByUtilisateurId(utilisateurId);
+        List<Signalement> signalements = signalementRepository.findByUtilisateurId(utilisateurId);
+        signalements.forEach(this::enrichWithHistoriqueDate);
+        return signalements;
+    }
+
+    /**
+     * Enrichit un signalement avec la date de dernière mise à jour depuis l'historique
+     */
+    private void enrichWithHistoriqueDate(Signalement signalement) {
+        if (signalement.getId() != null) {
+            Optional<LocalDateTime> lastDate = historiqueService.getLatestUpdateDate(signalement.getId());
+            lastDate.ifPresent(signalement::setLastHistoriqueDate);
+        }
     }
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { fetchWithAuth } from '../services/authService';
 import './UserManagement.css';
 
 function UserManagement() {
@@ -111,15 +112,9 @@ function UserManagement() {
       }
       
       const [allUsersRes, blockedUsersRes, deblocagesRes] = await Promise.all([
-        fetch('http://localhost:8080/api/users', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('http://localhost:8080/api/users/blocked', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('http://localhost:8080/api/deblocages', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        fetchWithAuth('http://localhost:8080/api/users'),
+        fetchWithAuth('http://localhost:8080/api/users/blocked'),
+        fetchWithAuth('http://localhost:8080/api/deblocages')
       ]);
 
       if (!allUsersRes.ok || !blockedUsersRes.ok) {

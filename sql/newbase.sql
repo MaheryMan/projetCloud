@@ -417,6 +417,26 @@ CREATE TRIGGER log_signalement_status_change
     AFTER UPDATE OF id_status ON signalements
     FOR EACH ROW EXECUTE FUNCTION log_status_change();
 
+-- Fonction: Créer un historique lors de la création d'un signalement
+CREATE OR REPLACE FUNCTION create_initial_historique()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO historiques_status_signalement 
+    (id_signalement, id_status, id_utilisateur, commentaire)
+    VALUES (
+        NEW.id, 
+        NEW.id_status, 
+        NEW.id_utilisateur,
+        'Création du signalement'
+    );
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER log_signalement_creation
+    AFTER INSERT ON signalements
+    FOR EACH ROW EXECUTE FUNCTION create_initial_historique();
+
 -- =========================
 -- FONCTION: Validation password pour utilisateurs locaux
 -- =========================

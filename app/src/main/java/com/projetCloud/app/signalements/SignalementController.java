@@ -1,5 +1,6 @@
 package com.projetCloud.app.signalements;
 
+import com.projetCloud.app.historiques.HistoriqueStatusSignalementService;
 import com.projetCloud.app.status.Status;
 import com.projetCloud.app.status.StatusService;
 import com.projetCloud.app.typesSignalement.TypeSignalement;
@@ -39,6 +40,9 @@ public class SignalementController {
 
     @Autowired
     private TypeSignalementService typeSignalementService;
+
+    @Autowired
+    private HistoriqueStatusSignalementService historiqueService;
 
     @GetMapping
     @Operation(summary = "Récupérer tous les signalements", description = "Retourne la liste de tous les signalements")
@@ -172,25 +176,42 @@ public class SignalementController {
                 typeSignalement.get(),
                 utilisateur.get()
             );
-            return ResponseEntity.ok(signalementService.save(signalement));
+            Signalement saved = signalementService.save(signalement);
+            
+            // Créer un historique pour le statut initial
+            historiqueService.createHistorique(
+                saved.getId(), 
+                saved.getIdStatus(), 
+                utilisateur.get().getId(), 
+                "Création du signalement"
+            );
+            
+            return ResponseEntity.ok(saved);
         } else {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Mettre à jour un signalement", description = "Met à jour les informations d'un signalement existant")
+    @Operation(summary = "Mettre à jour un signalement", description = "Met à jour un signalement existant avec les informations fournies")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Signalement mis à jour avec succès",
                     content = @Content(mediaType = "application/json",
                                      schema = @Schema(implementation = Signalement.class))),
+        @ApiResponse(responseCode = "400", description = "Données invalides ou statut/type non trouvé",
+                    content = @Content),
         @ApiResponse(responseCode = "404", description = "Signalement non trouvé",
                     content = @Content)
     })
-    public ResponseEntity<Signalement> updateSignalement(@Parameter(description = "ID du signalement") @PathVariable Long id, @RequestBody SignalementRequest request) {
+    public ResponseEntity<Signalement> updateSignalement(
+            @Parameter(description = "ID du signalement") @PathVariable Long id,
+            @RequestBody SignalementRequest request,
+            HttpServletRequest httpServletRequest) {
         Optional<Signalement> signalementOpt = signalementService.findById(id);
         if (signalementOpt.isPresent()) {
             Signalement signalement = signalementOpt.get();
+            Long oldStatus = signalement.getIdStatus();
+
             if (request.getLatitude() != null) {
                 signalement.setLatitude(request.getLatitude());
             }
@@ -226,7 +247,25 @@ public class SignalementController {
                 }
                 signalement.setTypeSignalement(typeSignalement.get());
             }
-            return ResponseEntity.ok(signalementService.save(signalement));
+
+            Signalement saved = signalementService.save(signalement);
+
+            // Créer un historique si le statut a changé
+            if (request.getIdStatus() != null && !request.getIdStatus().equals(oldStatus)) {
+                Object currentUserAttr = httpServletRequest.getAttribute("currentUser");
+                Long userId = currentUserAttr instanceof Utilisateur
+                        ? ((Utilisateur) currentUserAttr).getId()
+                        : signalement.getUtilisateur().getId();
+
+                historiqueService.createHistorique(
+                        saved.getId(),
+                        saved.getIdStatus(),
+                        userId,
+                        "Mise à jour du statut"
+                );
+            }
+
+            return ResponseEntity.ok(saved);
         } else {
             return ResponseEntity.notFound().build();
         }

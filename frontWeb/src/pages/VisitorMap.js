@@ -12,7 +12,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
 });
 
-// Icônes personnalisées selon le statut
+
 const getMarkerIcon = (status) => {
   const colors = {
     'nouveau': '#e74c3c',
@@ -476,7 +476,7 @@ const handleSubmitSignalement = async () => {
                       <div className="popup-content">
                         <h3>{signal.typeSignalement?.libelle || 'Type inconnu'}</h3>
                         <div className="popup-info">
-                          <p><strong>Date:</strong> {formatDate(signal.createdAt)}</p>
+                          <p><strong>Date:</strong> {formatDate(signal.lastHistoriqueDate || signal.createdAt)}</p>
                           <p><strong>Statut:</strong> <span className={getStatusClass(statusKey)}>{getStatusLabel(statusKey)}</span></p>
                           <p><strong>Surface:</strong> {signal.surfaceM2} m²</p>
                           <p><strong>Budget:</strong> {formatCurrency(signal.budget)}</p>
