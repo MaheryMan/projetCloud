@@ -25,6 +25,8 @@ services:
   api:
     build:
       context: ./app
+      args:
+        MAVEN_CONFIG: /root/.m2
     container_name: cloud-api
     depends_on:
       postgres:
@@ -35,6 +37,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/cloud
       SPRING_DATASOURCE_USERNAME: cloud
       SPRING_DATASOURCE_PASSWORD: cloud
+    volumes:
+      - photo-uploads:/app/uploads/photos
     networks:
       - app-network
     restart: unless-stopped
@@ -58,3 +62,4 @@ networks:
 
 volumes:
   pgdata:
+  photo-uploads:

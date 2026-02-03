@@ -1,5 +1,6 @@
 package com.projetCloud.app.utilisateurs;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.projetCloud.app.roles.Role;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -73,6 +74,7 @@ public class Utilisateur {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @JsonIgnore
     @ManyToMany
     @JoinTable(
         name = "user_roles",

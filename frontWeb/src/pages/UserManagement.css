@@ -23,6 +23,9 @@
 
 .page-header {
   margin-bottom: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .page-header h1 {
@@ -36,6 +39,33 @@
 .page-header p {
   color: var(--text-secondary);
   font-size: 15px;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn-create {
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-create:hover {
+  background: #229954;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
 }
 
 .stats-cards {
@@ -600,6 +630,97 @@
   outline: none;
   border-color: var(--accent-blue);
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Styles pour le formulaire de création d'utilisateur */
+.user-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.user-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-form .form-group:last-child {
+  grid-column: 1 / -1;
+}
+
+.user-form label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.user-form input,
+.user-form select {
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background: white;
+  color: var(--text-primary);
+}
+
+.user-form input:focus,
+.user-form select:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Styles spécifiques pour les listes déroulantes */
+.user-form select {
+  color: #2c3e50 !important;
+  background: white !important;
+}
+
+.user-form select option {
+  color: #2c3e50 !important;
+  background: white !important;
+  padding: 8px 12px !important;
+}
+
+.user-form select option:hover {
+  background: #f8f9fa !important;
+}
+
+.user-form select option:checked {
+  background: #3498db !important;
+  color: white !important;
+}
+
+.user-form input::placeholder {
+  color: var(--text-secondary);
+}
+
+.form-note {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-style: italic;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* Responsive pour le formulaire */
+@media (max-width: 768px) {
+  .user-form {
+    grid-template-columns: 1fr;
+  }
+  
+  .header-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .btn-create {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .form-group small {

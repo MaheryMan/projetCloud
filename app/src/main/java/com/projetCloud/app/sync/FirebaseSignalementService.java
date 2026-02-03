@@ -11,6 +11,8 @@ import com.projetCloud.app.utilisateurs.UtilisateurRepository;
 import com.projetCloud.app.status.Status;
 import com.projetCloud.app.status.StatusRepository;
 import com.projetCloud.app.entreprises.EntrepriseRepository;
+import com.projetCloud.app.photos.Photo;
+import com.projetCloud.app.photos.PhotoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
@@ -50,6 +52,9 @@ public class FirebaseSignalementService {
 
     @Autowired
     private EntrepriseRepository entrepriseRepository;
+
+    @Autowired
+    private PhotoService photoService;
 
     /**
      * Récupère les signalements Firebase qui n'ont pas encore été synchronisés en Postgres
@@ -119,8 +124,36 @@ public class FirebaseSignalementService {
         if (firebaseData.get("surfaceM2") != null) {
             signalement.setSurfaceM2(new BigDecimal(firebaseData.get("surfaceM2").toString()));
         }
+        
+        // Gestion de la photo
         if (firebaseData.get("photo") != null) {
-            signalement.setPhotoUrl((String) firebaseData.get("photo"));
+            String photoUrl = (String) firebaseData.get("photo");
+            try {
+                // Créer ou trouver la photo dans l'entité Photo
+                Photo photo = photoService.findOrCreateByUrl(photoUrl, null, "image/jpeg");
+                signalement.addPhoto(photo);
+                logger.info("Photo associée au signalement: {}", photoUrl);
+            } catch (Exception e) {
+                logger.error("Erreur lors de l'association de la photo: {}", e.getMessage());
+                // Continue sans photo en cas d'erreur
+            }
+        }
+        
+        // Gestion des photos multiples (si Firebase contient un array)
+        if (firebaseData.get("photos") != null) {
+            try {
+                @SuppressWarnings("unchecked")
+                List<String> photoUrls = (List<String>) firebaseData.get("photos");
+                for (String photoUrl : photoUrls) {
+                    if (photoUrl != null && !photoUrl.trim().isEmpty()) {
+                        Photo photo = photoService.findOrCreateByUrl(photoUrl.trim(), null, "image/jpeg");
+                        signalement.addPhoto(photo);
+                        logger.info("Photo multiple associée au signalement: {}", photoUrl);
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Erreur lors de l'association des photos multiples: {}", e.getMessage());
+            }
         }
 
         // Type de signalement
@@ -212,8 +245,17 @@ public class FirebaseSignalementService {
                     .orElse(null);
             updates.put("companyName", companyName);
         }
-        if (signalement.getPhotoUrl() != null) {
+        
+        // Gestion de la photo
+        if (!signalement.getPhotos().isEmpty()) {
+            // Envoyer la première photo pour compatibilité avec l'ancien format
             updates.put("photo", signalement.getPhotoUrl());
+            
+            // Envoyer toutes les photos dans un array pour les nouvelles versions
+            List<String> photoUrls = signalement.getPhotoUrls();
+            updates.put("photos", photoUrls);
+            
+            logger.info("Photos mises à jour dans Firebase: {} photo(s)", photoUrls.size());
         }
 
         // Mise à jour dans Firebase

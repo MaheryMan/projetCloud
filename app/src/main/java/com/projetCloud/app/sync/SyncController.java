@@ -214,6 +214,29 @@ public class SyncController {
         }
     }
 
+
+        /**
+     * Endpoint pour synchroniser bi-directionnellement les signalements
+     * Insère les signalements manquants dans PostgreSQL et Firebase
+     * @return ResponseEntity avec le résultat de la synchronisation
+     */
+    @PostMapping("/signalements/bidirectional")
+    @Operation(summary = "Synchronisation bi-directionnelle des signalements", description = "Synchronise les signalements manquants entre PostgreSQL et Firebase dans les deux sens")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Synchronisation réussie",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = SyncResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Erreur lors de la synchronisation")
+    })
+    public ResponseEntity<?> syncSignalementsBidirectionnel() {
+        try {
+            int syncedCount = syncService.syncSignalementsBidirectionnel();
+            return ResponseEntity.ok(new SyncResponse("Synchronisation bi-directionnelle des signalements réussie", syncedCount));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new SyncResponse("Erreur: " + e.getMessage(), 0));
+        }
+    }
+
     /**
      * Endpoint pour créer un utilisateur en ligne
      * @param request Requête avec email, password, nom, prenom

@@ -38,15 +38,17 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     "/actuator/**",
                     "/api/connectivity/**",
-                    "/api/sync/**"
+                    "/api/sync/**",
+                    "/uploads/photos/**"
                 ).permitAll()
-                // Création d'utilisateur publique
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/users").permitAll()
-                // Lecture des signalements publique
+                // Upload de photos publique
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/photos/upload").permitAll()
+                // Création de signalements publique (pour visiteurs non authentifiés)                // Lecture des signalements publique
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/signalements/**").permitAll()
+               .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/entreprises").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/types-signalement").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/historiques/**").permitAll()
                 // Mobile_User: accès limité
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/signalements").hasAnyAuthority("Mobile_User", "Manager")
                 .requestMatchers(org.springframework.http.HttpMethod.GET,
                         "/api/types-signalement/**",
                         "/api/entreprises/**"
@@ -54,6 +56,8 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.POST,
                         "/api/entreprises"
                 ).hasAnyAuthority("Mobile_User", "Manager")
+                // Configurations: uniquement pour les Managers
+                .requestMatchers("/api/configurations/**").hasAuthority("Manager")
                 // Manager: accès total au reste de l'API
                 .requestMatchers("/api/**").hasAuthority("Manager")
                 // Tous les autres endpoints nécessitent une authentification

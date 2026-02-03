@@ -26,6 +26,42 @@ public class SessionController {
         return sessionService.findAll();
     }
 
+    /**
+     * Endpoint pour vérifier la validité de la session courante
+     * Utilisé par le frontend pour le monitoring de session
+     */
+    @GetMapping("/validate")
+    public ResponseEntity<?> validateCurrentSession(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body("Token manquant");
+        }
+        
+        String token = authHeader.substring(7);
+        Optional<Session> sessionOpt = sessionService.findByToken(token);
+        
+        if (sessionOpt.isEmpty()) {
+            return ResponseEntity.status(401).body("Session introuvable");
+        }
+        
+        Session session = sessionOpt.get();
+        
+        // Vérifier si la session est expirée
+        if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.status(401).body("Session expirée");
+        }
+        
+        // Vérifier si la session est valide
+        if (!session.getIsValid()) {
+            return ResponseEntity.status(401).body("Session invalidée");
+        }
+        
+        return ResponseEntity.ok().body(new SessionValidationResponse(
+            true,
+            session.getExpiresAt(),
+            "Session valide"
+        ));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Session> getSessionById(@PathVariable UUID id) {
         Optional<Session> session = sessionService.findById(id);
@@ -90,6 +126,43 @@ public class SessionController {
             return ResponseEntity.noContent().build();
         } else {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Classe interne pour la réponse de validation de session
+    public static class SessionValidationResponse {
+        private boolean valid;
+        private LocalDateTime expiresAt;
+        private String message;
+
+        public SessionValidationResponse(boolean valid, LocalDateTime expiresAt, String message) {
+            this.valid = valid;
+            this.expiresAt = expiresAt;
+            this.message = message;
+        }
+
+        public boolean isValid() {
+            return valid;
+        }
+
+        public void setValid(boolean valid) {
+            this.valid = valid;
+        }
+
+        public LocalDateTime getExpiresAt() {
+            return expiresAt;
+        }
+
+        public void setExpiresAt(LocalDateTime expiresAt) {
+            this.expiresAt = expiresAt;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
         }
     }
 

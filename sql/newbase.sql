@@ -217,7 +217,6 @@ CREATE TABLE signalements (
     
     -- Description
     description TEXT NOT NULL,
-    photo_url TEXT,                   -- URL de la photo si uploadée
     
     -- Détails techniques
     surface_m2 NUMERIC(15,2),
@@ -244,6 +243,46 @@ CREATE TABLE signalements (
     CONSTRAINT positive_surface CHECK (surface_m2 IS NULL OR surface_m2 >= 0),
     CONSTRAINT positive_budget CHECK (budget IS NULL OR budget >= 0)
 );
+
+-- =========================
+-- TABLE: PHOTOS (entité séparée pour plusieurs photos par signalement)
+-- =========================
+
+-- Fonction pour mettre à jour automatiquement updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TABLE photos (
+    id BIGSERIAL PRIMARY KEY,
+    url VARCHAR(1000) NOT NULL,
+    description VARCHAR(500),
+    file_name VARCHAR(255),
+    file_size BIGINT,
+    mime_type VARCHAR(100),
+    uploaded_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Relation vers signalement (plusieurs photos par signalement)
+    id_signalement BIGINT REFERENCES signalements(id) ON DELETE CASCADE
+);
+
+-- Index pour photos
+CREATE INDEX idx_photos_url ON photos(url);
+CREATE INDEX idx_photos_file_name ON photos(file_name);
+CREATE INDEX idx_photos_mime_type ON photos(mime_type);
+CREATE INDEX idx_photos_created_at ON photos(created_at);
+CREATE INDEX idx_photos_signalement_id ON photos(id_signalement);
+
+-- Trigger pour mettre à jour updated_at dans photos
+CREATE TRIGGER update_photos_updated_at 
+    BEFORE UPDATE ON photos 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 
 -- Index pour signalements
 CREATE INDEX idx_signalements_location ON signalements (latitude, longitude);
@@ -383,15 +422,6 @@ ORDER BY COUNT(s.id) DESC;
 -- FONCTIONS ET TRIGGERS
 -- =========================
 
--- Fonction: Mettre à jour updated_at automatiquement
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
 -- Triggers pour les tables principales
 CREATE TRIGGER update_utilisateurs_updated_at 
     BEFORE UPDATE ON utilisateurs 
@@ -426,6 +456,26 @@ $$ language 'plpgsql';
 CREATE TRIGGER log_signalement_status_change
     AFTER UPDATE OF id_status ON signalements
     FOR EACH ROW EXECUTE FUNCTION log_status_change();
+
+-- Fonction: Créer un historique lors de la création d'un signalement
+CREATE OR REPLACE FUNCTION create_initial_historique()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO historiques_status_signalement 
+    (id_signalement, id_status, id_utilisateur, commentaire)
+    VALUES (
+        NEW.id, 
+        NEW.id_status, 
+        NEW.id_utilisateur,
+        'Création du signalement'
+    );
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER log_signalement_creation
+    AFTER INSERT ON signalements
+    FOR EACH ROW EXECUTE FUNCTION create_initial_historique();
 
 -- =========================
 -- FONCTION: Validation password pour utilisateurs locaux
@@ -518,3 +568,37 @@ COMMENT ON COLUMN utilisateurs.is_synced_to_firebase IS 'TRUE si synchronisé av
 COMMENT ON COLUMN signalements.firebase_id IS 'ID correspondant dans Firebase (pour sync)';
 COMMENT ON COLUMN signalements.is_synced_to_firebase IS 'TRUE si le signalement est synchronisé avec Firebase';
 COMMENT ON COLUMN configurations.cle IS 'Clé de configuration (ex: tentatives_max)';
+
+-- PATCH : Correction migration pour Hibernate
+-- 1. Supprimer la vue avant modification
+DROP VIEW IF EXISTS vue_utilisateurs_complets;
+
+-- 2. Modifier la colonne num_tel (exemple : changer le type)
+ALTER TABLE utilisateurs ALTER COLUMN num_tel TYPE varchar(255);
+
+-- 3. Ajouter une colonne NOT NULL à status (exemple)
+ALTER TABLE status ADD COLUMN IF NOT EXISTS status_id varchar(50);
+UPDATE status SET status_id = 'default' WHERE status_id IS NULL;
+ALTER TABLE status ALTER COLUMN status_id SET NOT NULL;
+
+-- 4. Recréer la vue après modification
+CREATE VIEW vue_utilisateurs_complets AS
+SELECT 
+    u.id,
+    u.email,
+    u.nom,
+    u.prenom,
+    u.num_tel,
+    u.tentatives_connexion,
+    u.is_blocked,
+    s.libelle as source_auth,
+    st.libelle as statut_utilisateur,
+    STRING_AGG(r.libelle, ', ') as roles,
+    u.created_at,
+    u.updated_at
+FROM utilisateurs u
+JOIN sources s ON u.id_source = s.id
+JOIN status st ON u.id_status = st.id
+LEFT JOIN user_roles ur ON u.id = ur.id_utilisateur
+LEFT JOIN roles r ON ur.id_role = r.id
+GROUP BY u.id, s.libelle, st.libelle;

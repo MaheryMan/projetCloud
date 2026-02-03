@@ -28,6 +28,7 @@ public class AuthService {
 
     /**
      * Authentifie un utilisateur et crée une session
+     * Seuls les Managers peuvent se connecter
      */
     public Optional<AuthResponse> login(String email, String password, String deviceInfo, String ipAddress) {
         Optional<Utilisateur> userOpt = utilisateurService.authenticate(email, password);
@@ -40,38 +41,16 @@ public class AuthService {
         // Récupérer les rôles
         List<String> roles = utilisateurService.getUserRoles(user.getId());
 
-        // Le manager/admin a un token (opaque) sans expiration (expiration très lointaine)
-        if (roles.contains("Manager")) {
-            String token = UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "");
-            LocalDateTime expiresAt = LocalDateTime.now().plusYears(100);
-
-            Session session = new Session();
-            session.setToken(token);
-            session.setUtilisateur(user);
-            session.setCreatedAt(LocalDateTime.now());
-            session.setExpiresAt(expiresAt);
-            session.setLastActivity(LocalDateTime.now());
-            session.setIsValid(true);
-            session.setDeviceInfo(deviceInfo);
-            session.setIpAddress(ipAddress);
-
-            sessionRepository.save(session);
-
-            AuthResponse response = new AuthResponse();
-            response.setToken(token);
-            response.setUser(user);
-            response.setRoles(roles);
-            return Optional.of(response);
+        // Vérifier si l'utilisateur est Manager
+        if (!roles.contains("Manager")) {
+            System.out.println("Login refusé: L'utilisateur " + email + " n'a pas le rôle Manager");
+            return Optional.empty();
         }
 
-        // Générer un token opaque unique
+        // Le manager/admin a un token (opaque) sans expiration (expiration très lointaine)
         String token = UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "");
+        LocalDateTime expiresAt = LocalDateTime.now().plusYears(100);
 
-        // Récupérer la durée de session depuis configurations
-        int sessionDurationMinutes = Integer.parseInt(configurationService.getValue("duree_session_minutes", "1440"));
-        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(sessionDurationMinutes);
-
-        // Créer la session
         Session session = new Session();
         session.setToken(token);
         session.setUtilisateur(user);
@@ -88,7 +67,6 @@ public class AuthService {
         response.setToken(token);
         response.setUser(user);
         response.setRoles(roles);
-
         return Optional.of(response);
     }
 
@@ -102,7 +80,16 @@ public class AuthService {
         }
 
         Session session = sessionOpt.get();
-        if (!session.getIsValid() || session.getExpiresAt().isBefore(LocalDateTime.now())) {
+        
+        // Vérifier si la session est expirée et l'invalider automatiquement
+        if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
+            session.setIsValid(false);
+            sessionRepository.save(session);
+            return Optional.empty();
+        }
+        
+        // Vérifier si la session est valide
+        if (!session.getIsValid()) {
             return Optional.empty();
         }
 

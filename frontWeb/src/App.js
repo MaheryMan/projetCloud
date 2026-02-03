@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Navbar from './components/Navbar';
+import FirebaseStatusBubble from './components/FirebaseStatusBubble';
 import Login from './components/Login';
 import Register from './components/Register';
+import Navbar from './components/Navbar';
 import VisitorMap from './pages/VisitorMap';
 import ManagerDashboard from './pages/ManagerDashboard';
 import SignalementManagement from './pages/SignalementManagement';
 import UserManagement from './pages/UserManagement';
+import Statistics from './pages/Statistics';
 import Synchronization from './pages/Synchronization';
 import Settings from './pages/Settings';
+import { startSessionMonitoring, stopSessionMonitoring } from './services/authService';
 import './App.css';
 
 function App() {
@@ -25,11 +28,28 @@ function App() {
         localStorage.removeItem('user');
       }
     }
+
+    // Démarrer le monitoring de session si utilisateur connecté
+    let monitoringId = null;
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Vérifier toutes les 5 minutes si la session est toujours valide
+      monitoringId = startSessionMonitoring(5);
+    }
+
+    // Nettoyer le monitoring au démontage du composant
+    return () => {
+      if (monitoringId) {
+        stopSessionMonitoring(monitoringId);
+      }
+    };
   }, []);
 
   const handleLogin = (userData) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
+    // Stocker les rôles avec l'utilisateur
+    const userWithRoles = { ...userData.user, roles: userData.roles };
+    setUser(userWithRoles);
+    localStorage.setItem('user', JSON.stringify(userWithRoles));
   };
 
   const handleLogout = () => {
@@ -41,17 +61,27 @@ function App() {
   // Composant pour protéger les routes Manager
   const ProtectedRoute = ({ children }) => {
     const token = localStorage.getItem('token');
-    return token ? children : <Navigate to="/login" />;
+    if (!token) return <Navigate to="/login" />;
+    
+    // Vérifier si l'utilisateur est un manager
+    if (!user || !user.roles || !user.roles.includes('Manager')) {
+      return <Navigate to="/" />;
+    }
+    
+    return children;
   };
 
   return (
     <Router>
       <div className="App">
-        {/* ⭐ NAVBAR EN PREMIER - Toujours affichée si user connecté */}
-        {user && <Navbar user={user} onLogout={handleLogout} />}
+        <FirebaseStatusBubble />
+        {/* ⭐ NAVBAR - Affichée seulement pour les managers */}
+        {user && user.roles && user.roles.includes('Manager') && (
+          <Navbar user={user} onLogout={handleLogout} />
+        )}
         
         {/* ⭐ CONTENU PRINCIPAL après la navbar */}
-        <main className="main-content">
+        <main className={`main-content ${!user || !(user.roles && user.roles.includes('Manager')) ? 'visitor-mode' : ''}`}>
           <Routes>
             {/* Route publique - Carte visiteur */}
             <Route path="/" element={<VisitorMap />} />
@@ -60,7 +90,9 @@ function App() {
             <Route 
               path="/login" 
               element={
-                user ? <Navigate to="/dashboard" /> : (
+                user ? (
+                  <Navigate to={user.roles && user.roles.includes('Manager') ? "/dashboard" : "/"} />
+                ) : (
                   <div className="auth-page">
                     <Login onLogin={handleLogin} />
                   </div>
@@ -70,7 +102,11 @@ function App() {
             <Route 
               path="/register" 
               element={
-                user ? <Navigate to="/dashboard" /> : (
+                user ? (
+                  user.roles && user.roles.includes('Manager') 
+                    ? <Navigate to="/dashboard" /> 
+                    : <Navigate to="/" />
+                ) : (
                   <div className="auth-page">
                     <Register />
                   </div>
@@ -100,6 +136,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserManagement />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/statistics" 
+              element={
+                <ProtectedRoute>
+                  <Statistics />
                 </ProtectedRoute>
               } 
             />

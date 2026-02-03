@@ -14,6 +14,36 @@ function ManagerDashboard() {
   const [recentSignalements, setRecentSignalements] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Ajout pour la synchronisation
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState(null);
+
+  // Fonction utilitaire pour synchroniser les utilisateurs
+  const handleSyncUsers = async () => {
+    setSyncing(true);
+    setSyncMessage(null);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/sync/users', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setSyncMessage({ type: 'success', text: data.message || 'Synchronisation réussie.' });
+      } else {
+        setSyncMessage({ type: 'error', text: data.message || 'Erreur lors de la synchronisation.' });
+      }
+    } catch (error) {
+      setSyncMessage({ type: 'error', text: 'Erreur réseau ou serveur.' });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -187,7 +217,6 @@ function ManagerDashboard() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Date</th>
                 <th>Localisation</th>
                 <th>Statut</th>
@@ -199,11 +228,12 @@ function ManagerDashboard() {
             <tbody>
               {recentSignalements.map((signal) => (
                 <tr key={signal.id}>
-                  <td>#{signal.id}</td>
                       <td>
-                    {signal.typeSignalement?.createdAt
-                      ? formatDate(signal.typeSignalement.createdAt)
-                      : ''}
+                    {signal.lastHistoriqueDate
+                      ? formatDate(signal.lastHistoriqueDate)
+                      : signal.createdAt
+                      ? formatDate(signal.createdAt)
+                      : 'N/A'}
                   </td>
                   <td>
                     <div className="location">
@@ -235,10 +265,25 @@ function ManagerDashboard() {
           <button className="action-btn" onClick={() => window.location.href = '/users'}>
              Gérer les utilisateurs
           </button>
-          <button className="action-btn" onClick={() => window.location.href = '/sync'}>
-            Synchroniser
+          <button
+            className="action-btn"
+            onClick={handleSyncUsers}
+            disabled={syncing}
+            style={{ background: '#6c47ff', color: 'white' }}
+          >
+            {syncing ? 'Synchronisation...' : 'Synchroniser'}
           </button>
         </div>
+        {/* Message de feedback synchronisation */}
+        {syncMessage && (
+          <div style={{
+            marginTop: 12,
+            color: syncMessage.type === 'success' ? 'green' : 'red',
+            fontWeight: 500
+          }}>
+            {syncMessage.text}
+          </div>
+        )}
       </div>
     </div>
   );

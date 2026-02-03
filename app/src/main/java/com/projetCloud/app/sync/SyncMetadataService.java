@@ -56,31 +56,32 @@ public class SyncMetadataService {
      * @throws TimeoutException 
      */
     public int syncAllMetadata() throws RuntimeException, TimeoutException {
-        System.out.println("DEBUG: syncAllMetadata started");
-        
+        System.out.println("[SYNC] syncAllMetadata started");
         if (!connectivityService.isFirebaseOnline()) {
+            System.err.println("[SYNC] Firebase n'est pas accessible");
             throw new RuntimeException("Firebase n'est pas accessible");
         }
-        
-        System.out.println("DEBUG: Firebase is online");
+        System.out.println("[SYNC] Firebase is online");
 
         int totalSynced = 0;
-
         try {
             // Synchroniser status
-            System.out.println("DEBUG: Starting status sync");
-            totalSynced += syncStatusToFirebase();
-            System.out.println("DEBUG: Status sync completed, synced: " + totalSynced);
-            
+            System.out.println("[SYNC] --- STATUS ---");
+            int statusSynced = syncStatusToFirebase();
+            System.out.println("[SYNC] Status sync completed, synced: " + statusSynced);
+            totalSynced += statusSynced;
+
             // Synchroniser entreprises
-            System.out.println("DEBUG: Starting entreprises sync");
-            totalSynced += syncEntreprisesToFirebase();
-            System.out.println("DEBUG: Entreprises sync completed, total synced: " + totalSynced);
+            System.out.println("[SYNC] --- ENTREPRISES ---");
+            int entreprisesSynced = syncEntreprisesToFirebase();
+            System.out.println("[SYNC] Entreprises sync completed, synced: " + entreprisesSynced);
+            totalSynced += entreprisesSynced;
 
             // Synchroniser types_signalement
-            System.out.println("DEBUG: Starting types_signalement sync");
-            totalSynced += syncTypesSignalementToFirebase();
-            System.out.println("DEBUG: Types signalement sync completed, total synced: " + totalSynced);
+            System.out.println("[SYNC] --- TYPES SIGNALEMENT ---");
+            int typesSynced = syncTypesSignalementToFirebase();
+            System.out.println("[SYNC] Types signalement sync completed, synced: " + typesSynced);
+            totalSynced += typesSynced;
 
             // Synchroniser configurations
             System.out.println("DEBUG: Starting configurations sync");
@@ -88,15 +89,17 @@ public class SyncMetadataService {
             System.out.println("DEBUG: Configurations sync completed, total synced: " + totalSynced);
 
             // Synchroniser depuis Firebase (cas redéploiement)
-            System.out.println("DEBUG: Starting reverse sync from Firebase");
-            totalSynced += syncStatusFromFirebase();
-            totalSynced += syncEntreprisesFromFirebase();
-            totalSynced += syncTypesSignalementFromFirebase();
-            System.out.println("DEBUG: Reverse sync completed, total synced: " + totalSynced);
+            System.out.println("[SYNC] --- REVERSE SYNC FROM FIREBASE ---");
+            int statusFromFb = syncStatusFromFirebase();
+            int entreprisesFromFb = syncEntreprisesFromFirebase();
+            int typesFromFb = syncTypesSignalementFromFirebase();
+            System.out.println("[SYNC] Reverse sync completed, status: " + statusFromFb + ", entreprises: " + entreprisesFromFb + ", types: " + typesFromFb);
+            totalSynced += statusFromFb + entreprisesFromFb + typesFromFb;
 
+            System.out.println("[SYNC] syncAllMetadata finished, total synced: " + totalSynced);
             return totalSynced;
         } catch (Exception e) {
-            System.err.println("DEBUG: Exception caught: " + e.getMessage());
+            System.err.println("[SYNC][ERROR] Exception caught: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Erreur lors de la sync des métadonnées: " + e.getMessage());
         }
@@ -108,6 +111,7 @@ public class SyncMetadataService {
      */
     public int syncStatusToFirebase() throws RuntimeException, TimeoutException {
         if (!connectivityService.isFirebaseOnline()) {
+            System.err.println("[SYNC][STATUS] Firebase n'est pas accessible");
             throw new RuntimeException("Firebase n'est pas accessible");
         }
 
@@ -116,7 +120,9 @@ public class SyncMetadataService {
 
         for (Status status : allStatus) {
             try {
+                System.out.println("[SYNC][STATUS] Traitement status id=" + status.getId());
                 if (status.getIsSyncedToFirebase() != null && status.getIsSyncedToFirebase()) {
+                    System.out.println("[SYNC][STATUS] Déjà synchronisé, skip id=" + status.getId());
                     continue;
                 }
 
@@ -128,6 +134,7 @@ public class SyncMetadataService {
                 DocumentSnapshot existingDoc = futureDoc.get();
 
                 if (existingDoc.exists()) {
+                    System.out.println("[SYNC][STATUS] Document existe déjà dans Firebase pour id=" + status.getId());
                     // Document existe déjà, ne pas réécrire, juste marquer comme synced
                     status.setIsSyncedToFirebase(true);
                     status.setLastSyncedAt(LocalDateTime.now());
@@ -145,6 +152,7 @@ public class SyncMetadataService {
                 statusData.put("syncedAt", com.google.cloud.Timestamp.now());
 
                 docRef.set(statusData);
+                System.out.println("[SYNC][STATUS] Document écrit dans Firebase pour id=" + status.getId());
 
                 // Mettre à jour PostgreSQL
                 status.setIsSyncedToFirebase(true);
@@ -153,10 +161,12 @@ public class SyncMetadataService {
 
                 syncedCount++;
             } catch (Exception e) {
-                System.err.println("Erreur lors de la sync du status " + status.getId() + ": " + e.getMessage());
+                System.err.println("[SYNC][STATUS][ERROR] Erreur lors de la sync du status " + status.getId() + ": " + e.getMessage());
+                e.printStackTrace();
             }
         }
 
+        System.out.println("[SYNC][STATUS] Fin, total synchronisés: " + syncedCount);
         return syncedCount;
     }
 

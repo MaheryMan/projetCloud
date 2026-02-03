@@ -1,0 +1,203 @@
+.statistics-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.statistics-container h1 {
+  color: #2c3e50;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+}
+
+.error {
+  color: #e74c3c;
+  background: #ffe5e5;
+  border-radius: 8px;
+}
+
+/* Cartes de statistiques */
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.highlight {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  opacity: 0.9;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-content h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.stat-card.highlight h3,
+.stat-card.highlight .stat-subtitle {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.stat-value-small {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.3rem 0;
+}
+
+.stat-subtitle {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-top: 0.3rem;
+}
+
+/* Sections */
+.stats-section {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stats-section h2 {
+  color: #2c3e50;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 0.5rem;
+}
+
+/* Tableaux */
+.stats-table-wrapper {
+  overflow-x: auto;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.stats-table thead {
+  background: #f8f9fa;
+}
+
+.stats-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.stats-table td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.stats-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+/* Badges de statut */
+.status-badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-nouveau {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-en-cours {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.status-termine {
+  background: #d4edda;
+  color: #155724;
+}
+
+/* Note */
+.stats-note {
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .statistics-container {
+    padding: 1rem;
+  }
+
+  .statistics-container h1 {
+    font-size: 1.5rem;
+  }
+
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-section {
+    padding: 1rem;
+  }
+
+  .stats-table th,
+  .stats-table td {
+    padding: 0.7rem 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+}

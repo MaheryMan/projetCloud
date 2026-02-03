@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { fetchWithAuth } from '../services/authService';
 import './UserManagement.css';
 import { auth, googleProvider } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
@@ -18,10 +19,25 @@ function UserManagement() {
     dureeSessionMinutes: 1440,
     dureeBloquageMinutes: 30
   });
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [sources, setSources] = useState([]);
+  const [statuses, setStatuses] = useState([]);
+  const [newUser, setNewUser] = useState({
+    nom: '',
+    prenom: '',
+    email: '',
+    numTel: '',
+    idSource: '',
+    idStatus: '',
+    password: '',
+    confirmPassword: ''
+  });
 
   useEffect(() => {
     fetchUsers();
     fetchConfiguration();
+    fetchSources();
+    fetchStatuses();
   }, []);
 
   const fetchConfiguration = async () => {
@@ -52,6 +68,40 @@ function UserManagement() {
     }
   };
 
+  const fetchSources = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/sources', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSources(data);
+      } else {
+        console.error('Erreur chargement sources:', res.status);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des sources:', error);
+    }
+  };
+
+  const fetchStatuses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/status', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStatuses(data);
+      } else {
+        console.error('Erreur chargement statuts:', res.status);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des statuts:', error);
+    }
+  };
+
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -64,15 +114,9 @@ function UserManagement() {
       }
       
       const [allUsersRes, blockedUsersRes, deblocagesRes] = await Promise.all([
-        fetch('http://localhost:8080/api/users', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('http://localhost:8080/api/users/blocked', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('http://localhost:8080/api/deblocages', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        fetchWithAuth('http://localhost:8080/api/users'),
+        fetchWithAuth('http://localhost:8080/api/users/blocked'),
+        fetchWithAuth('http://localhost:8080/api/deblocages')
       ]);
 
       if (!allUsersRes.ok || !blockedUsersRes.ok) {
@@ -210,14 +254,82 @@ function UserManagement() {
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) {
-      return new Date().toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
+  const handleCreateUser = async () => {
+    // Validation
+    if (!newUser.nom.trim() || !newUser.prenom.trim() || !newUser.email.trim() || !newUser.idSource || !newUser.idStatus) {
+      alert('Veuillez remplir tous les champs obligatoires');
+      return;
     }
+
+    // Validation du mot de passe pour les utilisateurs locaux
+    const selectedSource = sources.find(s => s.id == newUser.idSource);
+    if (selectedSource?.providerType === 'local') {
+      if (!newUser.password.trim()) {
+        alert('Le nouveau mot de passe est obligatoire pour les utilisateurs locaux');
+        return;
+      }
+      if (!newUser.confirmPassword.trim()) {
+        alert('La confirmation du mot de passe est obligatoire');
+        return;
+      }
+      if (newUser.password !== newUser.confirmPassword) {
+        alert('Les mots de passe ne correspondent pas');
+        return;
+      }
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const userData = {
+        nom: newUser.nom.trim(),
+        prenom: newUser.prenom.trim(),
+        email: newUser.email.trim(),
+        numTel: newUser.numTel.trim() || null,
+        idSource: parseInt(newUser.idSource),
+        idStatus: parseInt(newUser.idStatus)
+      };
+
+      // Ajouter le mot de passe seulement pour les utilisateurs locaux
+      if (selectedSource?.providerType === 'local') {
+        userData.password = newUser.password.trim();
+      }
+
+      const response = await fetch('http://localhost:8080/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(userData)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Erreur lors de la création');
+      }
+
+      alert('Utilisateur créé avec succès');
+      setShowCreateModal(false);
+      setNewUser({
+        nom: '',
+        prenom: '',
+        email: '',
+        numTel: '',
+        idSource: '',
+        idStatus: '',
+        password: '',
+        confirmPassword: ''
+      });
+      await fetchUsers();
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert(`Erreur lors de la création : ${error.message}`);
+    }
+  };
+
+  // Utility function to format dates
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: '2-digit',
@@ -311,13 +423,22 @@ function UserManagement() {
           <h1>Gestion des Utilisateurs</h1>
           <p>Débloquer les comptes et gérer les utilisateurs</p>
         </div>
-        <button
-          className="btn-config"
-          onClick={() => setShowConfigModal(true)}
-          title="Gérer la configuration système"
-        >
-           Configuration
-        </button>
+        <div className="header-buttons">
+          <button
+            className="btn-create"
+            onClick={() => setShowCreateModal(true)}
+            title="Créer un nouvel utilisateur"
+          >
+            ➕ Créer un utilisateur
+          </button>
+          <button
+            className="btn-config"
+            onClick={() => setShowConfigModal(true)}
+            title="Gérer la configuration système"
+          >
+             Configuration
+          </button>
+        </div>
       </header>
 
       <div className="stats-cards">
@@ -568,6 +689,154 @@ function UserManagement() {
               <button 
                 className="btn-close-modal" 
                 onClick={() => setShowConfigModal(false)}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de création d'utilisateur */}
+      {showCreateModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Créer un nouvel utilisateur</h2>
+              <button 
+                className="btn-close-modal" 
+                onClick={() => setShowCreateModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="user-form">
+                <div className="form-group">
+                  <label htmlFor="nom">Nom *</label>
+                  <input
+                    type="text"
+                    id="nom"
+                    value={newUser.nom}
+                    onChange={(e) => setNewUser({ ...newUser, nom: e.target.value })}
+                    placeholder="Entrez le nom"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="prenom">Prénom *</label>
+                  <input
+                    type="text"
+                    id="prenom"
+                    value={newUser.prenom}
+                    onChange={(e) => setNewUser({ ...newUser, prenom: e.target.value })}
+                    placeholder="Entrez le prénom"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="email">Email *</label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={newUser.email}
+                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                    placeholder="Entrez l'email"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="numTel">Numéro de téléphone</label>
+                  <input
+                    type="tel"
+                    id="numTel"
+                    value={newUser.numTel}
+                    onChange={(e) => setNewUser({ ...newUser, numTel: e.target.value })}
+                    placeholder="Entrez le numéro de téléphone"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="idSource">Source *</label>
+                  <select
+                    id="idSource"
+                    value={newUser.idSource}
+                    onChange={(e) => setNewUser({ ...newUser, idSource: e.target.value })}
+                    style={{ color: '#2c3e50', backgroundColor: 'white' }}
+                  >
+                    <option value="" style={{ color: '#2c3e50', backgroundColor: 'white' }}>Sélectionnez une source</option>
+                    {sources.map(source => (
+                      <option key={source.id} value={source.id} style={{ color: '#2c3e50', backgroundColor: 'white' }}>
+                        {source.libelle}
+                      </option>
+                    ))}
+                  </select>
+                 
+                </div>
+
+                {sources.find(s => s.id == newUser.idSource)?.providerType === 'local' && (
+                  <>
+                    <div className="form-group">
+                      <label htmlFor="password">Nouveau mot de passe *</label>
+                      <input
+                        type="password"
+                        id="password"
+                        value={newUser.password}
+                        onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                        placeholder="Entrez le nouveau mot de passe"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="confirmPassword">Confirmer mot de passe *</label>
+                      <input
+                        type="password"
+                        id="confirmPassword"
+                        value={newUser.confirmPassword}
+                        onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
+                        placeholder="Confirmez le mot de passe"
+                      />
+                      {newUser.password && newUser.confirmPassword && newUser.password !== newUser.confirmPassword && (
+                        <small style={{ color: '#e74c3c' }}>Les mots de passe ne correspondent pas</small>
+                      )}
+                      {newUser.password && newUser.confirmPassword && newUser.password === newUser.confirmPassword && (
+                        <small style={{ color: '#27ae60' }}>Les mots de passe correspondent</small>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                <div className="form-group">
+                  <label htmlFor="idStatus">Statut *</label>
+                  <select
+                    id="idStatus"
+                    value={newUser.idStatus}
+                    onChange={(e) => setNewUser({ ...newUser, idStatus: e.target.value })}
+                    style={{ color: '#2c3e50', backgroundColor: 'white' }}
+                  >
+                    <option value="" style={{ color: '#2c3e50', backgroundColor: 'white' }}>Sélectionnez un statut</option>
+                    {statuses.map(status => (
+                      <option key={status.id} value={status.id} style={{ color: '#2c3e50', backgroundColor: 'white' }}>
+                        {status.libelle}
+                      </option>
+                    ))}
+                  </select>
+             
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                className="btn-save-config" 
+                onClick={handleCreateUser}
+              >
+                Créer l'utilisateur
+              </button>
+              <button 
+                className="btn-close-modal" 
+                onClick={() => setShowCreateModal(false)}
               >
                 Annuler
               </button>
