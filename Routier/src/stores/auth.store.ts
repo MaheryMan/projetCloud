@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User } from 'firebase/auth'
 import { onAuthChange, login, loginWithGoogle, logout } from '@/services/auth.service'
+import { useMetadataStore } from './metadata.store'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -25,6 +26,9 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const u = await login(email, password)
       user.value = u
+      // Charger les métadonnées après login
+      const metadataStore = useMetadataStore()
+      await metadataStore.loadMetadata()
     } catch (e: any) {
       error.value = e?.message || 'Erreur de connexion'
       throw e
@@ -39,6 +43,9 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const u = await loginWithGoogle()
       user.value = u
+      // Charger les métadonnées après login
+      const metadataStore = useMetadataStore()
+      await metadataStore.loadMetadata()
     } catch (e: any) {
       error.value = e?.message || 'Erreur de connexion Google'
       throw e
@@ -50,6 +57,9 @@ export const useAuthStore = defineStore('auth', () => {
   const logoutAction = async () => {
     await logout()
     user.value = null
+    // Réinitialiser les métadonnées à la déconnexion
+    const metadataStore = useMetadataStore()
+    metadataStore.reset()
   }
 
   return {

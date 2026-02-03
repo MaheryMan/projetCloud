@@ -11,5 +11,9 @@ public interface StatusRepository extends JpaRepository<Status, Long> {
 
     Optional<Status> findByCode(String code);
     Optional<Status> findByLibelle(String libelle);
+    
+    // Recherche insensible à la casse (case-insensitive)
+    Optional<Status> findByLibelleIgnoreCase(String libelle);
+    
     List<Status> findByIsSyncedToFirebaseFalse();
 }

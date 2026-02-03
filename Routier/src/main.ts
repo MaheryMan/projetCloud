@@ -4,6 +4,7 @@ import router from './router';
 
 import { IonicVue } from '@ionic/vue';
 import { createPinia } from 'pinia'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
 // Initialize Google Auth
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
@@ -42,6 +43,9 @@ import {
   calendarOutline,
   fingerPrintOutline,
   shieldCheckmarkOutline,
+  helpOutline,
+  cameraOutline,
+  imagesOutline,
   // Add these if you're using them in other components:
   homeOutline,
   settingsOutline,
@@ -90,6 +94,9 @@ addIcons({
   'calendar-outline': calendarOutline,
   'finger-print-outline': fingerPrintOutline,
   'shield-checkmark-outline': shieldCheckmarkOutline,
+  'help-outline': helpOutline,
+  'camera-outline': cameraOutline,
+  'images-outline': imagesOutline,
   // Optional: add these for other pages
   'home-outline': homeOutline,
   'settings-outline': settingsOutline,
@@ -139,9 +146,12 @@ import '@ionic/vue/css/palettes/dark.system.css';
 /* Theme variables */
 import './theme/variables.css';
 
+const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate)
+
 const app = createApp(App)
   .use(IonicVue)
-  .use(createPinia())
+  .use(pinia)
   .use(router);
 
 // Initialize Google Auth

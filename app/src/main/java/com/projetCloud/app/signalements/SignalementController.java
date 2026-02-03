@@ -226,10 +226,114 @@ public class SignalementController {
                 }
                 signalement.setTypeSignalement(typeSignalement.get());
             }
+            
+            // Marquer pour synchronisation Firebase si le signalement a un firebaseId
+            if (signalement.getFirebaseId() != null) {
+                signalement.setNeedsFirebaseSync(true);
+            }
+            
             return ResponseEntity.ok(signalementService.save(signalement));
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @PostMapping("/{id}/validate")
+    @Operation(summary = "Valider un signalement", description = "Le manager valide un signalement 'Créé' et le passe à 'Nouveau' avec optionnellement entreprise et budget")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Signalement validé avec succès",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = Signalement.class))),
+        @ApiResponse(responseCode = "404", description = "Signalement non trouvé",
+                    content = @Content),
+        @ApiResponse(responseCode = "400", description = "Signalement n'est pas au status 'Créé'",
+                    content = @Content)
+    })
+    public ResponseEntity<?> validateSignalement(
+            @Parameter(description = "ID du signalement") @PathVariable Long id,
+            @RequestBody(required = false) Map<String, Object> validationData) {
+        
+        Optional<Signalement> signalementOpt = signalementService.findById(id);
+        if (signalementOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Signalement signalement = signalementOpt.get();
+        
+        // Vérifier que le signalement est au status "Créé" (id 8)
+        if (signalement.getIdStatus() != 8L) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "Le signalement n'est pas au status 'Créé'"));
+        }
+
+        // Passer à "Nouveau" (id 4)
+        signalement.setIdStatus(4L);
+        
+        // Optionnel: ajouter entreprise et budget
+        if (validationData != null) {
+            if (validationData.containsKey("idEntreprise")) {
+                Long idEntreprise = ((Number) validationData.get("idEntreprise")).longValue();
+                signalement.setIdEntreprise(idEntreprise);
+                
+                // Si entreprise assignée, passer à "En cours" (id 5)
+                signalement.setIdStatus(5L);
+            }
+            
+            if (validationData.containsKey("budget")) {
+                BigDecimal budget = new BigDecimal(validationData.get("budget").toString());
+                signalement.setBudget(budget);
+            }
+            
+            if (validationData.containsKey("surfaceM2")) {
+                BigDecimal surface = new BigDecimal(validationData.get("surfaceM2").toString());
+                signalement.setSurfaceM2(surface);
+            }
+        }
+
+        // Marquer pour synchronisation Firebase
+        if (signalement.getFirebaseId() != null) {
+            signalement.setNeedsFirebaseSync(true);
+        }
+
+        Signalement saved = signalementService.save(signalement);
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Signalement validé avec succès",
+                "signalement", saved
+        ));
+    }
+
+    @PostMapping("/{id}/reject")
+    @Operation(summary = "Rejeter un signalement", description = "Le manager rejette un signalement et le passe au status 'Rejeté'")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Signalement rejeté avec succès",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = Signalement.class))),
+        @ApiResponse(responseCode = "404", description = "Signalement non trouvé",
+                    content = @Content)
+    })
+    public ResponseEntity<?> rejectSignalement(@Parameter(description = "ID du signalement") @PathVariable Long id) {
+        Optional<Signalement> signalementOpt = signalementService.findById(id);
+        if (signalementOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Signalement signalement = signalementOpt.get();
+        
+        // Passer à "Annulé/Rejeté" (id 7 si existe, sinon utiliser 4 avec note)
+        signalement.setIdStatus(7L); // Vous devrez peut-être ajuster selon vos status
+
+        // Marquer pour synchronisation Firebase
+        if (signalement.getFirebaseId() != null) {
+            signalement.setNeedsFirebaseSync(true);
+        }
+
+        Signalement saved = signalementService.save(signalement);
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Signalement rejeté",
+                "signalement", saved
+        ));
     }
 
     @DeleteMapping("/{id}")

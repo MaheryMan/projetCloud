@@ -1,7 +1,9 @@
 import { ref, computed, type Ref } from 'vue'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { createReport } from '@/services/report.service'
+import { useMetadataStore } from '@/stores/metadata.store'
 import type { ReportType } from '@/types/report.types'
+import type { TypeSignalement } from '@/services/metadata.service'
 
 type ToastColor = 'primary' | 'success' | 'warning' | 'danger' | 'medium'
 type ShowToast = (message: string, color?: ToastColor, duration?: number) => Promise<void> | void
@@ -24,15 +26,71 @@ export interface UseReportFormOptions {
 }
 
 export function useReportForm(options: UseReportFormOptions) {
+  const metadataStore = useMetadataStore()
+  
   const showForm = ref(false)
   const submitting = ref(false)
 
-  const reportType = ref<ReportType>('trou')
+  /**
+   * Récupère le libellé du statut initial depuis la metadata
+   */
+  const getInitialStatusLabel = (): string => {
+    const newStatus = metadataStore.statuses.find((s) => s.code === 'nouveau')
+    return newStatus?.libelle || 'Nouveau'
+  }
+
+  // Ces variables doivent rester modifiables directement
+  const reportType = ref<string>('Trou')
   const reportDescription = ref('')
   const surfaceM2 = ref<number>(0)
   const reportPhoto = ref<string>('')
 
   const showActionSheet = ref(false)
+
+  /**
+   * Retourne les types de signalement depuis le store Firebase
+   */
+  const availableTypes = computed(() => {
+    const types = metadataStore.types
+    
+    // Mapping entre les icônes du backend et les icônes Ionicons
+    const iconMapping: Record<string, string> = {
+      'pothole': 'warning-outline',
+      'diversion': 'swap-horizontal-outline',
+      'construction': 'construct-outline',
+      'other': 'help-outline',
+      'alert': 'alert-circle-outline',
+      'danger': 'warning-outline',
+      'info': 'information-circle-outline'
+    }
+    
+    // Si les types sont vides, retourner des valeurs par défaut
+    if (!types || types.length === 0) {
+      return [
+        { value: 'Trou', label: 'Trou', icon: 'warning-outline', class: 'danger' },
+        { value: 'Chantier', label: 'Chantier', icon: 'construct-outline', class: 'warning' },
+        { value: 'Déviation', label: 'Déviation', icon: 'swap-horizontal-outline', class: 'info' },
+        { value: 'Autre', label: 'Autre', icon: 'help-outline', class: 'default' }
+      ]
+    }
+    
+    const mapped = types.map((type) => {
+      // Utiliser le mapping pour l'icône, sinon utiliser l'icône du backend ou une icône par défaut
+      const iconeBackend = (type.icone || 'alert').toLowerCase()
+      const ioniconsIcon = iconMapping[iconeBackend] || 'help-outline'
+      
+      const mapped = {
+        value: type.libelle,
+        label: type.libelle,
+        icon: ioniconsIcon,
+        class: type.couleur ? '' : 'default',
+        color: type.couleur
+      }
+      return mapped
+    })
+    
+    return mapped
+  })
 
   const estimateDataUrlBytes = (dataUrl: string): number => {
     if (!dataUrl) return 0
@@ -318,16 +376,22 @@ export function useReportForm(options: UseReportFormOptions) {
     submitting.value = true
 
     try {
-      await createReport({
+      const reportData: any = {
         uid: options.userId.value as string,
         description: reportDescription.value,
         type: reportType.value as any,
         lat: options.newPosition.value.lat,
         lng: options.newPosition.value.lng,
-        status: 'nouveau',
-        surfaceM2: Number(surfaceM2.value || 0),
-        photo: reportPhoto.value || undefined
-      } as any)
+        status: getInitialStatusLabel(),
+        surfaceM2: Number(surfaceM2.value || 0)
+      }
+
+      // Ajouter la photo seulement si elle existe
+      if (reportPhoto.value) {
+        reportData.photo = reportPhoto.value
+      }
+
+      await createReport(reportData)
 
       options.showToast('Signalement créé avec succès!')
       closeForm()
@@ -360,6 +424,7 @@ export function useReportForm(options: UseReportFormOptions) {
     formProgress,
     canSubmit,
     placeholderText,
+    availableTypes,
     startAddReport,
     startAddReportAtPosition,
     closeForm,

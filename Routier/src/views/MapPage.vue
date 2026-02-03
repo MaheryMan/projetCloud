@@ -268,7 +268,7 @@
               
               <div class="type-grid">
                 <div 
-                  v-for="type in reportTypes" 
+                  v-for="type in availableTypes || []" 
                   :key="type.value"
                   class="type-card"
                   :class="{ 'selected': reportType === type.value }"
@@ -461,6 +461,7 @@ const {
   formProgress,
   canSubmit,
   placeholderText,
+  availableTypes,
   startAddReport: _startAddReport,
   closeForm,
   openPhotoOptions,
@@ -520,11 +521,8 @@ const statsData = computed(() => [
   }
 ]);
 
-const reportTypes: Array<{ value: ReportType; label: string; icon: string; class: string }> = [
-  { value: 'trou', label: 'Trou', icon: 'warning-outline', class: 'danger' },
-  { value: 'chantier', label: 'Chantier', icon: 'construct-outline', class: 'warning' },
-  { value: 'deviation', label: 'Déviation', icon: 'swap-horizontal-outline', class: 'info' }
-];
+// Les types sont maintenant fournis par le composable useReportForm (via metadata store)
+// const reportTypes est défini dans le composable et exposé comme 'availableTypes'
 
 const legendItems = [
   { type: 'nouveau', label: 'Nouveau', icon: '●' },
