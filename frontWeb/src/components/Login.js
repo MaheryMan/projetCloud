@@ -31,15 +31,15 @@ function Login({ onLogin }) {
       console.log('Connexion réussie:', data);
       
       localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user.id));
       if (onLogin) onLogin(data);
-      if (data.user.roles && data.user.roles.some(role => role.libelle === 'Manager')
-    ) {
-      navigate('/dashboard');
-    } else {
-      console.log("role de l'user ", data.user.roles);
-      navigate('/');
-    }
+      
+      // Redirection basée sur le rôle
+      if (data.user.roles && data.user.roles.some(role => role.libelle === 'Manager')) {
+        navigate('/dashboard');
+      } else {
+        console.log("role de l'user ", data.user.roles);
+        navigate('/');
+      }
       
     } catch (err) {
       setError(err.message || 'Une erreur est survenue');

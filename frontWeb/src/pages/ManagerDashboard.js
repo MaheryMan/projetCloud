@@ -187,7 +187,6 @@ function ManagerDashboard() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Date</th>
                 <th>Localisation</th>
                 <th>Statut</th>
@@ -199,7 +198,6 @@ function ManagerDashboard() {
             <tbody>
               {recentSignalements.map((signal) => (
                 <tr key={signal.id}>
-                  <td>#{signal.id}</td>
                       <td>
                     {signal.typeSignalement?.createdAt
                       ? formatDate(signal.typeSignalement.createdAt)

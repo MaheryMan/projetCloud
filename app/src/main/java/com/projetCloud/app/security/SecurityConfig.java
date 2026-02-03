@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/users").permitAll()
                 // Lecture des signalements publique
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/signalements/**").permitAll()
+               .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/entreprises").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/types-signalement").permitAll()
                 // Mobile_User: accès limité
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/signalements").hasAnyAuthority("Mobile_User", "Manager")
