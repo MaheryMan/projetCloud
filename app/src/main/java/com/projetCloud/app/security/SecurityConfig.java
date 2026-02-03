@@ -43,8 +43,6 @@ public class SecurityConfig {
                 ).permitAll()
                 // Upload de photos publique
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/photos/upload").permitAll()
-                // Création d'utilisateur publique
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/users").permitAll()
                 // Création de signalements publique (pour visiteurs non authentifiés)                // Lecture des signalements publique
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/signalements/**").permitAll()
                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/entreprises").permitAll()
