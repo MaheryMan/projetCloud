@@ -152,12 +152,12 @@ function Login({ onLogin }) {
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
           </form>
-          <div style={{ textAlign: 'center', marginTop: 16 }}>
+          {/* <div style={{ textAlign: 'center', marginTop: 16 }}>
             <button type="button" className="login-google-btn" onClick={handleGoogleLogin} disabled={loading}>
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{ width: 22, height: 22, marginRight: 10, background: 'none', verticalAlign: 'middle' }} />
               Se connecter avec Google
             </button>
-          </div>
+          </div> */}
 
           {/* <div className="signup-link">
             Pas encore de compte ? <a href="/register">S'inscrire</a>

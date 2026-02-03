@@ -12,6 +12,34 @@ function Synchronization() {
   const [syncLog, setSyncLog] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState('checking');
 
+  // Utilitaire générique pour appeler une API sync
+  const callSyncApi = async (endpoint, label) => {
+    if (!syncStatus.isOnline) {
+      alert('❌ Pas de connexion Internet. Synchronisation impossible.');
+      return;
+    }
+    setSyncing(true);
+    addLog(`⏳ Appel de ${label}...`, 'info');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/sync/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        addLog(`✅ ${label} : ${data.message || 'Succès'} (${data.syncedCount !== undefined ? data.syncedCount : ''})`, 'success');
+      } else {
+        addLog(`❌ ${label} : ${data.message || 'Erreur'}`, 'error');
+      }
+      await fetchSyncStatus();
+    } catch (error) {
+      addLog(`❌ ${label} : Erreur réseau ou serveur`, 'error');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   useEffect(() => {
     checkConnectionStatus();
     fetchSyncStatus();
@@ -19,10 +47,11 @@ function Synchronization() {
 
   const checkConnectionStatus = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/sync/status');
-      const data = await response.json();
-      setConnectionStatus(data.online ? 'online' : 'offline');
-      setSyncStatus(prev => ({ ...prev, isOnline: data.online }));
+      const response = await fetch('http://localhost:8080/api/connectivity/firebase');
+      // L'API retourne un booléen pur
+      const isOnline = await response.json();
+      setConnectionStatus(isOnline ? 'online' : 'offline');
+      setSyncStatus(prev => ({ ...prev, isOnline }));
     } catch (error) {
       setConnectionStatus('offline');
       setSyncStatus(prev => ({ ...prev, isOnline: false }));
@@ -192,41 +221,43 @@ function Synchronization() {
 
       <div className="sync-actions">
         <div className="action-card">
-          <div className="action-icon">📥</div>
-          <h3>Récupérer depuis Firebase</h3>
-          <p>Importer les nouveaux signalements depuis le cloud</p>
-          <button 
-            className="action-btn primary"
-            onClick={handleSyncFromFirebase}
-            disabled={syncing || !syncStatus.isOnline}
-          >
-            {syncing ? '⏳ Synchronisation...' : '📥 Récupérer'}
-          </button>
-        </div>
-
-        <div className="action-card">
           <div className="action-icon">📤</div>
-          <h3>Envoyer vers Firebase</h3>
-          <p>Exporter les données locales vers le cloud</p>
-          <button 
-            className="action-btn success"
-            onClick={handleSyncToFirebase}
-            disabled={syncing || !syncStatus.isOnline}
-          >
-            {syncing ? '⏳ Synchronisation...' : '📤 Envoyer'}
+          <h3>Synchroniser utilisateurs locaux → Firebase</h3>
+          <p>POST /api/sync/users</p>
+          <button className="action-btn" onClick={() => callSyncApi('users', 'Utilisateurs locaux → Firebase')} disabled={syncing || !syncStatus.isOnline}>
+            {syncing ? '⏳...' : 'Synchroniser'}
           </button>
         </div>
-
+        <div className="action-card">
+          <div className="action-icon">📥</div>
+          <h3>Synchroniser utilisateurs Firebase → PostgreSQL</h3>
+          <p>POST /api/sync/users/from-firebase</p>
+          <button className="action-btn" onClick={() => callSyncApi('users/from-firebase', 'Utilisateurs Firebase → PostgreSQL')} disabled={syncing || !syncStatus.isOnline}>
+            {syncing ? '⏳...' : 'Synchroniser'}
+          </button>
+        </div>
+        <div className="action-card">
+          <div className="action-icon">📝</div>
+          <h3>Synchroniser modifications hors ligne</h3>
+          <p>POST /api/sync/users/offline-changes</p>
+          <button className="action-btn" onClick={() => callSyncApi('users/offline-changes', 'Modifications hors ligne')} disabled={syncing || !syncStatus.isOnline}>
+            {syncing ? '⏳...' : 'Synchroniser'}
+          </button>
+        </div>
+        <div className="action-card">
+          <div className="action-icon">🔖</div>
+          <h3>Synchroniser métadonnées</h3>
+          <p>POST /api/sync/metadata</p>
+          <button className="action-btn" onClick={() => callSyncApi('metadata', 'Métadonnées')} disabled={syncing || !syncStatus.isOnline}>
+            {syncing ? '⏳...' : 'Synchroniser'}
+          </button>
+        </div>
         <div className="action-card">
           <div className="action-icon">🔄</div>
-          <h3>Synchronisation complète</h3>
-          <p>Récupérer et envoyer toutes les données</p>
-          <button 
-            className="action-btn purple"
-            onClick={handleFullSync}
-            disabled={syncing || !syncStatus.isOnline}
-          >
-            {syncing ? '⏳ Synchronisation...' : '🔄 Synchroniser'}
+          <h3>Synchronisation bi-directionnelle des signalements</h3>
+          <p>POST /api/sync/signalements/bidirectional</p>
+          <button className="action-btn" onClick={() => callSyncApi('signalements/bidirectional', 'Sync bi-directionnelle signalements')} disabled={syncing || !syncStatus.isOnline}>
+            {syncing ? '⏳...' : 'Synchroniser'}
           </button>
         </div>
       </div>
