@@ -54,7 +54,7 @@ function Login({ onLogin }) {
         {/* Left Side - Visual Section */}
         <div className="login-visual">
           <div className="visual-content">
-            <div className="visual-icon">🚧</div>
+            <div className="visual-icon"></div>
             <h2 className="visual-title">Travaux Routiers</h2>
             <p className="visual-description">
               Plateforme de gestion et de signalement des travaux routiers à Antananarivo
