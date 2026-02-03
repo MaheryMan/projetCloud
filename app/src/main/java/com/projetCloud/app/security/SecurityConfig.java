@@ -38,16 +38,18 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     "/actuator/**",
                     "/api/connectivity/**",
-                    "/api/sync/**"
+                    "/api/sync/**",
+                    "/uploads/photos/**"
                 ).permitAll()
+                // Upload de photos publique
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/photos/upload").permitAll()
                 // Création d'utilisateur publique
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/users").permitAll()
-                // Lecture des signalements publique
+                // Création de signalements publique (pour visiteurs non authentifiés)                // Lecture des signalements publique
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/signalements/**").permitAll()
                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/entreprises").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/types-signalement").permitAll()
                 // Mobile_User: accès limité
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/signalements").hasAnyAuthority("Mobile_User", "Manager")
                 .requestMatchers(org.springframework.http.HttpMethod.GET,
                         "/api/types-signalement/**",
                         "/api/entreprises/**"

@@ -2,9 +2,14 @@ package com.projetCloud.app.signalements;
 
 import com.projetCloud.app.typesSignalement.TypeSignalement;
 import com.projetCloud.app.utilisateurs.Utilisateur;
+import com.projetCloud.app.photos.Photo;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "signalements")
@@ -26,9 +31,6 @@ public class Signalement {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "photo_url", columnDefinition = "TEXT")
-    private String photoUrl;
-
     @Column(precision = 15, scale = 2)
     private BigDecimal budget;
 
@@ -45,6 +47,10 @@ public class Signalement {
     @ManyToOne
     @JoinColumn(name = "id_utilisateur", nullable = false)
     private Utilisateur utilisateur;
+
+    // Relation avec Photos (liste)
+    @OneToMany(mappedBy = "signalement", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Photo> photos = new ArrayList<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -71,13 +77,12 @@ public class Signalement {
     // Constructeurs
     public Signalement() {}
 
-    public Signalement(BigDecimal latitude, BigDecimal longitude, BigDecimal surfaceM2, BigDecimal budget, String description, String photoUrl, Long idEntreprise, Long idStatus, TypeSignalement typeSignalement, Utilisateur utilisateur) {
+    public Signalement(BigDecimal latitude, BigDecimal longitude, BigDecimal surfaceM2, BigDecimal budget, String description, Long idEntreprise, Long idStatus, TypeSignalement typeSignalement, Utilisateur utilisateur) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.surfaceM2 = surfaceM2;
         this.budget = budget;
         this.description = description;
-        this.photoUrl = photoUrl;
         this.idEntreprise = idEntreprise;
         this.idStatus = idStatus;
         this.typeSignalement = typeSignalement;
@@ -123,14 +128,6 @@ public class Signalement {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getPhotoUrl() {
-        return photoUrl;
-    }
-
-    public void setPhotoUrl(String photoUrl) {
-        this.photoUrl = photoUrl;
     }
 
     public BigDecimal getBudget() {
@@ -227,5 +224,47 @@ public class Signalement {
 
     public void setNeedsFirebaseSync(Boolean needsFirebaseSync) {
         this.needsFirebaseSync = needsFirebaseSync;
+    }
+
+    public List<Photo> getPhotos() {
+        return photos;
+    }
+
+    public void setPhotos(List<Photo> photos) {
+        this.photos = photos;
+    }
+
+    /**
+     * Ajoute une photo au signalement
+     * @param photo Photo à ajouter
+     */
+    public void addPhoto(Photo photo) {
+        photos.add(photo);
+        photo.setSignalement(this);
+    }
+
+    /**
+     * Supprime une photo du signalement
+     * @param photo Photo à supprimer
+     */
+    public void removePhoto(Photo photo) {
+        photos.remove(photo);
+        photo.setSignalement(null);
+    }
+
+    /**
+     * Méthode utilitaire pour obtenir l'URL de la première photo
+     * @return URL de la première photo ou null si pas de photos
+     */
+    public String getPhotoUrl() {
+        return photos.isEmpty() ? null : photos.get(0).getUrl();
+    }
+
+    /**
+     * Méthode utilitaire pour obtenir toutes les URLs des photos
+     * @return Liste des URLs des photos
+     */
+    public List<String> getPhotoUrls() {
+        return photos.stream().map(Photo::getUrl).toList();
     }
 }

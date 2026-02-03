@@ -29,8 +29,10 @@ function App() {
   }, []);
 
   const handleLogin = (userData) => {
-    setUser(userData.user);
-    localStorage.setItem('user', JSON.stringify(userData.user));
+    // Stocker les rôles avec l'utilisateur
+    const userWithRoles = { ...userData.user, roles: userData.roles };
+    setUser(userWithRoles);
+    localStorage.setItem('user', JSON.stringify(userWithRoles));
   };
 
   const handleLogout = () => {
@@ -45,7 +47,7 @@ function App() {
     if (!token) return <Navigate to="/login" />;
     
     // Vérifier si l'utilisateur est un manager
-    if (!user || !user.roles || !user.roles.some(role => role.libelle === 'Manager')) {
+    if (!user || !user.roles || !user.roles.includes('Manager')) {
       return <Navigate to="/" />;
     }
     
@@ -57,12 +59,12 @@ function App() {
       <div className="App">
         <FirebaseStatusBubble />
         {/* ⭐ NAVBAR - Affichée seulement pour les managers */}
-        {user && user.roles && user.roles.some(role => role.libelle === 'Manager') && (
+        {user && user.roles && user.roles.includes('Manager') && (
           <Navbar user={user} onLogout={handleLogout} />
         )}
         
         {/* ⭐ CONTENU PRINCIPAL après la navbar */}
-        <main className={`main-content ${!user || !(user.roles && user.roles.some(role => role.libelle === 'Manager')) ? 'visitor-mode' : ''}`}>
+        <main className={`main-content ${!user || !(user.roles && user.roles.includes('Manager')) ? 'visitor-mode' : ''}`}>
           <Routes>
             {/* Route publique - Carte visiteur */}
             <Route path="/" element={<VisitorMap />} />
@@ -72,7 +74,7 @@ function App() {
               path="/login" 
               element={
                 user ? (
-                  <Navigate to={user.roles && user.roles.some(role => role.libelle === 'Manager') ? "/dashboard" : "/"} />
+                  <Navigate to={user.roles && user.roles.includes('Manager') ? "/dashboard" : "/"} />
                 ) : (
                   <div className="auth-page">
                     <Login onLogin={handleLogin} />
@@ -84,7 +86,7 @@ function App() {
               path="/register" 
               element={
                 user ? (
-                  user.roles && user.roles.some(role => role.libelle === 'Manager') 
+                  user.roles && user.roles.includes('Manager') 
                     ? <Navigate to="/dashboard" /> 
                     : <Navigate to="/" />
                 ) : (

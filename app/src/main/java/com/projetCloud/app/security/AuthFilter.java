@@ -48,6 +48,8 @@ public class AuthFilter extends OncePerRequestFilter {
             path.startsWith("/actuator") ||
             path.startsWith("/api/connectivity") ||
             path.startsWith("/api/sync") ||
+            path.startsWith("/uploads/photos/") ||
+            ("POST".equalsIgnoreCase(method) && "/api/photos/upload".equals(path)) ||
             ("POST".equalsIgnoreCase(method) && "/api/users".equals(path)) ||
             ("GET".equalsIgnoreCase(method) && path.startsWith("/api/signalements"))||
             ("GET".equalsIgnoreCase(method) && path.startsWith("/api/entreprises"))) {

@@ -217,7 +217,6 @@ CREATE TABLE signalements (
     
     -- Description
     description TEXT NOT NULL,
-    photo_url TEXT,                   -- URL de la photo si uploadée
     
     -- Détails techniques
     surface_m2 NUMERIC(15,2),
@@ -244,6 +243,46 @@ CREATE TABLE signalements (
     CONSTRAINT positive_surface CHECK (surface_m2 IS NULL OR surface_m2 >= 0),
     CONSTRAINT positive_budget CHECK (budget IS NULL OR budget >= 0)
 );
+
+-- =========================
+-- TABLE: PHOTOS (entité séparée pour plusieurs photos par signalement)
+-- =========================
+
+-- Fonction pour mettre à jour automatiquement updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TABLE photos (
+    id BIGSERIAL PRIMARY KEY,
+    url VARCHAR(1000) NOT NULL,
+    description VARCHAR(500),
+    file_name VARCHAR(255),
+    file_size BIGINT,
+    mime_type VARCHAR(100),
+    uploaded_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Relation vers signalement (plusieurs photos par signalement)
+    id_signalement BIGINT REFERENCES signalements(id) ON DELETE CASCADE
+);
+
+-- Index pour photos
+CREATE INDEX idx_photos_url ON photos(url);
+CREATE INDEX idx_photos_file_name ON photos(file_name);
+CREATE INDEX idx_photos_mime_type ON photos(mime_type);
+CREATE INDEX idx_photos_created_at ON photos(created_at);
+CREATE INDEX idx_photos_signalement_id ON photos(id_signalement);
+
+-- Trigger pour mettre à jour updated_at dans photos
+CREATE TRIGGER update_photos_updated_at 
+    BEFORE UPDATE ON photos 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 
 -- Index pour signalements
 CREATE INDEX idx_signalements_location ON signalements (latitude, longitude);
@@ -382,15 +421,6 @@ ORDER BY COUNT(s.id) DESC;
 -- =========================
 -- FONCTIONS ET TRIGGERS
 -- =========================
-
--- Fonction: Mettre à jour updated_at automatiquement
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
 
 -- Triggers pour les tables principales
 CREATE TRIGGER update_utilisateurs_updated_at 

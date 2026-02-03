@@ -5,6 +5,9 @@ import com.projetCloud.app.status.StatusService;
 import com.projetCloud.app.typesSignalement.TypeSignalement;
 import com.projetCloud.app.typesSignalement.TypeSignalementService;
 import com.projetCloud.app.utilisateurs.Utilisateur;
+import com.projetCloud.app.utilisateurs.UtilisateurService;
+import com.projetCloud.app.photos.Photo;
+import com.projetCloud.app.photos.PhotoService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +42,12 @@ public class SignalementController {
 
     @Autowired
     private TypeSignalementService typeSignalementService;
+
+    @Autowired
+    private PhotoService photoService;
+
+    @Autowired
+    private UtilisateurService utilisateurService;
 
     @GetMapping
     @Operation(summary = "Récupérer tous les signalements", description = "Retourne la liste de tous les signalements")
@@ -155,9 +164,33 @@ public class SignalementController {
             HttpServletRequest httpServletRequest) {
         Object currentUserAttr = httpServletRequest.getAttribute("currentUser");
         Utilisateur currentUser = currentUserAttr instanceof Utilisateur ? (Utilisateur) currentUserAttr : null;
-        Optional<Utilisateur> utilisateur = currentUser != null ? Optional.of(currentUser) : Optional.empty();
+        
+        // Récupérer l'utilisateur (connecté ou par ID fourni dans la requête)
+        Optional<Utilisateur> utilisateur = Optional.empty();
+        if (currentUser != null) {
+            utilisateur = Optional.of(currentUser);
+        } else if (request.getIdUtilisateur() != null) {
+            utilisateur = utilisateurService.findById(request.getIdUtilisateur());
+        }
+        
         Optional<TypeSignalement> typeSignalement = typeSignalementService.findById(request.getIdTypeSignalement());
-        Optional<Status> status = statusService.findByCode("REPORT_NOUVEAU");
+        Optional<Status> status = statusService.findByCode("REPORT001"); // Nouveau
+
+        // Log pour debug
+        System.out.println("=== DEBUG CREATE SIGNALEMENT ===");
+        System.out.println("Utilisateur present: " + utilisateur.isPresent());
+        System.out.println("TypeSignalement present: " + typeSignalement.isPresent() + " (ID: " + request.getIdTypeSignalement() + ")");
+        System.out.println("Status present: " + status.isPresent());
+        if (!utilisateur.isPresent()) {
+            System.out.println("ERREUR: Utilisateur non trouvé (ID: " + request.getIdUtilisateur() + ")");
+        }
+        if (!typeSignalement.isPresent()) {
+            System.out.println("ERREUR: TypeSignalement non trouvé (ID: " + request.getIdTypeSignalement() + ")");
+        }
+        if (!status.isPresent()) {
+            System.out.println("ERREUR: Status 'REPORT001' non trouvé");
+        }
+        System.out.println("================================");
 
         if (utilisateur.isPresent() && typeSignalement.isPresent() && status.isPresent()) {
             Signalement signalement = new Signalement(
@@ -166,15 +199,64 @@ public class SignalementController {
                 request.getSurfaceM2(),
                 request.getBudget(),
                 request.getDescription(),
-                request.getPhotoUrl(),
                 request.getIdEntreprise(),
                 status.get().getId(),
                 typeSignalement.get(),
                 utilisateur.get()
             );
+            
+            // Gestion de la photo si une URL est fournie
+            if (request.getPhotoUrl() != null && !request.getPhotoUrl().trim().isEmpty()) {
+                try {
+                    // Créer une nouvelle photo SANS la sauvegarder (pas de cascade issue)
+                    Photo photo = new Photo(
+                        request.getPhotoUrl().trim(),
+                        null,
+                        null,
+                        "image/jpeg"
+                    );
+                    signalement.addPhoto(photo);
+                } catch (Exception e) {
+                    // Log l'erreur mais continue sans photo
+                    System.err.println("Erreur lors de la création de la photo: " + e.getMessage());
+                }
+            }
+            
+            // Gestion des photos multiples (si fournies)
+            if (request.getPhotoUrls() != null && !request.getPhotoUrls().isEmpty()) {
+                for (String photoUrl : request.getPhotoUrls()) {
+                    if (photoUrl != null && !photoUrl.trim().isEmpty()) {
+                        try {
+                            // Créer une nouvelle photo SANS la sauvegarder
+                            Photo photo = new Photo(
+                                photoUrl.trim(),
+                                null,
+                                null,
+                                "image/jpeg"
+                            );
+                            signalement.addPhoto(photo);
+                        } catch (Exception e) {
+                            System.err.println("Erreur lors de la création d'une photo multiple: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+            
             return ResponseEntity.ok(signalementService.save(signalement));
         } else {
-            return ResponseEntity.badRequest().build();
+            // Créer un message d'erreur détaillé
+            String errorMessage = "Erreur de validation: ";
+            if (!utilisateur.isPresent()) {
+                errorMessage += "Utilisateur non trouvé (ID: " + request.getIdUtilisateur() + "). ";
+            }
+            if (!typeSignalement.isPresent()) {
+                errorMessage += "Type de signalement non trouvé (ID: " + request.getIdTypeSignalement() + "). ";
+            }
+            if (!status.isPresent()) {
+                errorMessage += "Statut 'REPORT001' (Nouveau) non trouvé dans la base de données. ";
+            }
+            System.err.println(errorMessage);
+            return ResponseEntity.badRequest().body(null);
         }
     }
 
@@ -206,9 +288,6 @@ public class SignalementController {
             if (request.getDescription() != null && !request.getDescription().trim().isEmpty()) {
                 signalement.setDescription(request.getDescription());
             }
-            if (request.getPhotoUrl() != null) {
-                signalement.setPhotoUrl(request.getPhotoUrl());
-            }
             if (request.getIdEntreprise() != null) {
                 signalement.setIdEntreprise(request.getIdEntreprise());
             }
@@ -225,6 +304,46 @@ public class SignalementController {
                     return ResponseEntity.badRequest().build();
                 }
                 signalement.setTypeSignalement(typeSignalement.get());
+            }
+            
+            // Gestion de la photo
+            if (request.getPhotoUrl() != null) {
+                if (request.getPhotoUrl().trim().isEmpty()) {
+                    // Supprimer toutes les photos si URL vide
+                    signalement.getPhotos().clear();
+                } else {
+                    try {
+                        // Remplacer toutes les photos par la nouvelle
+                        signalement.getPhotos().clear();
+                        Photo photo = photoService.findOrCreateByUrl(
+                            request.getPhotoUrl().trim(), 
+                            null, 
+                            "image/jpeg"
+                        );
+                        signalement.addPhoto(photo);
+                    } catch (Exception e) {
+                        System.err.println("Erreur lors de la mise à jour de la photo: " + e.getMessage());
+                    }
+                }
+            }
+            
+            // Gestion des photos multiples (remplace toutes les photos existantes)
+            if (request.getPhotoUrls() != null) {
+                signalement.getPhotos().clear();
+                for (String photoUrl : request.getPhotoUrls()) {
+                    if (photoUrl != null && !photoUrl.trim().isEmpty()) {
+                        try {
+                            Photo photo = photoService.findOrCreateByUrl(
+                                photoUrl.trim(), 
+                                null, 
+                                "image/jpeg"
+                            );
+                            signalement.addPhoto(photo);
+                        } catch (Exception e) {
+                            System.err.println("Erreur lors de l'ajout d'une photo multiple: " + e.getMessage());
+                        }
+                    }
+                }
             }
             
             // Marquer pour synchronisation Firebase si le signalement a un firebaseId
@@ -388,6 +507,9 @@ public class SignalementController {
         @Schema(description = "URL de la photo", example = "https://example.com/photo.jpg")
         private String photoUrl;
 
+        @Schema(description = "Liste des URLs des photos", example = "[\"https://example.com/photo1.jpg\", \"https://example.com/photo2.jpg\"]")
+        private List<String> photoUrls;
+
         @Schema(description = "ID du type de signalement", example = "1", required = true, format = "int64")
         private Long idTypeSignalement;
 
@@ -446,6 +568,14 @@ public class SignalementController {
 
         public void setPhotoUrl(String photoUrl) {
             this.photoUrl = photoUrl;
+        }
+
+        public List<String> getPhotoUrls() {
+            return photoUrls;
+        }
+
+        public void setPhotoUrls(List<String> photoUrls) {
+            this.photoUrls = photoUrls;
         }
 
         public Long getIdTypeSignalement() {

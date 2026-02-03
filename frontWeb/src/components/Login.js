@@ -31,15 +31,21 @@ function Login({ onLogin }) {
 
       const data = await response.json();
       console.log('Connexion réussie:', data);
+      console.log('data.roles =', data.roles);
+      console.log('Type:', typeof data.roles);
+      console.log('Is Array?', Array.isArray(data.roles));
+      console.log('First element:', data.roles ? data.roles[0] : 'undefined');
+      console.log('Includes Manager?', data.roles ? data.roles.includes('Manager') : 'no roles');
       
       localStorage.setItem('token', data.token);
       if (onLogin) onLogin(data);
       
       // Redirection basée sur le rôle
-      if (data.user.roles && data.user.roles.some(role => role.libelle === 'Manager')) {
+      if (data.roles && data.roles.includes('Manager')) {
+        console.log('REDIRECTION VERS DASHBOARD');
         navigate('/dashboard');
       } else {
-        console.log("role de l'user ", data.user.roles);
+        console.log('REDIRECTION VERS MAP');
         navigate('/');
       }
       

@@ -56,8 +56,10 @@ function VisitorMap() {
     longitude: 0,
     description: '',
     surface: 0,
-    idTypeSignalement: ''
+    idTypeSignalement: '',
+    photos: [] // Array de fichiers photos
   });
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState([]);
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [typesSignalement, setTypesSignalement] = useState([]);
   const [entreprises, setEntreprises] = useState([]);
@@ -274,6 +276,10 @@ const handleSubmitSignalement = async () => {
       // Récupérer l'ID utilisateur depuis localStorage (si connecté)
       const token = await getAuthToken();
       const userId = localStorage.getItem('user');
+      
+      // Upload des photos vers Firebase Storage ou autre service
+      const photoUrls = await uploadPhotos(newSignalement.photos);
+      
       // Préparer les headers
       const headers = {
         'Content-Type': 'application/json'
@@ -291,9 +297,10 @@ const handleSubmitSignalement = async () => {
           description: newSignalement.description,
           surfaceM2: newSignalement.surface || 0,
           budget: 0, // Budget par défaut
-          idTypeSignalement: newSignalement.idTypeSignalement,
+          idTypeSignalement: parseInt(newSignalement.idTypeSignalement), // Convertir en nombre
           idStatus: 1, // Statut "nouveau" par défaut
           idEntreprise: null,
+          photoUrls: photoUrls, // Array d'URLs de photos
           // Utiliser l'ID de l'utilisateur connecté OU l'ID anonyme (1)
           idUtilisateur: userId ? parseInt(userId) : 1
         })
@@ -307,12 +314,77 @@ const handleSubmitSignalement = async () => {
       alert('✅ Signalement ajouté avec succès !');
       setShowModal(false);
       setIsAddingMode(false);
-      setNewSignalement({ latitude: 0, longitude: 0, description: '', surface: 0, idTypeSignalement: '' });
+      setNewSignalement({ latitude: 0, longitude: 0, description: '', surface: 0, idTypeSignalement: '', photos: [] });
+      setPhotoPreviewUrls([]);
       await fetchSignalements();
     } catch (error) {
       console.error('Erreur:', error);
       alert('❌ Erreur lors de l\'ajout du signalement: ' + error.message);
     }
+  };
+
+  // Fonction pour uploader les photos vers le backend
+  const uploadPhotos = async (photos) => {
+    if (!photos || photos.length === 0) return [];
+    
+    try {
+      const formData = new FormData();
+      photos.forEach(photo => {
+        formData.append('files', photo);
+      });
+      
+      const response = await fetch('http://localhost:8080/api/photos/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erreur upload: ${errorText}`);
+      }
+      
+      const uploadedUrls = await response.json();
+      return uploadedUrls;
+    } catch (error) {
+      console.error('Erreur lors de l\'upload des photos:', error);
+      throw error;
+    }
+  };
+
+  // Gestion de la sélection de photos
+  const handlePhotoChange = (e) => {
+    const files = Array.from(e.target.files);
+    const maxPhotos = 5; // Limite de 5 photos
+    
+    if (newSignalement.photos.length + files.length > maxPhotos) {
+      alert(`Vous ne pouvez ajouter que ${maxPhotos} photos maximum`);
+      return;
+    }
+    
+    // Ajouter les nouvelles photos
+    setNewSignalement({
+      ...newSignalement,
+      photos: [...newSignalement.photos, ...files]
+    });
+    
+    // Créer les URLs de prévisualisation
+    const newPreviewUrls = files.map(file => URL.createObjectURL(file));
+    setPhotoPreviewUrls([...photoPreviewUrls, ...newPreviewUrls]);
+  };
+
+  // Supprimer une photo
+  const handleRemovePhoto = (index) => {
+    const newPhotos = [...newSignalement.photos];
+    newPhotos.splice(index, 1);
+    setNewSignalement({
+      ...newSignalement,
+      photos: newPhotos
+    });
+    
+    const newPreviews = [...photoPreviewUrls];
+    URL.revokeObjectURL(newPreviews[index]); // Libérer la mémoire
+    newPreviews.splice(index, 1);
+    setPhotoPreviewUrls(newPreviews);
   };
 
   const MapClickHandler = () => {
@@ -589,6 +661,40 @@ const handleSubmitSignalement = async () => {
                   placeholder="Surface en m²"
                   min="0"
                 />
+              </div>
+
+              <div className="form-group">
+                <label>Photos (max 5)</label>
+                <div className="photo-upload-section">
+                  <input
+                    type="file"
+                    id="photo-upload"
+                    multiple
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    style={{ display: 'none' }}
+                  />
+                  <label htmlFor="photo-upload" className="photo-upload-btn">
+                    📷 Ajouter des photos ({newSignalement.photos.length}/5)
+                  </label>
+                  
+                  {photoPreviewUrls.length > 0 && (
+                    <div className="photo-previews">
+                      {photoPreviewUrls.map((url, index) => (
+                        <div key={index} className="photo-preview-item">
+                          <img src={url} alt={`Photo ${index + 1}`} />
+                          <button
+                            type="button"
+                            className="remove-photo-btn"
+                            onClick={() => handleRemovePhoto(index)}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="modal-actions">

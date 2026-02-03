@@ -531,10 +531,27 @@ const fetchEntreprises = async () => {
                       </span>
                     </td>
                     <td className="photo-cell">
-                      {signal.photoUrl ? (
-                        <a href={signal.photoUrl} target="_blank" rel="noopener noreferrer" className="photo-link">
-                          📷 Voir photo
-                        </a>
+                      {signal.photos && signal.photos.length > 0 ? (
+                        <div className="photo-link-wrapper">
+                          <span className="photo-link">
+                            📷 {signal.photos.length} photo{signal.photos.length > 1 ? 's' : ''}
+                          </span>
+                          <div className="photo-preview-tooltip">
+                            <div className="photo-grid">
+                              {signal.photos.map((photo, index) => (
+                                <a 
+                                  key={photo.id || index} 
+                                  href={photo.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="photo-thumbnail"
+                                >
+                                  <img src={photo.url} alt={`Photo ${index + 1}`} />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                       ) : (
                         <span className="no-photo">Aucune photo</span>
                       )}
