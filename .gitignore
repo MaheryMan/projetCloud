@@ -1,7 +1,54 @@
-app/.DS_Store
+# OS files
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Maven/Java
+app/target/
+app/.classpath
+app/.project
+app/.settings/
+*.class
+*.jar
+
+# Firebase
+app/src/main/resources/firebase-sdk.json
+login.json
+
+# Map data
 map/data/madagascar-latest.osm.pbf
 madagascar-latest.osm.pbf
 osm_tile_server.tar
 map/madagascar.osm.pbf
-app/src/main/resources/firebase-sdk.json
+
+# Build outputs
+dist/
+build/
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Ionic/Capacitor
+Routier/www/
+Routier/.angular/
+Routier/dist/
