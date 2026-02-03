@@ -51,6 +51,7 @@ function Navbar({ user, onLogout }) {
               <Link to="/dashboard" className="nav-link">Tableau de bord</Link>
               <Link to="/signalements" className="nav-link">Signalements</Link>
               <Link to="/users" className="nav-link">Utilisateurs</Link>
+              <Link to="/statistics" className="nav-link">Statistiques</Link>
               <Link to="/sync" className="nav-link">Synchronisation</Link>
               <Link to="/settings" className="nav-link">Paramètres</Link>
               <div className="nav-user">

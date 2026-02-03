@@ -8,8 +8,10 @@ import VisitorMap from './pages/VisitorMap';
 import ManagerDashboard from './pages/ManagerDashboard';
 import SignalementManagement from './pages/SignalementManagement';
 import UserManagement from './pages/UserManagement';
+import Statistics from './pages/Statistics';
 import Synchronization from './pages/Synchronization';
 import Settings from './pages/Settings';
+import { startSessionMonitoring, stopSessionMonitoring } from './services/authService';
 import './App.css';
 
 function App() {
@@ -26,6 +28,21 @@ function App() {
         localStorage.removeItem('user');
       }
     }
+
+    // Démarrer le monitoring de session si utilisateur connecté
+    let monitoringId = null;
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Vérifier toutes les 5 minutes si la session est toujours valide
+      monitoringId = startSessionMonitoring(5);
+    }
+
+    // Nettoyer le monitoring au démontage du composant
+    return () => {
+      if (monitoringId) {
+        stopSessionMonitoring(monitoringId);
+      }
+    };
   }, []);
 
   const handleLogin = (userData) => {
@@ -119,6 +136,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserManagement />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/statistics" 
+              element={
+                <ProtectedRoute>
+                  <Statistics />
                 </ProtectedRoute>
               } 
             />

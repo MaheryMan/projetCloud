@@ -102,7 +102,16 @@ public class AuthService {
         }
 
         Session session = sessionOpt.get();
-        if (!session.getIsValid() || session.getExpiresAt().isBefore(LocalDateTime.now())) {
+        
+        // Vérifier si la session est expirée et l'invalider automatiquement
+        if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
+            session.setIsValid(false);
+            sessionRepository.save(session);
+            return Optional.empty();
+        }
+        
+        // Vérifier si la session est valide
+        if (!session.getIsValid()) {
             return Optional.empty();
         }
 

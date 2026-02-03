@@ -414,7 +414,7 @@ const fetchEntreprises = async () => {
                 {editingId === signal.id ? (
                   <>
                   
-                    <td>{formatDate(signal.date)}</td>
+                    <td>{formatDate(signal.lastHistoriqueDate || signal.createdAt)}</td>
                     <td>
                       <select
                         value={editForm.idStatus}
@@ -521,9 +521,11 @@ const fetchEntreprises = async () => {
                   <>
                  
                   <td>
-                    {signal.typeSignalement?.createdAt
-                      ? formatDate(signal.typeSignalement.createdAt)
-                      : ''}
+                    {signal.lastHistoriqueDate
+                      ? formatDate(signal.lastHistoriqueDate)
+                      : signal.createdAt
+                      ? formatDate(signal.createdAt)
+                      : 'N/A'}
                   </td>
                     <td>
                       <span className={getStatusClass(signal.idStatus)}>

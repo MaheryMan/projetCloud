@@ -49,6 +49,7 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/signalements/**").permitAll()
                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/entreprises").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/types-signalement").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/historiques/**").permitAll()
                 // Mobile_User: accès limité
                 .requestMatchers(org.springframework.http.HttpMethod.GET,
                         "/api/types-signalement/**",
