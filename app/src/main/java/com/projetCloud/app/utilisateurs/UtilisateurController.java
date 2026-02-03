@@ -63,6 +63,13 @@ public class UtilisateurController {
         );
 
         if (authResponse.isPresent()) {
+            // Réinitialiser les tentatives de connexion échouées après une connexion réussie
+            Optional<Utilisateur> user = utilisateurService.findByEmail(loginRequest.getEmail());
+            if (user.isPresent()) {
+                Utilisateur u = user.get();
+                u.setTentativesConnexion(0);
+                utilisateurService.save(u);
+            }
             return ResponseEntity.ok(authResponse.get());
         } else {
             // Gestion des tentatives échouées
