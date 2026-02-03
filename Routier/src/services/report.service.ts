@@ -49,12 +49,24 @@ export async function createReport(payload: Omit<Report, 'id' | 'createdAt'>): P
 export async function getAllReports(): Promise<Report[]> {
   const snap = await getDocs(collection(db, REPORTS_COLLECTION))
 
-  return snap.docs.map((docSnap) => normalizeReport(docSnap.id, docSnap.data()))
+  return snap.docs
+    .map((docSnap) => normalizeReport(docSnap.id, docSnap.data()))
+    .filter((report) => {
+      // Filtrer les signalements avec status "Créé" (en attente de validation)
+      const statusNormalized = report.status?.toLowerCase().replace(/[éè]/g, 'e')
+      return statusNormalized !== 'cree'
+    })
 }
 
 export async function getReportsByUser(uid: string): Promise<Report[]> {
   const q = query(collection(db, REPORTS_COLLECTION), where('uid', '==', uid))
   const snap = await getDocs(q)
 
-  return snap.docs.map((docSnap) => normalizeReport(docSnap.id, docSnap.data()))
+  return snap.docs
+    .map((docSnap) => normalizeReport(docSnap.id, docSnap.data()))
+    .filter((report) => {
+      // Filtrer les signalements avec status "Créé" (en attente de validation)
+      const statusNormalized = report.status?.toLowerCase().replace(/[éè]/g, 'e')
+      return statusNormalized !== 'cree'
+    })
 }
