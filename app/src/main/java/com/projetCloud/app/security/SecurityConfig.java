@@ -51,6 +51,8 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.POST,
                         "/api/entreprises"
                 ).hasAnyAuthority("Mobile_User", "Manager")
+                // Configurations: uniquement pour les Managers
+                .requestMatchers("/api/configurations/**").hasAuthority("Manager")
                 // Manager: accès total au reste de l'API
                 .requestMatchers("/api/**").hasAuthority("Manager")
                 // Tous les autres endpoints nécessitent une authentification
