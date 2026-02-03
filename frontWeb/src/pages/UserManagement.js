@@ -249,14 +249,6 @@ function UserManagement() {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
     }
-  };
-
-  const handleCreateUser = async () => {
-    // Validation
-    if (!newUser.nom.trim() || !newUser.prenom.trim() || !newUser.email.trim() || !newUser.idSource || !newUser.idStatus) {
-      alert('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
 
     // Validation du mot de passe pour les utilisateurs locaux
     const selectedSource = sources.find(s => s.id == newUser.idSource);

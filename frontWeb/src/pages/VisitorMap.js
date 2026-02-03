@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
@@ -37,6 +37,12 @@ const getMarkerIcon = (status) => {
 function VisitorMap() {
   const navigate = useNavigate();
   const [signalements, setSignalements] = useState([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    surfaceTotal: 0,
+    budgetTotal: 0,
+    avancement: 0
+  });
   const [displayStats, setDisplayStats] = useState({
     total: 0,
     surfaceTotal: 0,
@@ -108,36 +114,7 @@ function VisitorMap() {
         console.error('Error parsing user:', e);
       }
     }
-
-    const fetchSignalements = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-        const response = await fetch('http://localhost:8080/api/signalements', { headers });
-        if (!response.ok) throw new Error('Erreur de chargement des signalements');
-        const data = await response.json();
-        setSignalements(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error('Erreur de chargement:', error);
-        setSignalements([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchTypesSignalement = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-        const response = await fetch('http://localhost:8080/api/types-signalement', { headers });
-        if (!response.ok) throw new Error('Erreur de chargement des types');
-        const data = await response.json();
-        setTypesSignalement(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error('Erreur de chargement des types:', error);
-      }
-    };
-
+    
     fetchSignalements();
     fetchTypesSignalement();
     fetchEntreprises();
@@ -351,6 +328,11 @@ const handleSubmitSignalement = async () => {
     const ent = entreprises.find(e => e.id === idEntreprise);
     console.log('found entreprise:', ent);
     return ent ? ent.nom : 'Non attribuée';
+  };
+
+  const getTypeLabel = (idType) => {
+    const type = typesSignalement.find(t => t.id === idType);
+    return type ? type.libelle : 'Type inconnu';
   };
 
   return (
