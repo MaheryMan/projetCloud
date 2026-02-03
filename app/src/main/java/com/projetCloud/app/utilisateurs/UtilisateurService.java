@@ -330,6 +330,11 @@ public class UtilisateurService {
             userData.put("provider", "google");
             userData.put("role", "driver"); // valeur par défaut
             userData.put("createdAt", com.google.cloud.Timestamp.now());
+            
+            // Champs de sécurité pour le blocage de compte
+            userData.put("is_blocked", false);
+            userData.put("tentatives_connexion", 0);
+            userData.put("last_failed_attempt", null);
 
             DocumentReference docRef = firestore.collection("users").document(userRecord.getUid());
             docRef.set(userData); // Asynchrone, pas de .get()
@@ -351,6 +356,11 @@ public class UtilisateurService {
         userData.put("provider", "email"); // ou "google" selon le cas
         userData.put("role", "driver"); // rôle par défaut, peut être modifié
         userData.put("createdAt", com.google.cloud.Timestamp.now());
+        
+        // Champs de sécurité pour le blocage de compte
+        userData.put("is_blocked", false);
+        userData.put("tentatives_connexion", 0);
+        userData.put("last_failed_attempt", null);
 
         // Ajouter photoURL si disponible (null pour l'instant)
         if (userRecord.getPhotoUrl() != null) {

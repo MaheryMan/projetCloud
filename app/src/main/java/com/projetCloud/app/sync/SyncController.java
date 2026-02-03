@@ -93,9 +93,72 @@ public class SyncController {
     }
 
     /**
-     * Endpoint pour synchroniser les métadonnées (status, entreprises, types_signalement)
+     * Endpoint pour synchroniser l'état de blocage depuis Firebase vers PostgreSQL
+     * Firebase est la source de vérité pour le blocage
      * @return ResponseEntity avec le résultat de la synchronisation
      */
+    @PostMapping("/block-status")
+    @Operation(summary = "Synchroniser l'état de blocage", description = "Synchronise l'état de blocage depuis Firebase (source de vérité) vers PostgreSQL")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Synchronisation réussie",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = SyncResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Erreur lors de la synchronisation")
+    })
+    public ResponseEntity<?> syncBlockStatusFromFirebase() {
+        try {
+            int syncedCount = syncService.syncBlockStatusFromFirebase();
+            return ResponseEntity.ok(new SyncResponse("Synchronisation de l'état de blocage réussie", syncedCount));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new SyncResponse("Erreur: " + e.getMessage(), 0));
+        }
+    }
+
+    /**
+     * Endpoint pour synchroniser le déblocage d'un utilisateur vers Firebase
+     * @param utilisateurId L'ID de l'utilisateur à synchroniser
+     * @return ResponseEntity avec le résultat
+     */
+    @PostMapping("/deblocage/{utilisateurId}")
+    @Operation(summary = "Synchroniser le déblocage vers Firebase", description = "Synchronise l'état de déblocage d'un utilisateur PostgreSQL vers Firebase")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Synchronisation réussie"),
+        @ApiResponse(responseCode = "400", description = "Erreur lors de la synchronisation")
+    })
+    public ResponseEntity<?> syncDeblocageToFirebase(@PathVariable Long utilisateurId) {
+        try {
+            boolean success = syncService.syncDeblocageToFirebase(utilisateurId);
+            if (success) {
+                return ResponseEntity.ok(new SyncResponse("Déblocage synchronisé vers Firebase", 1));
+            } else {
+                return ResponseEntity.badRequest().body(new SyncResponse("Document Firebase non trouvé", 0));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new SyncResponse("Erreur: " + e.getMessage(), 0));
+        }
+    }
+
+    /**
+     * Endpoint pour synchroniser TOUS les déblocages vers Firebase
+     * @return ResponseEntity avec le résultat
+     */
+    @PostMapping("/deblocages")
+    @Operation(summary = "Synchroniser tous les déblocages vers Firebase", description = "Synchronise l'état de déblocage de TOUS les utilisateurs PostgreSQL vers Firebase")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Synchronisation réussie",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = SyncResponse.class))),
+        @ApiResponse(responseCode = "400", description = "Erreur lors de la synchronisation")
+    })
+    public ResponseEntity<?> syncAllDeblocagesToFirebase() {
+        try {
+            int syncedCount = syncService.syncAllDeblocagesToFirebase();
+            return ResponseEntity.ok(new SyncResponse("Tous les déblocages synchronisés vers Firebase", syncedCount));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new SyncResponse("Erreur: " + e.getMessage(), 0));
+        }
+    }
+
     @PostMapping("/metadata")
     @Operation(summary = "Synchroniser les métadonnées", description = "Synchronise les métadonnées (status, entreprises, types_signalement) entre PostgreSQL et Firebase")
     @ApiResponses(value = {
@@ -201,7 +264,6 @@ public class SyncController {
         public boolean isHasModifiedOffline() { return hasModifiedOffline; }
         public void setHasModifiedOffline(boolean hasModifiedOffline) { this.hasModifiedOffline = hasModifiedOffline; }
     }
-
     public static class CreateUserRequest {
         private String email;
         private String password;

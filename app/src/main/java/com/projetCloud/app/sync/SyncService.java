@@ -237,6 +237,11 @@ public class SyncService {
         userData.put("provider", "email");
         userData.put("role", "driver");
         userData.put("createdAt", com.google.cloud.Timestamp.now());
+        
+        // Champs de sécurité pour le blocage de compte
+        userData.put("is_blocked", false);
+        userData.put("tentatives_connexion", 0);
+        userData.put("last_failed_attempt", null);
 
         if (userRecord.getPhotoUrl() != null) {
             userData.put("photoURL", userRecord.getPhotoUrl());
@@ -417,5 +422,220 @@ public class SyncService {
         }
 
         return syncedCount;
+    }
+
+    /**
+     * Ajoute les champs de sécurité manquants aux documents utilisateur existants
+     * (is_blocked, tentatives_connexion, last_failed_attempt)
+     */
+    public int addSecurityFieldsToExistingUsers() throws RuntimeException {
+        try {
+            com.google.cloud.firestore.QuerySnapshot snapshot = firestore.collection("users").get().get();
+            int updatedCount = 0;
+            
+            for (com.google.cloud.firestore.DocumentSnapshot doc : snapshot.getDocuments()) {
+                Map<String, Object> data = doc.getData();
+                if (data != null) {
+                    boolean needsUpdate = !data.containsKey("is_blocked") || 
+                                        !data.containsKey("tentatives_connexion") || 
+                                        !data.containsKey("last_failed_attempt");
+                    
+                    if (needsUpdate) {
+                        Map<String, Object> updates = new HashMap<>();
+                        if (!data.containsKey("is_blocked")) {
+                            updates.put("is_blocked", false);
+                        }
+                        if (!data.containsKey("tentatives_connexion")) {
+                            updates.put("tentatives_connexion", 0);
+                        }
+                        if (!data.containsKey("last_failed_attempt")) {
+                            updates.put("last_failed_attempt", null);
+                        }
+                        
+                        if (!updates.isEmpty()) {
+                            firestore.collection("users").document(doc.getId()).update(updates).get();
+                            updatedCount++;
+                            System.out.println("Champs de securite ajoutes au document: " + doc.getId());
+                        }
+                    }
+                }
+            }
+            
+            return updatedCount;
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la mise a jour des champs de securite: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Synchronise l'état de blocage depuis Firebase (source de vérité) vers PostgreSQL
+     * Récupère les champs: is_blocked, tentatives_connexion, last_failed_attempt
+     * @return nombre d'utilisateurs synchronisés
+     * @throws TimeoutException 
+     */
+    public int syncBlockStatusFromFirebase() throws TimeoutException {
+        if (!connectivityService.isFirebaseOnline()) {
+            throw new RuntimeException("Firebase n'est pas accessible");
+        }
+
+        int syncedCount = 0;
+        
+        try {
+            // Récupérer tous les utilisateurs PostgreSQL
+            List<Utilisateur> allUsers = utilisateurRepository.findAll();
+            
+            for (Utilisateur pgUser : allUsers) {
+                try {
+                    // Chercher le document Firestore correspondant (par email)
+                    var firebaseUsers = firestore.collection("users")
+                        .whereEqualTo("email", pgUser.getEmail())
+                        .get()
+                        .get()
+                        .getDocuments();
+                    
+                    if (!firebaseUsers.isEmpty()) {
+                        var fbDoc = firebaseUsers.get(0);
+                        var fbData = fbDoc.getData();
+                        
+                        if (fbData != null) {
+                            // Récupérer les données de blocage depuis Firebase
+                            Boolean isBlocked = (Boolean) fbData.getOrDefault("is_blocked", false);
+                            Long tentativesObj = (Long) fbData.get("tentatives_connexion");
+                            Integer tentatives = tentativesObj != null ? tentativesObj.intValue() : 0;
+                            // last_failed_attempt est un Timestamp Firebase, on l'ignore pour PostgreSQL
+                            
+                            // Vérifier si les données ont changé
+                            boolean hasChanged = false;
+                            if (pgUser.getIsBlocked() == null || !pgUser.getIsBlocked().equals(isBlocked)) {
+                                pgUser.setIsBlocked(isBlocked);
+                                hasChanged = true;
+                            }
+                            if (pgUser.getTentativesConnexion() == null || !pgUser.getTentativesConnexion().equals(tentatives)) {
+                                pgUser.setTentativesConnexion(tentatives);
+                                hasChanged = true;
+                            }
+                            
+                            // Sauvegarder si les données ont changé
+                            if (hasChanged) {
+                                pgUser.setUpdatedAt(LocalDateTime.now());
+                                utilisateurRepository.save(pgUser);
+                                syncedCount++;
+                                System.out.println("Blocage synchronisé pour l'utilisateur: " + pgUser.getEmail() 
+                                    + " (blocked=" + isBlocked + ", tentatives=" + tentatives + ")");
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("Erreur lors de la synchronisation du blocage pour " + pgUser.getEmail() + ": " + e.getMessage());
+                    // Continuer avec le prochain utilisateur
+                }
+            }
+            
+            return syncedCount;
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la synchronisation du blocage depuis Firebase: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Synchronise le déblocage d'un utilisateur vers Firebase
+     * Appelle cette méthode après le déblocage dans PostgreSQL
+     * @param utilisateurId L'ID PostgreSQL de l'utilisateur débloqué
+     * @return true si la synchronisation a réussi
+     * @throws TimeoutException 
+     */
+    public boolean syncDeblocageToFirebase(Long utilisateurId) throws TimeoutException {
+        if (!connectivityService.isFirebaseOnline()) {
+            throw new RuntimeException("Firebase n'est pas accessible");
+        }
+
+        try {
+            // Récupérer l'utilisateur depuis PostgreSQL
+            Optional<Utilisateur> userOpt = utilisateurRepository.findById(utilisateurId);
+            
+            if (!userOpt.isPresent()) {
+                throw new RuntimeException("Utilisateur non trouvé dans PostgreSQL");
+            }
+
+            Utilisateur user = userOpt.get();
+            
+            // Chercher le document Firebase par email
+            var firebaseUsers = firestore.collection("users")
+                .whereEqualTo("email", user.getEmail())
+                .get()
+                .get()
+                .getDocuments();
+            
+            if (firebaseUsers.isEmpty()) {
+                System.out.println("Document Firebase non trouvé pour " + user.getEmail() + ", déblocage non synchronisé");
+                return false;
+            }
+
+            // Mettre à jour le document Firebase avec l'état PostgreSQL
+            var fbDoc = firebaseUsers.get(0);
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("is_blocked", user.getIsBlocked() != null ? user.getIsBlocked() : false);
+            updates.put("tentatives_connexion", user.getTentativesConnexion() != null ? user.getTentativesConnexion() : 0);
+            updates.put("last_failed_attempt", null); // Réinitialiser après déblocage
+            updates.put("updated_at", com.google.cloud.firestore.FieldValue.serverTimestamp());
+            
+            firestore.collection("users").document(fbDoc.getId()).update(updates).get();
+            
+            System.out.println("Déblocage synchronisé vers Firebase pour: " + user.getEmail());
+            return true;
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la synchronisation du déblocage vers Firebase: " + e.getMessage());
+            throw new RuntimeException("Erreur synchronisation déblocage Firebase: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Synchronise TOUS les déblocages depuis PostgreSQL vers Firebase
+     * Envoie l'état de blocage de tous les utilisateurs
+     * @return nombre d'utilisateurs synchronisés
+     * @throws TimeoutException 
+     */
+    public int syncAllDeblocagesToFirebase() throws TimeoutException {
+        if (!connectivityService.isFirebaseOnline()) {
+            throw new RuntimeException("Firebase n'est pas accessible");
+        }
+
+        int syncedCount = 0;
+        
+        try {
+            // Récupérer tous les utilisateurs PostgreSQL
+            List<Utilisateur> allUsers = utilisateurRepository.findAll();
+            
+            for (Utilisateur user : allUsers) {
+                try {
+                    // Chercher le document Firestore correspondant (par email)
+                    var firebaseUsers = firestore.collection("users")
+                        .whereEqualTo("email", user.getEmail())
+                        .get()
+                        .get()
+                        .getDocuments();
+                    
+                    if (!firebaseUsers.isEmpty()) {
+                        var fbDoc = firebaseUsers.get(0);
+                        Map<String, Object> updates = new HashMap<>();
+                        updates.put("is_blocked", user.getIsBlocked() != null ? user.getIsBlocked() : false);
+                        updates.put("tentatives_connexion", user.getTentativesConnexion() != null ? user.getTentativesConnexion() : 0);
+                        updates.put("last_failed_attempt", null);
+                        updates.put("updated_at", com.google.cloud.firestore.FieldValue.serverTimestamp());
+                        
+                        firestore.collection("users").document(fbDoc.getId()).update(updates).get();
+                        syncedCount++;
+                        System.out.println("Déblocage synchronisé pour: " + user.getEmail());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Erreur lors de la synchronisation du déblocage pour " + user.getEmail() + ": " + e.getMessage());
+                    // Continuer avec le prochain utilisateur
+                }
+            }
+            
+            return syncedCount;
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la synchronisation globale des déblocages: " + e.getMessage());
+        }
     }
 }

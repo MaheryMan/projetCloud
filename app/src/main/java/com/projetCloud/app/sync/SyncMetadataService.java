@@ -9,6 +9,8 @@ import com.projetCloud.app.entreprises.Entreprise;
 import com.projetCloud.app.entreprises.EntrepriseRepository;
 import com.projetCloud.app.typesSignalement.TypeSignalement;
 import com.projetCloud.app.typesSignalement.TypeSignalementRepository;
+import com.projetCloud.app.configurations.Configuration;
+import com.projetCloud.app.configurations.ConfigurationRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,6 +43,9 @@ public class SyncMetadataService {
 
     @Autowired
     private TypeSignalementRepository typeSignalementRepository;
+
+    @Autowired
+    private ConfigurationRepository configurationRepository;
 
     @Autowired
     private Firestore firestore;
@@ -76,6 +81,11 @@ public class SyncMetadataService {
             System.out.println("DEBUG: Starting types_signalement sync");
             totalSynced += syncTypesSignalementToFirebase();
             System.out.println("DEBUG: Types signalement sync completed, total synced: " + totalSynced);
+
+            // Synchroniser configurations
+            System.out.println("DEBUG: Starting configurations sync");
+            totalSynced += syncConfigurationsToFirebase();
+            System.out.println("DEBUG: Configurations sync completed, total synced: " + totalSynced);
 
             // Synchroniser depuis Firebase (cas redéploiement)
             System.out.println("DEBUG: Starting reverse sync from Firebase");
@@ -439,4 +449,49 @@ public class SyncMetadataService {
 
         return syncedCount;
     }
+
+    /**
+     * Synchronise les configurations (sécurité) de PostgreSQL vers Firebase
+     * Structure: /config/security avec tentatives_max, reset_after_success, etc.
+     */
+    public int syncConfigurationsToFirebase() throws RuntimeException, TimeoutException {
+        if (!connectivityService.isFirebaseOnline()) {
+            throw new RuntimeException("Firebase n'est pas accessible");
+        }
+
+        int syncedCount = 0;
+
+        try {
+            // Récupérer les configurations de sécurité importantes
+            Map<String, Object> securityConfig = new HashMap<>();
+
+            // tentatives_max
+            String tentativesMax = configurationRepository.findByCle("tentatives_max")
+                    .map(Configuration::getValeur)
+                    .orElse("3");
+            securityConfig.put("tentatives_max", Integer.parseInt(tentativesMax));
+
+            // reset_after_success
+            securityConfig.put("reset_after_success", true);
+
+            // message_blocked
+            securityConfig.put("message_blocked", "Compte bloqué. Contactez un manager.");
+
+            // Synchroniser vers Firebase
+            DocumentReference securityDocRef = firestore.collection("config")
+                    .document("security");
+
+            securityDocRef.set(securityConfig);
+            syncedCount++;
+
+            System.out.println("DEBUG: Configurations sécurité synchronisées vers Firebase: " + securityConfig);
+
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la sync des configurations: " + e.getMessage());
+            throw new RuntimeException("Erreur lors de la sync des configurations: " + e.getMessage());
+        }
+
+        return syncedCount;
+    }
 }
+

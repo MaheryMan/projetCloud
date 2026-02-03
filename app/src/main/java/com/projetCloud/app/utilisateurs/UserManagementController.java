@@ -50,6 +50,64 @@ public class UserManagementController {
         }
     }
 
+    /**
+     * Endpoint sécurisé pour débloquer un compte
+     * Vérifie que l'utilisateur effectuant la requête a le rôle Manager
+     * 
+     * @param userId L'ID de l'utilisateur à débloquer
+     * @param managerId L'ID du manager (celui qui effectue le déblocage)
+     * @param request Contient optionnellement le motif du déblocage
+     * @return L'utilisateur débloqué ou une erreur
+     */
+    @PostMapping("/admin/unlock-account/{userId}")
+    public ResponseEntity<?> adminUnlockAccount(
+            @PathVariable Long userId,
+            @RequestParam Long managerId,
+            @RequestBody(required = false) UnlockRequest request) {
+        
+        try {
+            // Vérifier que le manager existe et a le rôle Manager
+            Optional<Utilisateur> managerOpt = utilisateurService.findById(managerId);
+            if (managerOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new ErrorResponse("Manager non trouvé"));
+            }
+
+            Utilisateur manager = managerOpt.get();
+            
+            // Vérifier que le manager a bien le rôle Manager
+            boolean isManager = manager.getRoles().stream()
+                    .anyMatch(role -> "Manager".equals(role.getLibelle()));
+            
+            if (!isManager) {
+                return ResponseEntity.status(403)
+                        .body(new ErrorResponse("Seul un utilisateur avec le rôle Manager peut débloquer un compte"));
+            }
+
+            // Récupérer le motif du déblocage
+            String motif = (request != null && request.getMotif() != null) 
+                    ? request.getMotif() 
+                    : "Déblocage manuel par manager";
+
+            // Débloquer l'utilisateur
+            Optional<Utilisateur> unlockedUser = deblocageService.unlockUser(userId, managerId, motif);
+            
+            if (unlockedUser.isPresent()) {
+                return ResponseEntity.ok(new UnlockResponse(
+                        true,
+                        "Compte débloqué avec succès",
+                        unlockedUser.get()
+                ));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body(new ErrorResponse("Erreur lors du déblocage: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Utilisateur> getUserById(@PathVariable Long id) {
         Optional<Utilisateur> utilisateur = utilisateurService.findById(id);
@@ -139,6 +197,77 @@ public class UserManagementController {
             return ResponseEntity.noContent().build();
         } else {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Classes internes pour les réponses
+    public static class UnlockRequest {
+        private String motif;
+
+        public UnlockRequest() {}
+
+        public UnlockRequest(String motif) {
+            this.motif = motif;
+        }
+
+        public String getMotif() {
+            return motif;
+        }
+
+        public void setMotif(String motif) {
+            this.motif = motif;
+        }
+    }
+
+    public static class UnlockResponse {
+        private boolean success;
+        private String message;
+        private Utilisateur data;
+
+        public UnlockResponse(boolean success, String message, Utilisateur data) {
+            this.success = success;
+            this.message = message;
+            this.data = data;
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public void setSuccess(boolean success) {
+            this.success = success;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        public Utilisateur getData() {
+            return data;
+        }
+
+        public void setData(Utilisateur data) {
+            this.data = data;
+        }
+    }
+
+    public static class ErrorResponse {
+        private String error;
+
+        public ErrorResponse(String error) {
+            this.error = error;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public void setError(String error) {
+            this.error = error;
         }
     }
 }

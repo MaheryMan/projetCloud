@@ -223,6 +223,14 @@
   background: var(--primary-dark);
 }
 
+.action-btn.warning {
+  background: var(--warning);
+}
+
+.action-btn.info {
+  background: #3498db;
+}
+
 .action-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);

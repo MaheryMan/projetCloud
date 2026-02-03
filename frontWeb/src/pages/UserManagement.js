@@ -106,30 +106,46 @@ function UserManagement() {
   };
 
   const handleUnblock = async (userId) => {
-    if (!window.confirm('Débloquer cet utilisateur ?')) {
+    const token = localStorage.getItem('token');
+    const currentUser = users.find(u => u.id === userId);
+    
+    if (!token) {
+      alert('Non connecté. Reconnecte-toi.');
       return;
     }
 
+    const motif = prompt(`Motif du déblocage pour ${currentUser?.prenom} ${currentUser?.nom}:`, 'Déblocage manuel');
+    
+    if (motif === null) {
+      return; // Utilisateur a annulé
+    }
+
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/users/${userId}/unblock`, {
+      setLoading(true);
+      const res = await fetch(`http://localhost:8080/api/deblocages/debloquer/${userId}`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          createdAt: new Date().toISOString()
+          idManager: parseInt(localStorage.getItem('userId')) || 1,
+          motif: motif || 'Déblocage manuel'
         })
       });
 
-      if (!response.ok) throw new Error('Erreur de déblocage');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Erreur HTTP ${res.status}`);
+      }
 
-      alert('Utilisateur débloqué avec succès');
-      await fetchUsers();
+      alert('✅ Utilisateur débloqué avec succès');
+      await fetchUsers(); // Rafraîchir la liste
     } catch (error) {
       console.error('Erreur:', error);
-      alert('Erreur lors du déblocage');
+      alert(`❌ Erreur lors du déblocage: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 

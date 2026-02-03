@@ -91,6 +91,20 @@ public class DeblocageController {
         }
     }
 
+    /**
+     * Endpoint pour débloquer un utilisateur
+     * POST /api/deblocages/debloquer/{id}
+     */
+    @PostMapping("/debloquer/{id}")
+    public ResponseEntity<Utilisateur> unlockUser(@PathVariable Long id, @RequestBody UnlockRequest request) {
+        Optional<Utilisateur> result = deblocageService.unlockUser(id, request.getIdManager(), request.getMotif());
+        if (result.isPresent()) {
+            return ResponseEntity.ok(result.get());
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
     // Classe interne pour la requête
     public static class DeblocageRequest {
         private String motif;
@@ -119,6 +133,39 @@ public class DeblocageController {
 
         public void setIdManager(Long idManager) {
             this.idManager = idManager;
+        }
+    }
+
+    public static class BlockRequest {
+        private Integer tentativesConnexion;
+
+        public Integer getTentativesConnexion() {
+            return tentativesConnexion;
+        }
+
+        public void setTentativesConnexion(Integer tentativesConnexion) {
+            this.tentativesConnexion = tentativesConnexion;
+        }
+    }
+
+    public static class UnlockRequest {
+        private Long idManager;
+        private String motif;
+
+        public Long getIdManager() {
+            return idManager;
+        }
+
+        public void setIdManager(Long idManager) {
+            this.idManager = idManager;
+        }
+
+        public String getMotif() {
+            return motif;
+        }
+
+        public void setMotif(String motif) {
+            this.motif = motif;
         }
     }
 }

@@ -19,10 +19,10 @@ function Synchronization() {
 
   const checkConnectionStatus = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/sync/status');
-      const data = await response.json();
-      setConnectionStatus(data.online ? 'online' : 'offline');
-      setSyncStatus(prev => ({ ...prev, isOnline: data.online }));
+      const response = await fetch('http://localhost:8080/api/connectivity/firebase');
+      const isOnline = await response.json();
+      setConnectionStatus(isOnline ? 'online' : 'offline');
+      setSyncStatus(prev => ({ ...prev, isOnline }));
     } catch (error) {
       setConnectionStatus('offline');
       setSyncStatus(prev => ({ ...prev, isOnline: false }));
@@ -133,6 +133,68 @@ function Synchronization() {
     await handleSyncToFirebase();
   };
 
+  const handleSyncBlockStatus = async () => {
+    if (!syncStatus.isOnline) {
+      alert('❌ Pas de connexion Internet. Synchronisation impossible.');
+      return;
+    }
+
+    setSyncing(true);
+    addLog('🔒 Synchronisation de l\'état de blocage depuis Firebase...', 'info');
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('http://localhost:8080/api/sync/block-status', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error('Erreur synchronisation blocage');
+      
+      const data = await response.json();
+      addLog(`✅ État de blocage synchronisé pour ${data.count} utilisateurs`, 'success');
+      
+      await fetchSyncStatus();
+    } catch (error) {
+      console.error('Erreur:', error);
+      addLog(`❌ Erreur: ${error.message}`, 'error');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleSyncDeblocage = async () => {
+    if (!syncStatus.isOnline) {
+      alert('❌ Pas de connexion Internet. Synchronisation impossible.');
+      return;
+    }
+
+    setSyncing(true);
+    addLog(`📤 Synchronisation de tous les déblocages vers Firebase...`, 'info');
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`http://localhost:8080/api/sync/deblocages`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error('Erreur synchronisation déblocage');
+      
+      const data = await response.json();
+      addLog(`✅ ${data.count} utilisateurs synchronisés vers Firebase`, 'success');
+      
+      await fetchSyncStatus();
+    } catch (error) {
+      console.error('Erreur:', error);
+      addLog(`❌ Erreur: ${error.message}`, 'error');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const addLog = (message, type = 'info') => {
     const timestamp = new Date().toLocaleTimeString('fr-FR');
     setSyncLog(prev => [...prev, { message, type, timestamp }]);
@@ -229,6 +291,32 @@ function Synchronization() {
             {syncing ? '⏳ Synchronisation...' : '🔄 Synchroniser'}
           </button>
         </div>
+
+        <div className="action-card">
+          <div className="action-icon">🔒</div>
+          <h3>Synchroniser l'état de blocage</h3>
+          <p>Importer l'état de blocage depuis Firebase (source de vérité)</p>
+          <button 
+            className="action-btn warning"
+            onClick={handleSyncBlockStatus}
+            disabled={syncing || !syncStatus.isOnline}
+          >
+            {syncing ? '⏳ Synchronisation...' : '🔒 Synchroniser blocage'}
+          </button>
+        </div>
+
+        <div className="action-card">
+          <div className="action-icon">📤</div>
+          <h3>Synchroniser le déblocage</h3>
+          <p>Envoyer l'état de déblocage PostgreSQL vers Firebase</p>
+          <button 
+            className="action-btn info"
+            onClick={handleSyncDeblocage}
+            disabled={syncing || !syncStatus.isOnline}
+          >
+            {syncing ? '⏳ Synchronisation...' : '📤 Synchroniser déblocage'}
+          </button>
+        </div>
       </div>
 
       <div className="sync-log-section">
@@ -262,6 +350,7 @@ function Synchronization() {
           <li><strong>Récupérer</strong> : Importe les signalements créés via l'application mobile depuis Firebase</li>
           <li><strong>Envoyer</strong> : Exporte les données locales (signalements et utilisateurs) vers Firebase pour l'affichage mobile</li>
           <li><strong>Synchronisation complète</strong> : Effectue les deux opérations dans l'ordre</li>
+          <li><strong>Synchroniser l'état de blocage</strong> : Importe l'état de blocage des comptes depuis Firebase (qui est la source de vérité) vers PostgreSQL. Les données incluent: état de blocage, nombre de tentatives échouées et date de la dernière tentative</li>
           <li>Les données sont automatiquement sauvegardées dans PostgreSQL local</li>
         </ul>
       </div>
