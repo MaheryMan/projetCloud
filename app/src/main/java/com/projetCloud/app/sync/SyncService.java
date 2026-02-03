@@ -5,9 +5,12 @@ import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.UserRecord;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.projetCloud.app.config.ConnectivityService;
 import com.projetCloud.app.utilisateurs.Utilisateur;
 import com.projetCloud.app.utilisateurs.UtilisateurRepository;
+import com.projetCloud.app.signalements.Signalement;
+import com.projetCloud.app.signalements.SignalementService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
+
+import com.projetCloud.app.typesSignalement.TypeSignalement;
+import com.projetCloud.app.typesSignalement.TypeSignalementService;
 
 /**
  * Service pour synchroniser les données entre PostgreSQL et Firebase
@@ -35,6 +41,12 @@ public class SyncService {
 
     @Autowired
     private Firestore firestore;
+
+    @Autowired
+    private SignalementService signalementService;
+
+    @Autowired
+    private TypeSignalementService typeSignalementService;
 
     /**
      * Synchronise les utilisateurs locaux non synchronisés vers Firebase
@@ -417,5 +429,127 @@ public class SyncService {
         }
 
         return syncedCount;
+    }
+
+
+        /**
+     * Synchronisation bi-directionnelle des signalements entre PostgreSQL et Firebase
+     * Insère les signalements manquants dans chaque sens
+     * @return nombre total de signalements synchronisés
+     */
+    public int syncSignalementsBidirectionnel() throws RuntimeException, TimeoutException {
+        System.out.println("[SYNC][SIGNAL] Début synchronisation bi-directionnelle des signalements");
+        int totalSynced = 0;
+        try {
+            if (!connectivityService.isFirebaseOnline()) {
+                throw new RuntimeException("Firebase n'est pas accessible");
+            }
+
+            // 1. Récupérer tous les signalements de PostgreSQL
+            List<Signalement> signalementsPg = signalementService.findAll();
+            System.out.println("[SYNC][SIGNAL] Signalements PostgreSQL: " + signalementsPg.size());
+
+            // 2. Récupérer tous les signalements de Firebase
+            String firebaseCollection = "reports";
+            List<QueryDocumentSnapshot> firebaseSignalements = firestore.collection(firebaseCollection).get().get().getDocuments();
+            System.out.println("[SYNC][SIGNAL] Collection Firebase utilisée: " + firebaseCollection);
+            System.out.println("[SYNC][SIGNAL] Signalements Firebase: " + firebaseSignalements.size());
+            for (QueryDocumentSnapshot doc : firebaseSignalements) {
+                System.out.println("[SYNC][SIGNAL][DEBUG] Doc id=" + doc.getId() + " data=" + doc.getData());
+            }
+
+            // 3. Indexer par ID
+            java.util.Set<Long> idsPg = new java.util.HashSet<>();
+            for (Signalement s : signalementsPg) idsPg.add(s.getId());
+            java.util.Set<Long> idsFb = new java.util.HashSet<>();
+            for (QueryDocumentSnapshot doc : firebaseSignalements) {
+                try {
+                    // On utilise l'ID du document comme identifiant unique côté Firebase
+                    String docId = doc.getId();
+                    // Si jamais un champ id numérique existe, on peut aussi l'ajouter
+                    if (doc.contains("id")) {
+                        Long id = doc.getLong("id");
+                        if (id != null) idsFb.add(id);
+                    }
+                    // Ajoute aussi l'ID string pour la correspondance
+                    try {
+                        idsFb.add(Long.parseLong(docId));
+                    } catch (NumberFormatException ignore) {}
+                } catch (Exception e) {
+                    System.err.println("[SYNC][SIGNAL] Erreur lecture id Firebase: " + e.getMessage());
+                }
+            }
+
+            // 4. Insérer dans Firebase ceux présents en base mais absents dans Firebase
+            for (Signalement s : signalementsPg) {
+                if (!idsFb.contains(s.getId())) {
+                    try {
+                        Map<String, Object> data = new HashMap<>();
+                        data.put("description", s.getDescription());
+                        data.put("lat", s.getLatitude());
+                        data.put("lng", s.getLongitude());
+                        data.put("surfaceM2", s.getSurfaceM2());
+                        data.put("status", s.getIdStatus());
+                        data.put("type", s.getTypeSignalement() != null ? s.getTypeSignalement().getLibelle() : null);
+                        data.put("uid", s.getUtilisateur() != null ? s.getUtilisateur().getFirebaseUid() : null);
+                        data.put("createdAt", s.getCreatedAt() != null ? com.google.cloud.Timestamp.of(java.util.Date.from(s.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant())) : null);
+                        firestore.collection(firebaseCollection).document(String.valueOf(s.getId())).set(data).get();
+                        System.out.println("[SYNC][SIGNAL] Ajouté dans Firebase: id=" + s.getId());
+                        totalSynced++;
+                    } catch (Exception e) {
+                        System.err.println("[SYNC][SIGNAL] Erreur ajout Firebase id=" + s.getId() + " : " + e.getMessage());
+                    }
+                }
+            }
+
+            // 5. Insérer dans PostgreSQL ceux présents dans Firebase mais absents en base
+            for (QueryDocumentSnapshot doc : firebaseSignalements) {
+                String docId = doc.getId();
+                Long id = null;
+                // On tente d'utiliser l'ID numérique si possible, sinon l'ID string
+                if (doc.contains("id")) {
+                    id = doc.getLong("id");
+                } else {
+                    try {
+                        id = Long.parseLong(docId);
+                    } catch (NumberFormatException ignore) {}
+                }
+                if (id != null && !idsPg.contains(id)) {
+                    try {
+                        Signalement s = new Signalement();
+                        s.setId(id);
+                        s.setLatitude(doc.contains("lat") ? new java.math.BigDecimal(doc.get("lat").toString()) : null);
+                        s.setLongitude(doc.contains("lng") ? new java.math.BigDecimal(doc.get("lng").toString()) : null);
+                        s.setSurfaceM2(doc.contains("surfaceM2") ? new java.math.BigDecimal(doc.get("surfaceM2").toString()) : null);
+                        s.setDescription(doc.contains("description") ? doc.getString("description") : null);
+                        // Mapping type Firebase → id_type_signalement
+                        if (doc.contains("type")) {
+                            String libelleType = doc.getString("type");
+                            if (libelleType != null) {
+                                java.util.Optional<TypeSignalement> optType = typeSignalementService.findByLibelle(libelleType);
+                                if (optType.isPresent()) {
+                                    s.setTypeSignalement(optType.get());
+                                } else {
+                                    System.err.println("[SYNC][SIGNAL] TypeSignalement introuvable pour libelle: " + libelleType);
+                                }
+                            }
+                        }
+                        // TypeSignalement et Utilisateur à relier si besoin (optionnel)
+                        s.setCreatedAt(doc.contains("createdAt") && doc.get("createdAt") != null ? ((com.google.cloud.Timestamp)doc.get("createdAt")).toSqlTimestamp().toLocalDateTime() : null);
+                        signalementService.save(s);
+                        System.out.println("[SYNC][SIGNAL] Ajouté dans PostgreSQL: id=" + id);
+                        totalSynced++;
+                    } catch (Exception e) {
+                        System.err.println("[SYNC][SIGNAL] Erreur ajout PostgreSQL id=" + id + " : " + e.getMessage());
+                    }
+                }
+            }
+
+            System.out.println("[SYNC][SIGNAL] Synchronisation terminée. Total synchronisés: " + totalSynced);
+        } catch (Exception e) {
+            System.err.println("[SYNC][SIGNAL] Erreur générale: " + e.getMessage());
+        }
+        System.out.println("[SYNC][SIGNAL] Fin synchronisation bi-directionnelle des signalements");
+        return totalSynced;
     }
 }
