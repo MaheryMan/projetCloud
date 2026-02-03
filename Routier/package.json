@@ -28,6 +28,7 @@
     "ionicons": "^7.4.0",
     "leaflet": "^1.9.4",
     "pinia": "^3.0.4",
+    "pinia-plugin-persistedstate": "^4.7.1",
     "vue": "^3.3.0",
     "vue-router": "^4.2.0"
   },

@@ -52,6 +52,22 @@ public class Signalement {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // Champs de synchronisation Firebase
+    @Column(name = "is_synced_to_firebase")
+    private Boolean isSyncedToFirebase = false;
+
+    @Column(name = "firebase_id", length = 128)
+    private String firebaseId;
+
+    @Column(name = "synced_at")
+    private LocalDateTime syncedAt;
+
+    @Column(name = "synced_from_firebase_at")
+    private LocalDateTime syncedFromFirebaseAt;
+
+    @Column(name = "needs_firebase_sync")
+    private Boolean needsFirebaseSync = false;
+
     // Constructeurs
     public Signalement() {}
 
@@ -171,5 +187,45 @@ public class Signalement {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getIsSyncedToFirebase() {
+        return isSyncedToFirebase;
+    }
+
+    public void setIsSyncedToFirebase(Boolean isSyncedToFirebase) {
+        this.isSyncedToFirebase = isSyncedToFirebase;
+    }
+
+    public String getFirebaseId() {
+        return firebaseId;
+    }
+
+    public void setFirebaseId(String firebaseId) {
+        this.firebaseId = firebaseId;
+    }
+
+    public LocalDateTime getSyncedAt() {
+        return syncedAt;
+    }
+
+    public void setSyncedAt(LocalDateTime syncedAt) {
+        this.syncedAt = syncedAt;
+    }
+
+    public LocalDateTime getSyncedFromFirebaseAt() {
+        return syncedFromFirebaseAt;
+    }
+
+    public void setSyncedFromFirebaseAt(LocalDateTime syncedFromFirebaseAt) {
+        this.syncedFromFirebaseAt = syncedFromFirebaseAt;
+    }
+
+    public Boolean getNeedsFirebaseSync() {
+        return needsFirebaseSync;
+    }
+
+    public void setNeedsFirebaseSync(Boolean needsFirebaseSync) {
+        this.needsFirebaseSync = needsFirebaseSync;
     }
 }

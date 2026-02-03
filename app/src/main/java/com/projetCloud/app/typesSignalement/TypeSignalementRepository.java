@@ -10,5 +10,6 @@ import java.util.Optional;
 public interface TypeSignalementRepository extends JpaRepository<TypeSignalement, Long> {
 
     Optional<TypeSignalement> findByLibelle(String libelle);
+    Optional<TypeSignalement> findByLibelleIgnoreCase(String libelle);
     List<TypeSignalement> findByIsSyncedToFirebaseFalse();
 }

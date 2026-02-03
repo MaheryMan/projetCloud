@@ -202,7 +202,7 @@ CREATE TABLE types_signalement (
 -- Types par défaut
 INSERT INTO types_signalement (libelle, description, icone, couleur, niveau_urgence) VALUES
 ('Trou', 'Dégradation de la chaussée avec creux', 'pothole', '#FF0000', 1),
-('Chantier', 'Travaux en cours avec déviation', 'diversion', '#FFA500', 2),
+('Chantier', 'Travaux en cours avec déviation', 'construction', '#FFA500', 2),
 ('Autre', 'Autre type de problème non catégorisé', 'other', '#666666', 2);
 
 -- =========================
@@ -494,6 +494,14 @@ ALTER TABLE entreprises ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMP;
 -- Ajouter colonnes de sync pour types_signalement
 ALTER TABLE types_signalement ADD COLUMN IF NOT EXISTS is_synced_to_firebase BOOLEAN DEFAULT FALSE;
 ALTER TABLE types_signalement ADD COLUMN IF NOT EXISTS last_synced_at TIMESTAMP;
+
+-- Ajouter colonne pour tracer la synchro depuis Firebase
+ALTER TABLE signalements ADD COLUMN IF NOT EXISTS synced_from_firebase_at TIMESTAMP;
+ALTER TABLE signalements ADD COLUMN IF NOT EXISTS needs_firebase_sync BOOLEAN DEFAULT FALSE;
+
+-- Index pour optimiser les requêtes de synchro
+CREATE INDEX IF NOT EXISTS idx_signalements_firebase_id ON signalements (firebase_id);
+CREATE INDEX IF NOT EXISTS idx_signalements_needs_sync ON signalements (needs_firebase_sync) WHERE needs_firebase_sync = TRUE;
 
 -- =========================
 -- COMMENTAIRES
