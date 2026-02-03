@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Fonction utilitaire : vérifier si l'utilisateur est bloqué
+    function isUserBlocked(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.is_blocked == true;
+    }
+
+    // Fonction utilitaire : vérifier les tentatives max
+    function getMaxAttempts() {
+      return get(/databases/$(database)/documents/config/security).data.tentatives_max;
+    }
+
+    // Bloquer par défaut
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Collection 'config' - Lecture seule pour les utilisateurs authentifiés (config sécurité)
+    match /config/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Collection 'users' - Documents créés par le web via API backend uniquement
+    match /users/{userId} {
+      // Lecture : authentifié ET le document appartient à l'utilisateur connecté ET utilisateur NON bloqué
+      allow read: if request.auth.uid == userId && !isUserBlocked(userId);
+      
+      // Création/Modification : interdite (seul le backend peut le faire)
+      allow create, update, delete: if false;
+    }
+
+    // Collection 'metadata' - Lecture seule pour tous les utilisateurs authentifiés
+    match /metadata/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Collection 'signalements' - Contrôle d'accès complet
+    match /signalements/{signalementId} {
+      // Lecture : authentifié ET non bloqué
+      allow read: if request.auth != null && !isUserBlocked(request.auth.uid);
+      
+      // Création : authentifié ET non bloqué
+      allow create: if request.auth != null 
+                     && !isUserBlocked(request.auth.uid)
+                     && request.resource.data.id_utilisateur == request.auth.uid;
+      
+      // Mise à jour : seul le backend (aucun client)
+      allow update: if false;
+      
+      // Suppression : interdite
+      allow delete: if false;
+    }
+  }
+}

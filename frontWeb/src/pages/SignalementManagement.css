@@ -1,0 +1,261 @@
+/* SignalementManagement.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary: #0f172a;
+  --accent: #3b82f6;
+  --success-bg: #dcfce7; --success-text: #166534;
+  --warning-bg: #fef9c3; --warning-text: #854d0e;
+  --danger-bg: #fee2e2; --danger-text: #991b1b;
+  --info-bg: #e0f2fe; --info-text: #075985;
+  --slate-50: #f8fafc;
+  --slate-200: #e2e8f0;
+  --slate-500: #64748b;
+  --shadow-subtle: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.signalement-management {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--slate-50);
+  padding: 2rem 3rem;
+  color: var(--primary);
+}
+
+/* --- FILTRES RAPIDES (Segmented Controls) --- */
+.filters-section {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 2rem;
+}
+
+.filter-tabs {
+  display: inline-flex;
+  background: var(--slate-200);
+  padding: 4px;
+  border-radius: 10px;
+  gap: 2px;
+}
+
+.filter-tab {
+  border: none;
+  background: transparent;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--slate-500);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-tab.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: var(--shadow-subtle);
+}
+
+/* --- TABLEAU MODERNE --- */
+.table-container {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid var(--slate-200);
+  box-shadow: var(--shadow-subtle);
+  overflow: hidden;
+}
+
+.data-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.data-table th {
+  background: var(--slate-50);
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 13px;
+  color: var(--slate-500);
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.data-table td {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--slate-50);
+  transition: background 0.2s ease;
+}
+
+.data-table tbody tr:hover td {
+  background-color: #f1f5f9;
+}
+
+/* --- SYSTEME DE STATUS (Pastel Pills) --- */
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-termine { background: var(--success-bg); color: var(--success-text); }
+.status-en_cours { background: var(--warning-bg); color: var(--warning-text); }
+.status-nouveau { background: var(--danger-bg); color: var(--danger-text); } /* Utilisé pour Urgent */
+.status-programme { background: var(--info-bg); color: var(--info-text); }
+
+/* --- ACTIONS ICONES --- */
+.action-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.action-btn {
+  /* Fond sombre pour un contraste maximal */
+  background: #0f172a; /* Bleu ardoise très sombre */
+  color: #ffffff !important; /* Texte blanc forcé */
+  
+  border: 1px solid #1e293b;
+  padding: 18px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:hover {
+  background:#1a2332; /* Légèrement plus clair au survol */
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  border-color: #3b82f6; /* Accent bleu au hover */
+}
+
+.action-btn:active {
+  transform: translateY(0);
+}
+
+.btn-edit, .btn-delete {
+  background: transparent;
+  color: var(--slate-500);
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.btn-edit:hover { background: var(--info-bg); color: var(--accent); }
+.btn-delete:hover { background: var(--danger-bg); color: var(--danger-text); }
+
+/* --- PHOTO UPLOAD STYLES --- */
+.photo-cell {
+  text-align: center;
+  max-width: 120px;
+}
+
+.photo-upload-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60px;
+}
+
+.photo-preview {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--slate-200);
+  box-shadow: var(--shadow-subtle);
+}
+
+.photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-remove-photo {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-remove-photo:hover {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+.photo-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  border: 2px dashed var(--slate-200);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--slate-50);
+  width: 100%;
+}
+
+.photo-upload-label:hover {
+  border-color: var(--accent);
+  background: #eff6ff;
+}
+
+.photo-upload-label:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.upload-icon {
+  font-size: 24px;
+}
+
+.upload-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--slate-500);
+  text-align: center;
+}
+
+.photo-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.photo-link:hover {
+  background: var(--info-bg);
+  text-decoration: underline;
+}
+
+.no-photo {
+  color: var(--slate-500);
+  font-size: 12px;
+  font-style: italic;
+}

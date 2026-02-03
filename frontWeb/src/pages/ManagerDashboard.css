@@ -1,0 +1,98 @@
+/* ManagerDashboard.css */
+:root {
+  --bg-main: #f1f5f9;
+  --card-bg: #ffffff;
+  --pro-blue: #2563eb;
+  --slate-900: #0f172a;
+  --slate-600: #475569;
+}
+
+.manager-dashboard {
+  background-color: var(--bg-main);
+  padding: 2.5rem;
+}
+
+/* --- KPI CARDS --- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.stat-card {
+  border: none;
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  display: block; /* Stack verticalement */
+}
+
+.stat-card::before { display: none; } /* On retire l'ancienne bordure */
+
+.stat-content h3 {
+  font-size: 14px;
+  color: var(--slate-600);
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 32px;
+  letter-spacing: -1px;
+  color: var(--slate-900);
+}
+
+/* --- WIDGET GRID (Bento Box Style) --- */
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+/* Style commun aux widgets */
+.progress-section, .recent-section, .mini-map-widget {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid var(--slate-200);
+}
+
+/* --- MINI-MAP WIDGET --- */
+.mini-map-container {
+  height: 200px;
+  background: #e2e8f0;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--slate-500);
+  font-size: 13px;
+}
+
+/* --- PROGRESS BAR (Vercel Style) --- */
+.progress-bar-container {
+  height: 8px;
+  background: var(--slate-200);
+}
+
+.progress-bar {
+  background: var(--pro-blue);
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.3);
+}
+
+.progress-info {
+  margin-bottom: 1rem;
+  padding: 12px;
+  background: #f0f7ff;
+  border-radius: 8px;
+  border-left: 4px solid var(--pro-blue);
+}
+
+.progress-label {
+  font-size: 14px;
+  color: var(--slate-600);
+  font-weight: 500;
+}
