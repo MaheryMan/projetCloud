@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import FirebaseStatusBubble from './components/FirebaseStatusBubble';
 import Login from './components/Login';
 import Register from './components/Register';
+import Navbar from './components/Navbar';
 import VisitorMap from './pages/VisitorMap';
 import ManagerDashboard from './pages/ManagerDashboard';
 import SignalementManagement from './pages/SignalementManagement';
@@ -28,8 +29,8 @@ function App() {
   }, []);
 
   const handleLogin = (userData) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData.user);
+    localStorage.setItem('user', JSON.stringify(userData.user));
   };
 
   const handleLogout = () => {
@@ -41,15 +42,27 @@ function App() {
   // Composant pour protéger les routes Manager
   const ProtectedRoute = ({ children }) => {
     const token = localStorage.getItem('token');
-    return token ? children : <Navigate to="/login" />;
+    if (!token) return <Navigate to="/login" />;
+    
+    // Vérifier si l'utilisateur est un manager
+    if (!user || !user.roles || !user.roles.some(role => role.libelle === 'Manager')) {
+      return <Navigate to="/" />;
+    }
+    
+    return children;
   };
 
   return (
     <Router>
       <div className="App">
         <FirebaseStatusBubble />
+        {/* ⭐ NAVBAR - Affichée seulement pour les managers */}
+        {user && user.roles && user.roles.some(role => role.libelle === 'Manager') && (
+          <Navbar user={user} onLogout={handleLogout} />
+        )}
+        
         {/* ⭐ CONTENU PRINCIPAL après la navbar */}
-        <main className="main-content">
+        <main className={`main-content ${!user || !(user.roles && user.roles.some(role => role.libelle === 'Manager')) ? 'visitor-mode' : ''}`}>
           <Routes>
             {/* Route publique - Carte visiteur */}
             <Route path="/" element={<VisitorMap />} />
@@ -58,7 +71,9 @@ function App() {
             <Route 
               path="/login" 
               element={
-                user ? <Navigate to="/dashboard" /> : (
+                user ? (
+                  <Navigate to={user.roles && user.roles.some(role => role.libelle === 'Manager') ? "/dashboard" : "/"} />
+                ) : (
                   <div className="auth-page">
                     <Login onLogin={handleLogin} />
                   </div>
@@ -68,7 +83,11 @@ function App() {
             <Route 
               path="/register" 
               element={
-                user ? <Navigate to="/dashboard" /> : (
+                user ? (
+                  user.roles && user.roles.some(role => role.libelle === 'Manager') 
+                    ? <Navigate to="/dashboard" /> 
+                    : <Navigate to="/" />
+                ) : (
                   <div className="auth-page">
                     <Register />
                   </div>

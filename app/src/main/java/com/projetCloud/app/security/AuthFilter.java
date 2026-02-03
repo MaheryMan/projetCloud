@@ -49,7 +49,8 @@ public class AuthFilter extends OncePerRequestFilter {
             path.startsWith("/api/connectivity") ||
             path.startsWith("/api/sync") ||
             ("POST".equalsIgnoreCase(method) && "/api/users".equals(path)) ||
-            ("GET".equalsIgnoreCase(method) && path.startsWith("/api/signalements"))) {
+            ("GET".equalsIgnoreCase(method) && path.startsWith("/api/signalements"))||
+            ("GET".equalsIgnoreCase(method) && path.startsWith("/api/entreprises"))) {
              System.out.println("YUP C EST REGISTER ");
             filterChain.doFilter(request, response);
             return;

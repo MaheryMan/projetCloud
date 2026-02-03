@@ -74,3 +74,16 @@ html, body {
     font-size: 24px;
   }
 }
+
+/* Mode visiteur - Plein écran sans navbar */
+.main-content.visitor-mode {
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+}
+
+.visitor-mode .page-container {
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}

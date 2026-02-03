@@ -33,15 +33,15 @@ function Login({ onLogin }) {
       console.log('Connexion réussie:', data);
       
       localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user.id));
       if (onLogin) onLogin(data);
-      if (data.user.roles && data.user.roles.some(role => role.libelle === 'Manager')
-    ) {
-      navigate('/dashboard');
-    } else {
-      console.log("role de l'user ", data.user.roles);
-      navigate('/');
-    }
+      
+      // Redirection basée sur le rôle
+      if (data.user.roles && data.user.roles.some(role => role.libelle === 'Manager')) {
+        navigate('/dashboard');
+      } else {
+        console.log("role de l'user ", data.user.roles);
+        navigate('/');
+      }
       
     } catch (err) {
       setError(err.message || 'Une erreur est survenue');
@@ -89,7 +89,7 @@ function Login({ onLogin }) {
         {/* Left Side - Visual Section */}
         <div className="login-visual">
           <div className="visual-content">
-            <div className="visual-icon">🚧</div>
+            <div className="visual-icon"></div>
             <h2 className="visual-title">Travaux Routiers</h2>
             <p className="visual-description">
               Plateforme de gestion et de signalement des travaux routiers à Antananarivo

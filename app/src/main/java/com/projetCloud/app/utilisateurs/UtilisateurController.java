@@ -1,9 +1,11 @@
 package com.projetCloud.app.utilisateurs;
 
+import com.projetCloud.app.configurations.ConfigurationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,6 +29,9 @@ public class UtilisateurController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private ConfigurationService configurationService;
 
     /**
      * Endpoint pour la connexion des utilisateurs
@@ -60,18 +65,46 @@ public class UtilisateurController {
         if (authResponse.isPresent()) {
             return ResponseEntity.ok(authResponse.get());
         } else {
-            // Gestion des tentatives échouées (comme avant)
+            // Gestion des tentatives échouées
             Optional<Utilisateur> user = utilisateurService.findByEmail(loginRequest.getEmail());
             if (user.isPresent()) {
                 Utilisateur u = user.get();
                 
+                // Récupérer le nombre max de tentatives depuis la configuration
+                int maxAttempts = Integer.parseInt(configurationService.getValue("tentatives_max", "3"));
+                int blocageDurationMinutes = Integer.parseInt(configurationService.getValue("duree_blocage_minutes", "30"));
+                
+                // Vérifier si l'utilisateur est déjà bloqué et si le délai de blocage est écoulé
+                if (u.getIsBlocked() != null && u.getIsBlocked()) {
+                    if (u.getLastFailedAttempt() != null) {
+                        LocalDateTime blockedUntil = u.getLastFailedAttempt().plusMinutes(blocageDurationMinutes);
+                        if (LocalDateTime.now().isAfter(blockedUntil)) {
+                            // Débloquer l'utilisateur après expiration du délai
+                            u.setIsBlocked(false);
+                            u.setTentativesConnexion(0);
+                        } else {
+                            // L'utilisateur est toujours bloqué
+                            long minutesLeft = java.time.Duration.between(LocalDateTime.now(), blockedUntil).toMinutes();
+                            return ResponseEntity.status(403).body("Compte bloqué. Réessayez dans " + minutesLeft + " minutes.");
+                        }
+                    }
+                }
+                
+                // Incrémenter les tentatives échouées
                 int attempts = u.getTentativesConnexion() != null ? u.getTentativesConnexion() : 0;
                 u.setTentativesConnexion(attempts + 1);
-                u.setLastFailedAttempt(java.time.LocalDateTime.now());
-                if (u.getTentativesConnexion() >= 3) {
+                u.setLastFailedAttempt(LocalDateTime.now());
+                
+                // Bloquer si nombre max de tentatives atteint
+                if (u.getTentativesConnexion() >= maxAttempts) {
                     u.setIsBlocked(true);
+                    utilisateurService.save(u);
+                    return ResponseEntity.status(403).body("Compte bloqué suite à " + maxAttempts + " tentatives échouées. Réessayez dans " + blocageDurationMinutes + " minutes.");
                 }
+                
                 utilisateurService.save(u);
+                int attemptsLeft = maxAttempts - u.getTentativesConnexion();
+                return ResponseEntity.badRequest().body("Email ou mot de passe incorrect. Il vous reste " + attemptsLeft + " tentative(s).");
             }
             return ResponseEntity.badRequest().body("Email ou mot de passe incorrect");
         }

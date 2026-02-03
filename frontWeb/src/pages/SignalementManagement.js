@@ -5,6 +5,8 @@ function SignalementManagement() {
   const [signalements, setSignalements] = useState([]);
   const [filteredSignalements, setFilteredSignalements] = useState([]);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterType, setFilterType] = useState('tous');
+  const [filterEntreprise, setFilterEntreprise] = useState('tous');
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -13,10 +15,12 @@ function SignalementManagement() {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [typesSignalement, setTypesSignalement] = useState([]);
 
 
   useEffect(() => {
     fetchEntreprises();
+    fetchTypesSignalement();
   }, []);
 
 const fetchEntreprises = async () => {
@@ -32,6 +36,20 @@ const fetchEntreprises = async () => {
     console.error('Erreur:', error);
   }
 };
+
+  const fetchTypesSignalement = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/types-signalement', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (!response.ok) throw new Error('Erreur de chargement des types');
+      const data = await response.json();
+      setTypesSignalement(data);
+    } catch (error) {
+      console.error('Erreur:', error);
+    }
+  };
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
@@ -96,7 +114,7 @@ const fetchEntreprises = async () => {
 
   useEffect(() => {
     filterSignalements();
-  }, [signalements, filterStatus, searchTerm]);
+  }, [signalements, filterStatus, filterType, filterEntreprise, searchTerm]);
 
   const fetchSignalements = async () => {
     try {
@@ -124,6 +142,20 @@ const fetchEntreprises = async () => {
         if (filterStatus === 'termine') return s.idStatus === 6;
         return true;
       });
+    }
+
+    // Filtre par type
+    if (filterType !== 'tous') {
+      filtered = filtered.filter(s => s.typeSignalement?.id === parseInt(filterType));
+    }
+
+    // Filtre par entreprise
+    if (filterEntreprise !== 'tous') {
+      if (filterEntreprise === 'non_attribuee') {
+        filtered = filtered.filter(s => !s.idEntreprise);
+      } else {
+        filtered = filtered.filter(s => s.idEntreprise === parseInt(filterEntreprise));
+      }
     }
 
     if (searchTerm) {
@@ -307,31 +339,57 @@ const fetchEntreprises = async () => {
           />
         </div>
 
-        <div className="filter-tabs">
-          <button
-            className={`filter-tab ${filterStatus === 'all' ? 'active' : ''}`}
-            onClick={() => setFilterStatus('all')}
+        <div className="additional-filters">
+          <select 
+            value={filterStatus} 
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="filter-select"
           >
-            Tous ({signalements.length})
-          </button>
-          <button
-            className={`filter-tab ${filterStatus === 'nouveau' ? 'active' : ''}`}
-            onClick={() => setFilterStatus('nouveau')}
+            <option value="all">Tous les statuts</option>
+            <option value="nouveau">Nouveaux ({signalements.filter(s => s.idStatus === 4).length})</option>
+            <option value="en_cours">En cours ({signalements.filter(s => s.idStatus === 5).length})</option>
+            <option value="termine">Terminés ({signalements.filter(s => s.idStatus === 6).length})</option>
+          </select>
+
+          <select 
+            value={filterType} 
+            onChange={(e) => setFilterType(e.target.value)}
+            className="filter-select"
           >
-             Nouveaux ({signalements.filter(s => s.idStatus === 4).length})
-          </button>
-          <button
-            className={`filter-tab ${filterStatus === 'en_cours' ? 'active' : ''}`}
-            onClick={() => setFilterStatus('en_cours')}
+            <option value="tous">Tous les types</option>
+            {typesSignalement.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.libelle}
+              </option>
+            ))}
+          </select>
+
+          <select 
+            value={filterEntreprise} 
+            onChange={(e) => setFilterEntreprise(e.target.value)}
+            className="filter-select"
           >
-             En cours ({signalements.filter(s => s.idStatus === 5).length})
-          </button>
-          <button
-            className={`filter-tab ${filterStatus === 'termine' ? 'active' : ''}`}
-            onClick={() => setFilterStatus('termine')}
-          >
-             Terminés ({signalements.filter(s => s.idStatus === 6).length})
-          </button>
+            <option value="tous">Toutes les entreprises</option>
+            <option value="non_attribuee">Non attribuée</option>
+            {entreprises.map((entreprise) => (
+              <option key={entreprise.id} value={entreprise.id}>
+                {entreprise.nom}
+              </option>
+            ))}
+          </select>
+
+          {(filterStatus !== 'all' || filterType !== 'tous' || filterEntreprise !== 'tous') && (
+            <button 
+              className="filter-reset-btn"
+              onClick={() => {
+                setFilterStatus('all');
+                setFilterType('tous');
+                setFilterEntreprise('tous');
+              }}
+            >
+              Réinitialiser
+            </button>
+          )}
         </div>
       </div>
 
@@ -339,7 +397,7 @@ const fetchEntreprises = async () => {
         <table className="data-table">
           <thead>
             <tr>
-              <th>ID</th>
+             
               <th>Date</th>
               <th>Statut</th>
               <th>Photo</th>
@@ -355,7 +413,7 @@ const fetchEntreprises = async () => {
               <tr key={signal.id}>
                 {editingId === signal.id ? (
                   <>
-                    <td>#{signal.id}</td>
+                  
                     <td>{formatDate(signal.date)}</td>
                     <td>
                       <select
@@ -461,7 +519,7 @@ const fetchEntreprises = async () => {
                   </>
                 ) : (
                   <>
-                    <td>#{signal.id}</td>
+                 
                   <td>
                     {signal.typeSignalement?.createdAt
                       ? formatDate(signal.typeSignalement.createdAt)
@@ -491,10 +549,10 @@ const fetchEntreprises = async () => {
                     <td>
                       <div className="action-buttons">
                         <button className="btn-edit" onClick={() => handleEdit(signal)}>
-                          
+                          Éditer
                         </button>
                         <button className="btn-delete" onClick={() => handleDelete(signal.id)}>
-                          
+                          Supprimer
                         </button>
                       </div>
                     </td>

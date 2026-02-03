@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
@@ -37,7 +37,7 @@ const getMarkerIcon = (status) => {
 function VisitorMap() {
   const navigate = useNavigate();
   const [signalements, setSignalements] = useState([]);
-  const [stats, setStats] = useState({
+  const [displayStats, setDisplayStats] = useState({
     total: 0,
     surfaceTotal: 0,
     budgetTotal: 0,
@@ -55,8 +55,16 @@ function VisitorMap() {
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [typesSignalement, setTypesSignalement] = useState([]);
   const [entreprises, setEntreprises] = useState([]);
+  const [user, setUser] = useState(null);
+  const [filteredSignalements, setFilteredSignalements] = useState([]);
 
-  const position = [-18.8792, 47.5079];
+  // États pour les filtres
+  const [filterStatus, setFilterStatus] = useState('tous');
+  const [filterType, setFilterType] = useState('tous');
+  const [filterEntreprise, setFilterEntreprise] = useState('tous');
+  const [filterUser, setFilterUser] = useState(false);
+
+  const position = [-18.909855, 47.525637];
 
   const getAuthToken = async () => {
     // Prend le token Firebase si connecté, sinon fallback sur le token backend
@@ -68,22 +76,124 @@ function VisitorMap() {
 
   const fetchEntreprises = async () => {
     try {
-      const token = await getAuthToken();
+      console.log('fetchEntreprises: début du chargement...');
+      const token = localStorage.getItem('token');
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      console.log('fetchEntreprises: headers =', headers);
       const response = await fetch('http://localhost:8080/api/entreprises', { headers });
+      console.log('fetchEntreprises: response status =', response.status);
       if (!response.ok) throw new Error('Erreur de chargement des entreprises');
       const data = await response.json();
+      console.log('fetchEntreprises: données reçues =', data);
       setEntreprises(data);
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('fetchEntreprises: ERREUR =', error);
     }
   };
 
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+  };
+
   useEffect(() => {
+    // Charger l'utilisateur connecté
+    const storedUser = localStorage.getItem('user');
+    if (storedUser && storedUser !== 'undefined') {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Error parsing user:', e);
+      }
+    }
+
+    const fetchSignalements = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const response = await fetch('http://localhost:8080/api/signalements', { headers });
+        if (!response.ok) throw new Error('Erreur de chargement des signalements');
+        const data = await response.json();
+        setSignalements(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Erreur de chargement:', error);
+        setSignalements([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchTypesSignalement = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const response = await fetch('http://localhost:8080/api/types-signalement', { headers });
+        if (!response.ok) throw new Error('Erreur de chargement des types');
+        const data = await response.json();
+        setTypesSignalement(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Erreur de chargement des types:', error);
+      }
+    };
+
     fetchSignalements();
     fetchTypesSignalement();
     fetchEntreprises();
   }, []);
+
+  // Appliquer les filtres aux signalements
+  useEffect(() => {
+    let filtered = [...signalements];
+
+    // Filtre par statut
+    if (filterStatus !== 'tous') {
+      const statusMap = {
+        'nouveau': 4,
+        'en_cours': 5,
+        'termine': 6
+      };
+      filtered = filtered.filter(s => s.idStatus === statusMap[filterStatus]);
+    }
+
+    // Filtre par type
+    if (filterType !== 'tous') {
+      filtered = filtered.filter(s => s.typeSignalement?.id === parseInt(filterType));
+    }
+
+    // Filtre par entreprise
+    if (filterEntreprise !== 'tous') {
+      if (filterEntreprise === 'non_attribuee') {
+        filtered = filtered.filter(s => !s.idEntreprise);
+      } else {
+        filtered = filtered.filter(s => s.idEntreprise === parseInt(filterEntreprise));
+      }
+    }
+
+    // Filtre "Mes signalements"
+    if (filterUser && user) {
+      filtered = filtered.filter(s => s.utilisateur?.id === user.id);
+    }
+
+    setFilteredSignalements(filtered);
+  }, [signalements, filterStatus, filterType, filterEntreprise, filterUser, user]);
+
+  // Calculer les statistiques dynamiquement depuis les signalements filtrés
+  useEffect(() => {
+    const total = filteredSignalements.length;
+    const surfaceTotal = filteredSignalements.reduce((sum, s) => sum + (s.surfaceM2 || 0), 0);
+    const budgetTotal = filteredSignalements.reduce((sum, s) => sum + (s.budget || 0), 0);
+    const termines = filteredSignalements.filter(s => s.idStatus === 6).length;
+    const avancement = total > 0 ? Math.round((termines / total) * 100) : 0;
+
+    setDisplayStats({
+      total,
+      surfaceTotal,
+      budgetTotal,
+      avancement
+    });
+  }, [filteredSignalements]);
 
   const fetchTypesSignalement = async () => {
     try {
@@ -102,11 +212,21 @@ function VisitorMap() {
     try {
       const token = await getAuthToken();
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-      const response = await fetch('http://localhost:8080/api/signalements', { headers });
-      if (!response.ok) throw new Error('Erreur de chargement');
-      const data = await response.json();
-      setSignalements(data);
-      calculateStats(data);
+      
+      // Récupérer les signalements et les stats en parallèle
+      const [signalementsRes, statsRes] = await Promise.all([
+        fetch('http://localhost:8080/api/signalements', { headers }),
+        fetch('http://localhost:8080/api/signalements/stats', { headers })
+      ]);
+      
+      if (!signalementsRes.ok) throw new Error('Erreur de chargement des signalements');
+      if (!statsRes.ok) throw new Error('Erreur de chargement des stats');
+      
+      const signalementsData = await signalementsRes.json();
+      const statsData = await statsRes.json();
+      
+      setSignalements(signalementsData);
+      setStatsFromAPI(statsData);
     } catch (error) {
       console.error('Erreur:', error);
     } finally {
@@ -114,14 +234,16 @@ function VisitorMap() {
     }
   };
 
-  const calculateStats = (data) => {
-    const total = data.length;
-    const surfaceTotal = data.reduce((sum, s) => sum + (s.surface || 0), 0);
-    const budgetTotal = data.reduce((sum, s) => sum + (s.budget || 0), 0);
-    const termines = data.filter(s => s.status === 'termine').length;
-    const avancement = total > 0 ? Math.round((termines / total) * 100) : 0;
-
-    setStats({ total, surfaceTotal, budgetTotal, avancement });
+  const setStatsFromAPI = (statsData) => {
+    // Utiliser les mêmes stats que ManagerDashboard
+    const stats = {
+      total: parseInt(statsData.totalSignalements) || 0,
+      surfaceTotal: parseFloat(statsData.surfaceTotal) || 0,
+      budgetTotal: parseFloat(statsData.chiffreAffaire) || 0, // chiffreAffaire correspond au budget total
+      avancement: parseInt(statsData.avancement) || 0
+    };
+    
+    setStats(stats);
   };
 
   const formatDate = (dateString) => {
@@ -224,35 +346,109 @@ const handleSubmitSignalement = async () => {
   };
 
   const getEntrepriseName = (idEntreprise) => {
+    console.log('getEntrepriseName called with:', idEntreprise);
+    console.log('entreprises array:', entreprises);
     const ent = entreprises.find(e => e.id === idEntreprise);
+    console.log('found entreprise:', ent);
     return ent ? ent.nom : 'Non attribuée';
   };
 
   return (
     <div className="visitor-map-container">
-      <header className="map-header">
-        <h1>Travaux Routiers - Antananarivo</h1>
-        <p>Suivi des problèmes routiers en temps réel</p>
-        
+      {localStorage.getItem('token') && (
         <button 
-          className={`add-signalement-btn ${isAddingMode ? 'active' : ''}`}
-          onClick={() => setIsAddingMode(!isAddingMode)}
+          className="logout-btn"
+          onClick={handleLogout}
         >
-          {isAddingMode ? ' Annuler' : ' Ajouter un signalement'}
+          Déconnexion
         </button>
-        
-        {isAddingMode && (
-          <div className="add-mode-info">
-             Cliquez sur la carte pour placer un signalement
+      )}
+
+      {/* Barre de filtres */}
+      <div className="filter-container">
+        <div className="filter-group">
+          <label htmlFor="filter-status">Statut:</label>
+          <select 
+            id="filter-status"
+            value={filterStatus} 
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="filter-select"
+          >
+            <option value="tous">Tous les statuts</option>
+            <option value="nouveau">Nouveau</option>
+            <option value="en_cours">En cours</option>
+            <option value="termine">Terminé</option>
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label htmlFor="filter-type">Type:</label>
+          <select 
+            id="filter-type"
+            value={filterType} 
+            onChange={(e) => setFilterType(e.target.value)}
+            className="filter-select"
+          >
+            <option value="tous">Tous les types</option>
+            {typesSignalement.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.libelle}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label htmlFor="filter-entreprise">Entreprise:</label>
+          <select 
+            id="filter-entreprise"
+            value={filterEntreprise} 
+            onChange={(e) => setFilterEntreprise(e.target.value)}
+            className="filter-select"
+          >
+            <option value="tous">Toutes les entreprises</option>
+            <option value="non_attribuee">Non attribuée</option>
+            {entreprises.map((entreprise) => (
+              <option key={entreprise.id} value={entreprise.id}>
+                {entreprise.nom}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {user && (
+          <div className="filter-group filter-checkbox">
+            <label>
+              <input 
+                type="checkbox" 
+                checked={filterUser} 
+                onChange={(e) => setFilterUser(e.target.checked)}
+              />
+              <span>Mes signalements uniquement</span>
+            </label>
           </div>
         )}
-      </header>
+
+        {(filterStatus !== 'tous' || filterType !== 'tous' || filterEntreprise !== 'tous' || filterUser) && (
+          <button 
+            className="filter-reset-btn"
+            onClick={() => {
+              setFilterStatus('tous');
+              setFilterType('tous');
+              setFilterEntreprise('tous');
+              setFilterUser(false);
+            }}
+          >
+            Réinitialiser les filtres
+          </button>
+        )}
+      </div>
 
       <div className="stats-container">
         <div className="stat-card">
           <div className="stat-icon"></div>
           <div className="stat-content">
-            <div className="stat-value">{stats.total}</div>
+            <div className="stat-value">{displayStats.total}</div>
             <div className="stat-label">Signalements</div>
           </div>
         </div>
@@ -260,7 +456,7 @@ const handleSubmitSignalement = async () => {
         <div className="stat-card">
           <div className="stat-icon"></div>
           <div className="stat-content">
-            <div className="stat-value">{stats.surfaceTotal} m²</div>
+            <div className="stat-value">{displayStats.surfaceTotal} m²</div>
             <div className="stat-label">Surface totale</div>
           </div>
         </div>
@@ -268,7 +464,7 @@ const handleSubmitSignalement = async () => {
         <div className="stat-card">
           <div className="stat-icon"></div>
           <div className="stat-content">
-            <div className="stat-value">{formatCurrency(stats.budgetTotal)}</div>
+            <div className="stat-value">{formatCurrency(displayStats.budgetTotal)}</div>
             <div className="stat-label">Budget total</div>
           </div>
         </div>
@@ -276,7 +472,7 @@ const handleSubmitSignalement = async () => {
         <div className="stat-card">
           <div className="stat-icon"></div>
           <div className="stat-content">
-            <div className="stat-value">{stats.avancement}%</div>
+            <div className="stat-value">{displayStats.avancement}%</div>
             <div className="stat-label">Avancement</div>
           </div>
         </div>
@@ -288,17 +484,17 @@ const handleSubmitSignalement = async () => {
         ) : (
           <MapContainer
             center={position}
-            zoom={13}
+            zoom={17}
             style={{ height: '600px', width: '100%', borderRadius: '10px' }}
           >
             <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="http://localhost:8081/styles/osm-bright/{z}/{x}/{y}.png"
+              attribution='&copy; Carte locale Antananarivo'
             />
             
             <MapClickHandler />
             
-            {signalements
+            {filteredSignalements
               .filter(signal => [4, 5, 6].includes(signal.idStatus))
               .map((signal) => {
                 let statusKey = '';
@@ -314,9 +510,9 @@ const handleSubmitSignalement = async () => {
                   >
                     <Popup>
                       <div className="popup-content">
-                        <h3>Signalement #{signal.id}</h3>
+                        <h3>{signal.typeSignalement?.libelle || 'Type inconnu'}</h3>
                         <div className="popup-info">
-                          <p><strong>Date:</strong> {formatDate(signal.created_at)}</p>
+                          <p><strong>Date:</strong> {formatDate(signal.createdAt)}</p>
                           <p><strong>Statut:</strong> <span className={getStatusClass(statusKey)}>{getStatusLabel(statusKey)}</span></p>
                           <p><strong>Surface:</strong> {signal.surfaceM2} m²</p>
                           <p><strong>Budget:</strong> {formatCurrency(signal.budget)}</p>
@@ -348,6 +544,22 @@ const handleSubmitSignalement = async () => {
           </div>
         </div>
       </div>
+
+      {/* Bouton flottant pour ajouter un signalement */}
+      <button 
+        className={`floating-add-btn ${isAddingMode ? 'active' : ''}`}
+        onClick={() => setIsAddingMode(!isAddingMode)}
+        title={isAddingMode ? 'Annuler' : 'Ajouter un signalement'}
+      >
+        {isAddingMode ? '✕' : '+'}
+      </button>
+
+      {/* Message d'info en mode ajout */}
+      {isAddingMode && (
+        <div className="floating-add-info">
+           Cliquez sur la carte pour placer un signalement
+        </div>
+      )}
 
       {/* Modal pour ajouter un signalement */}
       {showModal && (

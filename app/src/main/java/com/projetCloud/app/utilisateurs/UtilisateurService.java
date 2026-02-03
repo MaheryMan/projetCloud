@@ -9,6 +9,7 @@ import com.google.firebase.auth.UserRecord;
 import com.projetCloud.app.config.ConnectivityService;
 import com.projetCloud.app.roles.Role;
 import com.projetCloud.app.roles.RoleRepository;
+import com.projetCloud.app.configurations.ConfigurationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,6 +39,7 @@ public class UtilisateurService {
 
     @Autowired
     private Firestore firestore;
+    private ConfigurationService configurationService;
 
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -52,7 +54,30 @@ public class UtilisateurService {
         Optional<Utilisateur> utilisateur = utilisateurRepository.findByEmail(email);
         if (utilisateur.isPresent()
                 && utilisateur.get().getDeletedAt() == null) {
-            String storedPassword = utilisateur.get().getPassword();
+            
+            Utilisateur user = utilisateur.get();
+            
+            // Vérifier si l'utilisateur est bloqué
+            if (user.getIsBlocked() != null && user.getIsBlocked()) {
+                // Vérifier si le délai de blocage est écoulé
+                int blocageDurationMinutes = Integer.parseInt(configurationService.getValue("duree_blocage_minutes", "30"));
+                if (user.getLastFailedAttempt() != null) {
+                    LocalDateTime blockedUntil = user.getLastFailedAttempt().plusMinutes(blocageDurationMinutes);
+                    if (LocalDateTime.now().isAfter(blockedUntil)) {
+                        // Débloquer automatiquement l'utilisateur
+                        user.setIsBlocked(false);
+                        user.setTentativesConnexion(0);
+                        utilisateurRepository.save(user);
+                    } else {
+                        // L'utilisateur est toujours bloqué
+                        return Optional.empty();
+                    }
+                } else {
+                    return Optional.empty();
+                }
+            }
+            
+            String storedPassword = user.getPassword();
             boolean passwordMatches = false;
             if (storedPassword != null) {
                 if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2y$") || storedPassword.startsWith("$2b$")) {
@@ -64,7 +89,13 @@ public class UtilisateurService {
                 }
             }
             if (passwordMatches) {
-                return utilisateur;
+                // Réinitialiser le compteur de tentatives en cas de succès
+                if (user.getTentativesConnexion() != null && user.getTentativesConnexion() > 0) {
+                    user.setTentativesConnexion(0);
+                    user.setLastFailedAttempt(null);
+                    utilisateurRepository.save(user);
+                }
+                return Optional.of(user);
             }
         }
         return Optional.empty();
