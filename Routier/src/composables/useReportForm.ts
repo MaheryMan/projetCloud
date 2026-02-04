@@ -34,10 +34,11 @@ export function useReportForm(options: UseReportFormOptions) {
 
   /**
    * Récupère le libellé du statut initial depuis la metadata
+   * Utilise 'cree' pour les brouillons (non affichés jusqu'à validation)
    */
   const getInitialStatusLabel = (): string => {
-    const newStatus = metadataStore.statuses.find((s) => s.code === 'nouveau')
-    return newStatus?.libelle || 'Nouveau'
+    const creeStatus = metadataStore.statuses.find((s) => s.code === 'cree')
+    return creeStatus?.libelle || 'Créé'
   }
 
   // Ces variables doivent rester modifiables directement
