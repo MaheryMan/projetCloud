@@ -313,33 +313,21 @@
               </div>
             </div>
 
-            <!-- Étape 2.5: Photo -->
+            <!-- Étape 2.5: Photos -->
             <div class="form-section">
               <div class="section-header">
                 <span class="section-number">2.5</span>
                 <div class="section-info">
-                  <h3 class="section-title">Photo (optionnel)</h3>
-                  <p class="section-subtitle">Ajoutez une photo du problème</p>
+                  <h3 class="section-title">Photos (optionnel)</h3>
+                  <p class="section-subtitle">Ajoutez jusqu'à 5 photos du problème</p>
                 </div>
               </div>
               
-              <div class="photo-section">
-                <div v-if="!reportPhoto" class="photo-placeholder" @click="openPhotoOptions">
-                  <ion-icon name="camera-outline" class="photo-icon"></ion-icon>
-                  <span class="photo-text">Ajouter une photo</span>
-                </div>
-                <div v-else class="photo-preview">
-                  <img :src="reportPhoto" alt="Photo du signalement" class="photo-image" />
-                  <div class="photo-actions">
-                    <ion-button fill="clear" size="small" @click="openPhotoOptions" class="photo-change-btn">
-                      <ion-icon name="create-outline" slot="icon-only"></ion-icon>
-                    </ion-button>
-                    <ion-button fill="clear" size="small" @click="removePhoto" class="photo-remove-btn">
-                      <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
-                    </ion-button>
-                  </div>
-                </div>
-              </div>
+              <PhotoPicker 
+                ref="photoPickerRef"
+                :disabled="submitting"
+                @error="(msg) => showToast(msg, 'danger')"
+              />
             </div>
 
             <!-- Note d'information -->
@@ -382,13 +370,35 @@
       </ion-content>
     </ion-modal>
 
-    <!-- Action Sheet pour les options photo -->
-    <ion-action-sheet
-      :is-open="showActionSheet"
-      header="Ajouter une photo"
-      :buttons="photoActionButtons"
-      @didDismiss="showActionSheet = false"
-    ></ion-action-sheet>
+    <!-- Modal Photos Gallery -->
+    <ion-modal
+      :is-open="showPhotoGallery"
+      @didDismiss="showPhotoGallery = false"
+      class="photo-gallery-modal"
+    >
+      <ion-header>
+        <ion-toolbar class="photo-gallery-toolbar">
+          <ion-title>Photos du signalement</ion-title>
+          <ion-buttons slot="end">
+            <ion-button @click="showPhotoGallery = false" fill="clear">
+              <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="photo-gallery-content" v-if="selectedReport">
+        <div class="gallery-header">
+          <div class="report-info">
+            <span class="report-type">{{ selectedReport.type }}</span>
+            <span class="report-status">{{ selectedReport.status }}</span>
+          </div>
+          <p class="report-desc">{{ selectedReport.description }}</p>
+        </div>
+
+        <PhotoGallery :report-id="selectedReport.id!" />
+      </ion-content>
+    </ion-modal>
   </ion-page>
 </template>
 @@
@@ -398,7 +408,7 @@ import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton,
   IonIcon, IonFabButton, IonModal, IonTextarea, IonSpinner, IonItem, IonInput,
-  IonCard, IonCardContent, IonActionSheet
+  IonCard, IonCardContent
 } from '@ionic/vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -408,6 +418,8 @@ import { useToast } from '@/composables/useToast';
 import { useAuth } from '@/composables/useAuth'
 import { useReportMap } from '@/composables/useReportMap'
 import { useReportForm } from '@/composables/useReportForm'
+import PhotoPicker from '@/components/PhotoPicker.vue'
+import PhotoGallery from '@/components/PhotoGallery.vue'
 import type { ReportType } from '@/types/report.types'
 
 const router = useRouter();
@@ -455,9 +467,7 @@ const {
   reportType,
   reportDescription,
   surfaceM2,
-  reportPhoto,
-  showActionSheet,
-  photoActionButtons,
+  photoPickerRef,
   formProgress,
   canSubmit,
   placeholderText,
@@ -465,7 +475,6 @@ const {
   startAddReport: _startAddReport,
   closeForm,
   openPhotoOptions,
-  removePhoto,
   submitReport
 } = reportForm
 
@@ -487,6 +496,8 @@ const {
   progressPercent,
   showLegend,
   isLegendExpanded,
+  selectedReport,
+  showPhotoGallery,
   toggleLegend,
   zoomIn,
   zoomOut,

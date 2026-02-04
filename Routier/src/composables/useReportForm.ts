@@ -1,6 +1,7 @@
 import { ref, computed, type Ref } from 'vue'
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'
 import { createReport } from '@/services/report.service'
+import { addPhotos } from '@/services/photos.service'
 import { useMetadataStore } from '@/stores/metadata.store'
 import type { ReportType } from '@/types/report.types'
 import type { TypeSignalement } from '@/services/metadata.service'
@@ -43,7 +44,9 @@ export function useReportForm(options: UseReportFormOptions) {
   const reportType = ref<string>('Trou')
   const reportDescription = ref('')
   const surfaceM2 = ref<number>(0)
-  const reportPhoto = ref<string>('')
+  
+  // Ref pour le composant PhotoPicker
+  const photoPickerRef = ref<any>(null)
 
   const showActionSheet = ref(false)
 
@@ -211,10 +214,6 @@ export function useReportForm(options: UseReportFormOptions) {
       return false
     }
 
-    if (reportPhoto.value && !validatePhotoSize(reportPhoto.value)) {
-      return false
-    }
-
     return true
   }
 
@@ -240,98 +239,13 @@ export function useReportForm(options: UseReportFormOptions) {
 
   const closeForm = () => {
     showForm.value = false
+    photoPickerRef.value?.reset()
   }
 
   const openPhotoOptions = () => {
-    showActionSheet.value = true
+    // Le PhotoPicker gère ses propres options internes
+    photoPickerRef.value?.openPhotoOptions()
   }
-
-  const takePhoto = async () => {
-    try {
-      const image = await Camera.getPhoto({
-        quality: 80,
-        allowEditing: false,
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Camera
-      })
-      const next = image.dataUrl || ''
-
-      if (!next) {
-        reportPhoto.value = ''
-      } else {
-        const thumb = await createThumbnail(next)
-        if (!validatePhotoSize(thumb)) {
-          reportPhoto.value = ''
-        } else {
-          reportPhoto.value = thumb
-        }
-      }
-      showActionSheet.value = false
-    } catch (error) {
-      console.error('Erreur caméra:', error)
-      options.showToast('Erreur lors de la prise de photo', 'danger')
-    }
-  }
-
-  const chooseFromGallery = async () => {
-    try {
-      const image = await Camera.getPhoto({
-        quality: 80,
-        allowEditing: false,
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Photos
-      })
-      const next = image.dataUrl || ''
-
-      if (!next) {
-        reportPhoto.value = ''
-      } else {
-        const thumb = await createThumbnail(next)
-        if (!validatePhotoSize(thumb)) {
-          reportPhoto.value = ''
-        } else {
-          reportPhoto.value = thumb
-        }
-      }
-      showActionSheet.value = false
-    } catch (error) {
-      console.error('Erreur galerie:', error)
-      options.showToast('Erreur lors de la sélection de photo', 'danger')
-    }
-  }
-
-  const removePhoto = () => {
-    reportPhoto.value = ''
-    showActionSheet.value = false
-  }
-
-  const photoActionButtons = computed(() => [
-    {
-      text: 'Prendre une photo',
-      icon: 'camera-outline',
-      handler: takePhoto
-    },
-    {
-      text: 'Choisir depuis la galerie',
-      icon: 'images-outline',
-      handler: chooseFromGallery
-    },
-    {
-      text: reportPhoto.value ? 'Changer la photo' : 'Annuler',
-      icon: 'close-outline',
-      role: 'cancel'
-    },
-    ...(reportPhoto.value
-      ? [
-          {
-            text: 'Supprimer la photo',
-            icon: 'trash-outline',
-            role: 'destructive',
-            handler: removePhoto
-          }
-        ]
-      : [])
-  ])
 
   const requireAuthOrRedirect = (): boolean => {
     if (options.isAuthenticated.value && options.userId.value) return true
@@ -344,7 +258,7 @@ export function useReportForm(options: UseReportFormOptions) {
     reportType.value = 'trou'
     reportDescription.value = ''
     surfaceM2.value = 0
-    reportPhoto.value = ''
+    photoPickerRef.value?.reset()
   }
 
   const startAddReport = () => {
@@ -376,6 +290,7 @@ export function useReportForm(options: UseReportFormOptions) {
     submitting.value = true
 
     try {
+      // Créer le report d'abord
       const reportData: any = {
         uid: options.userId.value as string,
         description: reportDescription.value,
@@ -386,26 +301,35 @@ export function useReportForm(options: UseReportFormOptions) {
         surfaceM2: Number(surfaceM2.value || 0)
       }
 
-      // Ajouter la photo seulement si elle existe
-      if (reportPhoto.value) {
-        reportData.photo = reportPhoto.value
-      }
+      const createdReport = await createReport(reportData)
 
-      await createReport(reportData)
+      // Uploader les photos ImgBB et créer les documents photos Firebase
+      if (photoPickerRef.value && photoPickerRef.value.getPhotoCount() > 0) {
+        try {
+          const photoUrls = await photoPickerRef.value.uploadPhotos()
+          
+          // Créer les documents photos dans Firebase
+          if (photoUrls && photoUrls.length > 0) {
+            const photoDocuments = photoUrls.map((url: string) => ({
+              reportId: createdReport.id,
+              uid: options.userId.value,
+              imgbbUrl: url
+            }))
+            
+            await addPhotos(photoDocuments)
+          }
+        } catch (photoError) {
+          console.error('Erreur lors de l\'upload des photos:', photoError)
+          options.showToast('Photos non uploadées mais le signalement a été créé', 'warning')
+          // Continuer malgré l'erreur des photos
+        }
+      }
 
       options.showToast('Signalement créé avec succès!')
       closeForm()
       options.onCreated?.()
     } catch (error) {
-      const message = (error as any)?.message as string | undefined
-      if (message?.includes('photo') && message?.includes('bytes')) {
-        options.showToast(
-          `Photo trop volumineuse. Limite Firestore ~${Math.round(FIRESTORE_MAX_FIELD_BYTES / 1024)} Ko.`,
-          'warning'
-        )
-      } else {
-        options.showToast('Erreur lors de la création du signalement', 'danger')
-      }
+      options.showToast('Erreur lors de la création du signalement', 'danger')
       console.error('Erreur lors de la création:', error)
     } finally {
       submitting.value = false
@@ -418,9 +342,7 @@ export function useReportForm(options: UseReportFormOptions) {
     reportType,
     reportDescription,
     surfaceM2,
-    reportPhoto,
-    showActionSheet,
-    photoActionButtons,
+    photoPickerRef,
     formProgress,
     canSubmit,
     placeholderText,
@@ -429,9 +351,6 @@ export function useReportForm(options: UseReportFormOptions) {
     startAddReportAtPosition,
     closeForm,
     openPhotoOptions,
-    takePhoto,
-    chooseFromGallery,
-    removePhoto,
     submitReport
   }
 }

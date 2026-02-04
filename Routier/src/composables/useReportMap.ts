@@ -27,6 +27,8 @@ export function useReportMap(options: UseReportMapOptions) {
   const map = ref<L.Map | null>(null)
   const markers: L.Marker[] = []
   const metadataStore = useMetadataStore()
+  const selectedReport = ref<Report | null>(null)
+  const showPhotoGallery = ref(false)
 
   const totalReports = ref(0)
   const approvedReports = ref(0)
@@ -175,7 +177,6 @@ export function useReportMap(options: UseReportMapOptions) {
             <span class="popup-status ${report.status.toLowerCase().replace(/\s+/g, '_')}">${report.status}</span>
           </div>
           <p class="popup-description">${report.description}</p>
-          ${report.photo ? `<div class="popup-photo"><img src="${report.photo}" alt="Photo du signalement" /></div>` : ''}
           <div class="popup-details">
             <div class="popup-detail"><strong>Surface:</strong> ${(report.surfaceM2 || 0)} m²</div>
             <div class="popup-detail"><strong>Budget estimé:</strong> ${(report.budgetEstimated || 0)} Ar</div>
@@ -185,12 +186,27 @@ export function useReportMap(options: UseReportMapOptions) {
             <ion-icon name="calendar-outline"></ion-icon>
             <span>${new Date(report.createdAt as any).toLocaleDateString('fr-FR')}</span>
           </div>
+          <div class="popup-actions">
+            <button class="popup-photo-btn" id="btn-photos-${report.id}">
+              <ion-icon name="images-outline"></ion-icon> Voir les photos
+            </button>
+          </div>
         </div>
       `,
       {
         className: 'custom-popup-container'
       }
     )
+
+    marker.on('popupopen', () => {
+      const btn = document.getElementById(`btn-photos-${report.id}`)
+      if (btn) {
+        btn.addEventListener('click', () => {
+          selectedReport.value = report
+          showPhotoGallery.value = true
+        })
+      }
+    })
 
     map.value.addLayer(marker)
     markers.push(marker)
@@ -287,6 +303,8 @@ export function useReportMap(options: UseReportMapOptions) {
     progressPercent,
     showLegend,
     isLegendExpanded,
+    selectedReport,
+    showPhotoGallery,
     toggleLegend,
     zoomIn,
     zoomOut,

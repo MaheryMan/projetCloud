@@ -15,6 +15,13 @@ export interface Report {
   surfaceM2?: number
   budgetEstimated?: number
   companyName?: string
-  photo?: string
   createdAt: Timestamp
+}
+
+export interface Photo {
+  id?: Id
+  reportId: Id
+  uid: Id
+  imgbbUrl: string
+  uploadedAt: Timestamp
 }
