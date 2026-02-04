@@ -55,25 +55,37 @@ export function useReportMap(options: UseReportMapOptions) {
   }
 
   const getMarkerIcon = (type: string, status: string) => {
-    // Couleurs mappées par code de statut
-    const colorsByCode: Record<string, string> = {
+    // Couleurs mappées par statut normalisé
+    const statusColors: Record<string, string> = {
       'nouveau': '#3b82f6',      // Bleu
       'en_cours': '#f59e0b',     // Orange
       'termine': '#22c55e'       // Vert
     }
 
-    // Normaliser le statut
+    // Normaliser le statut pour le matching
     const normalizedStatus = normalizeString(status)
     
-    // Trouver la couleur du statut
-    let statusColor = colorsByCode[normalizedStatus] || '#64748b'
+    // Chercher la couleur du statut par matching normalisé
+    let statusColor = '#64748b' // Couleur par défaut (gris)
     
-    if (!colorsByCode[normalizedStatus]) {
-      // Sinon, chercher en matchant le libellé du statut avec les codes
+    // Vérifier directement par code normalisé
+    for (const [code, color] of Object.entries(statusColors)) {
+      if (compareNormalized(normalizedStatus, code)) {
+        statusColor = color
+        break
+      }
+    }
+    
+    // Si pas trouvé, chercher en matchant avec les libellés metadata
+    if (statusColor === '#64748b') {
       const matchingStatus = findNormalized(metadataStore.statuses, status, (s) => s.libelle)
       if (matchingStatus && matchingStatus.code) {
-        const normalizedCode = normalizeString(matchingStatus.code)
-        statusColor = colorsByCode[normalizedCode] || '#64748b'
+        for (const [code, color] of Object.entries(statusColors)) {
+          if (compareNormalized(matchingStatus.code, code)) {
+            statusColor = color
+            break
+          }
+        }
       }
     }
 

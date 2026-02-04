@@ -1,12 +1,20 @@
 /**
  * Normalise une string pour les comparaisons case-insensitive
- * Convertit en minuscules et remplace les espaces par des underscores
+ * Convertit en minuscules, supprime les accents, remplace les espaces/tirets/underscores par des underscores
  * @param str - La chaîne à normaliser
  * @returns La chaîne normalisée
  */
 export function normalizeString(str: string): string {
   if (!str) return ''
-  return str.toLowerCase().replace(/\s+/g, '_')
+  // 1. Convertir en minuscules
+  let normalized = str.toLowerCase()
+  // 2. Normaliser Unicode NFD pour séparer les diacritiques
+  normalized = normalized.normalize('NFD')
+  // 3. Supprimer les diacritiques (caractères combinés)
+  normalized = normalized.replace(/[\u0300-\u036f]/g, '')
+  // 4. Remplacer espaces, tirets, etc. par underscore
+  normalized = normalized.replace(/[-\s_]+/g, '_')
+  return normalized
 }
 
 /**
