@@ -16,6 +16,8 @@ function SignalementManagement() {
   const [photoFile, setPhotoFile] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [typesSignalement, setTypesSignalement] = useState([]);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncMessage, setSyncMessage] = useState(null);
 
 
   useEffect(() => {
@@ -140,6 +142,7 @@ const fetchEntreprises = async () => {
         if (filterStatus === 'nouveau') return s.idStatus === 4;
         if (filterStatus === 'en_cours') return s.idStatus === 5;
         if (filterStatus === 'termine') return s.idStatus === 6;
+        if (filterStatus === 'cree') return s.idStatus === 8;
         return true;
       });
     }
@@ -293,7 +296,8 @@ const fetchEntreprises = async () => {
   };
 
   const getStatusLabel = (statusOrId) => {
-    const map = {
+    // Mapping des IDs vers les libellés
+    const idMap = {
       1: 'Actif',
       2: 'Bloqué',
       3: 'Inactif',
@@ -301,21 +305,137 @@ const fetchEntreprises = async () => {
       5: 'En cours',
       6: 'Terminé',
       7: 'Annulé',
+      8: 'Créé',
+    };
+
+    // Si c'est un objet status avec libelle
+    if (typeof statusOrId === 'object' && statusOrId !== null && statusOrId.libelle) {
+      return statusOrId.libelle;
+    }
+
+    // Si c'est un nombre (ID)
+    if (typeof statusOrId === 'number') {
+      return idMap[statusOrId] || statusOrId;
+    }
+
+    // Si c'est une string (en_cours, termine, etc)
+    const stringMap = {
       'nouveau': 'Nouveau',
       'en_cours': 'En cours',
       'termine': 'Terminé',
-      'annule': 'Annulé'
+      'annule': 'Annulé',
+      'actif': 'Actif',
+      'bloque': 'Bloqué',
+      'inactif': 'Inactif',
+      'cree': 'Créé',
     };
-    return map[statusOrId] || statusOrId;
+
+    const normalized = String(statusOrId).toLowerCase().replace(/[\s_-]/g, '_');
+    return stringMap[normalized] || statusOrId;
   };
 
-  const getStatusClass = (status) => {
-    return `status-badge status-${status}`;
+  const getStatusClass = (statusOrId) => {
+    // Extraire l'ID numérique s'il y a un objet status
+    let statusId = statusOrId;
+    if (typeof statusOrId === 'object' && statusOrId !== null && statusOrId.id) {
+      statusId = statusOrId.id;
+    }
+    return `status-badge status-${statusId}`;
   };
 
   const getEntrepriseName = (idEntreprise) => {
     const ent = entreprises.find(e => e.id === idEntreprise);
     return ent ? ent.nom : 'Non attribuée';
+  };
+
+  const handleSyncFirebaseToPostgres = async () => {
+    if (!window.confirm('Êtes-vous sûr de vouloir synchroniser les signalements de Firebase vers PostgreSQL ?')) {
+      return;
+    }
+
+    try {
+      setSyncLoading(true);
+      setSyncMessage(null);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('http://localhost:8080/api/sync/firebase-to-postgres', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la synchronisation');
+      }
+
+      const data = await response.json();
+      setSyncMessage({
+        type: 'success',
+        text: `Synchronisation réussie! ${data.successCount} signalement(s) synchronisé(s).`,
+        details: data.message
+      });
+
+      // Recharger la liste des signalements
+      await fetchSignalements();
+
+      // Masquer le message après 5 secondes
+      setTimeout(() => setSyncMessage(null), 5000);
+    } catch (error) {
+      console.error('Erreur:', error);
+      setSyncMessage({
+        type: 'error',
+        text: 'Erreur lors de la synchronisation'
+      });
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const handleSyncPostgresToFirebase = async () => {
+    if (!window.confirm('Êtes-vous sûr de vouloir synchroniser les signalements de PostgreSQL vers Firebase ?')) {
+      return;
+    }
+
+    try {
+      setSyncLoading(true);
+      setSyncMessage(null);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('http://localhost:8080/api/sync/postgres-to-firebase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la synchronisation');
+      }
+
+      const data = await response.json();
+      setSyncMessage({
+        type: 'success',
+        text: `Synchronisation réussie! ${data.successCount} signalement(s) synchronisé(s).`,
+        details: data.message
+      });
+
+      // Recharger la liste des signalements
+      await fetchSignalements();
+
+      // Masquer le message après 5 secondes
+      setTimeout(() => setSyncMessage(null), 5000);
+    } catch (error) {
+      console.error('Erreur:', error);
+      setSyncMessage({
+        type: 'error',
+        text: 'Erreur lors de la synchronisation'
+      });
+    } finally {
+      setSyncLoading(false);
+    }
   };
 
   if (loading) {
@@ -349,6 +469,7 @@ const fetchEntreprises = async () => {
             <option value="nouveau">Nouveaux ({signalements.filter(s => s.idStatus === 4).length})</option>
             <option value="en_cours">En cours ({signalements.filter(s => s.idStatus === 5).length})</option>
             <option value="termine">Terminés ({signalements.filter(s => s.idStatus === 6).length})</option>
+            <option value="cree">Créés ({signalements.filter(s => s.idStatus === 8).length})</option>
           </select>
 
           <select 
@@ -390,7 +511,32 @@ const fetchEntreprises = async () => {
               Réinitialiser
             </button>
           )}
+
+          <button 
+            className="sync-btn"
+            onClick={handleSyncFirebaseToPostgres}
+            disabled={syncLoading}
+            title="Synchroniser les signalements de Firebase vers PostgreSQL"
+          >
+            {syncLoading ? '⏳ Synchronisation...' : '🔄 Synchroniser Firebase'}
+          </button>
+
+          <button 
+            className="sync-btn"
+            onClick={handleSyncPostgresToFirebase}
+            disabled={syncLoading}
+            title="Synchroniser les signalements de PostgreSQL vers Firebase"
+          >
+            {syncLoading ? '⏳ Synchronisation...' : '🔄 Synchroniser PostgreSQL'}
+          </button>
         </div>
+
+        {syncMessage && (
+          <div className={`sync-message sync-message-${syncMessage.type}`}>
+            <span>{syncMessage.text}</span>
+            {syncMessage.details && <small>{syncMessage.details}</small>}
+          </div>
+        )}
       </div>
 
       <div className="table-container">

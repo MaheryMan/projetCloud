@@ -34,8 +34,9 @@
           @click="previousPhoto"
           class="control-btn prev-btn"
           :disabled="currentPhotoIndex === 0"
+          title="Photo précédente"
         >
-          <ion-icon name="chevron-back-outline"></ion-icon>
+          <span class="arrow-text">&lt;</span>
         </button>
 
         <div class="thumbnails">
@@ -61,8 +62,9 @@
           @click="nextPhoto"
           class="control-btn next-btn"
           :disabled="currentPhotoIndex === photos.length - 1"
+          title="Photo suivante"
         >
-          <ion-icon name="chevron-forward-outline"></ion-icon>
+          <span class="arrow-text">&gt;</span>
         </button>
       </div>
 
@@ -81,7 +83,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { IonIcon, IonSpinner } from '@ionic/vue'
+import { IonSpinner } from '@ionic/vue'
 import { getPhotosForReport } from '@/services/photos.service'
 import type { Photo } from '@/types/report.types'
 
@@ -245,6 +247,12 @@ const formatDate = (date: any): string => {
 
 .control-btn ion-icon {
   font-size: 20px;
+}
+
+.arrow-text {
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 1;
 }
 
 .thumbnails {

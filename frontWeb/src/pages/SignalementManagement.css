@@ -106,6 +106,68 @@
   color: white;
 }
 
+.sync-btn {
+  padding: 8px 16px;
+  background: #10b981;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.sync-btn:hover:not(:disabled) {
+  background: #059669;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.sync-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.sync-message {
+  margin-top: 1rem;
+  padding: 12px 16px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  animation: slideDown 0.3s ease;
+}
+
+.sync-message-success {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border-left: 4px solid #16a34a;
+}
+
+.sync-message-error {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border-left: 4px solid #dc2626;
+}
+
+.sync-message small {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .filter-tabs {
   display: inline-flex;
   background: var(--slate-200);
