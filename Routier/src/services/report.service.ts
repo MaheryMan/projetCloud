@@ -28,7 +28,6 @@ function normalizeReport(id: string, data: any): Report {
     surfaceM2: data.surfaceM2 ? Number(data.surfaceM2) : undefined,
     budgetEstimated: data.budgetEstimated ? Number(data.budgetEstimated) : undefined,
     companyName: data.companyName || undefined,
-    photo: data.photo || undefined,
     createdAt
   }
 }

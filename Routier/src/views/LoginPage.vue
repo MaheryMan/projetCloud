@@ -103,6 +103,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useToast } from '@/composables/useToast'
 import { useErrorHandler } from '@/composables/useErrorHandler'
 import { useFormValidation } from '@/composables/useFormValidation'
+import { useNotifications } from '@/composables/useNotifications'
 
 const email = ref('')
 const password = ref('')
@@ -116,6 +117,9 @@ const { handleError, clearError } = useErrorHandler()
 
 const {hasErrors } = useFormValidation({ email, password })
 
+// Notifications push
+const { updateTokenOnLogin } = useNotifications()
+
 const handleLogin = async () => {
     clearError()
 
@@ -126,6 +130,12 @@ const handleLogin = async () => {
 
     try {
         await authStore.loginWithEmail(email.value, password.value)
+        
+        // Mettre à jour le FCM token après connexion réussie
+        if (authStore.user?.uid) {
+          await updateTokenOnLogin(authStore.user.uid)
+        }
+        
         showToast('Connexion réussie', 'success')
         router.replace('/home')
     } catch (err) {
@@ -138,6 +148,12 @@ const loginGoogle = async () => {
 
     try {
         await authStore.loginGoogleAction()
+        
+        // Mettre à jour le FCM token après connexion réussie
+        if (authStore.user?.uid) {
+          await updateTokenOnLogin(authStore.user.uid)
+        }
+        
         showToast('Connexion avec Google réussie', 'success')
         router.replace('/home')
     } catch (err) {

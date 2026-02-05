@@ -184,52 +184,22 @@ public class UtilisateurService {
             throw new Exception("Un utilisateur avec cet email existe déjà");
         }
 
-        boolean isOnline = connectivityService.isFirebaseOnline();
-        String firebaseUid = null;
-        LocalDateTime firebaseCreatedAt = null;
-
-        if (isOnline) {
-            try {
-                // Créer l'utilisateur dans Firebase Auth
-                UserRecord.CreateRequest request = new UserRecord.CreateRequest()
-                        .setEmail(email)
-                        .setPassword(password)
-                        .setDisplayName(nom + " " + prenom)
-                        .setEmailVerified(false);
-
-                UserRecord userRecord = FirebaseAuth.getInstance().createUser(request);
-                firebaseUid = userRecord.getUid();
-                firebaseCreatedAt = LocalDateTime.now();
-
-                // Créer le document Firestore
-                createFirestoreUserDocument(userRecord, nom, prenom, email);
-
-            } catch (FirebaseAuthException e) {
-                throw new Exception("Erreur lors de la création dans Firebase: " + e.getMessage());
-            } catch (Exception e) {
-                throw new Exception("Erreur lors de la création du document Firestore: " + e.getMessage());
-            }
-        }
-
-        // Créer l'utilisateur localement
+        // Créer l'utilisateur localement uniquement
+        // L'envoi vers Firebase sera fait via le bouton sync (/api/sync/users)
+        // qui n'est accessible qu'en ligne
         Utilisateur utilisateur = new Utilisateur();
         utilisateur.setEmail(email);
         utilisateur.setPassword(password); // Toujours hasher le mot de passe localement
         utilisateur.setNom(nom);
         utilisateur.setPrenom(prenom);
         utilisateur.setNumTel(numTel);
-        utilisateur.setFirebaseUid(firebaseUid);
-        utilisateur.setIdSource(isOnline ? 1 : 3); // 1 = firebase_email, 3 = local
+        utilisateur.setFirebaseUid(null); // Pas de firebase_uid jusqu'à la sync
+        utilisateur.setIdSource(3); // 3 = local (sync sera effectuée plus tard)
         utilisateur.setIdStatus(1); // Actif
-        utilisateur.setIsSyncedToFirebase(isOnline);
-        utilisateur.setFirebaseCreatedAt(firebaseCreatedAt);
+        utilisateur.setIsSyncedToFirebase(false); // Non synchronisé jusqu'au clic du bouton sync
+        utilisateur.setFirebaseCreatedAt(null);
         utilisateur.setCreatedAt(LocalDateTime.now());
-
-        if (!isOnline) {
-            utilisateur.setTempPassword(password); // Stocker en clair pour la sync future
-        } else {
-            utilisateur.setTempPassword(null); // Pas de temp pour online, déjà sync
-        }
+        utilisateur.setTempPassword(password); // Stocker en clair pour la sync future
 
         Utilisateur savedUser = save(utilisateur);
 

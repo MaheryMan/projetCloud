@@ -56,6 +56,39 @@ function Settings() {
     setShowForm(false);
   };
 
+  // ===== SYNCHRONISATION MÉTADONNÉES =====
+  const handleSyncMetadata = async () => {
+    if (!window.confirm('Synchroniser les métadonnées (Status, Entreprises, Types de signalement, Configurations)?\n\nCette opération synchronise les paramètres entre PostgreSQL et Firebase (bidirectionnel).')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/sync/metadata', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || `Erreur HTTP ${res.status}`);
+      }
+
+      alert(`✅ Synchronisation réussie!\n${data.count} élément(s) de configuration synchronisé(s)`);
+      await fetchAllData(); // Rafraîchir les données
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert(`❌ Erreur lors de la synchronisation des métadonnées: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -156,6 +189,44 @@ function Settings() {
         <h1>Paramètres</h1>
         <p>Gérer les types de signalements, les entreprises et les statuts</p>
       </header>
+
+      {/* Synchronisation Section */}
+      <div style={{ 
+        backgroundColor: '#f8f9fa', 
+        border: '1px solid #dee2e6', 
+        borderRadius: '8px', 
+        padding: '15px', 
+        marginBottom: '20px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div style={{ flex: 1 }}>
+            <h4 style={{ color: '#34495e', marginTop: 0, marginBottom: '5px' }}>🔄 Synchroniser les Paramètres</h4>
+            <p style={{ color: '#7f8c8d', fontSize: '13px', margin: 0 }}>
+              Synchronisez les métadonnées (statuts, entreprises, types de signalement) entre PostgreSQL et Firebase
+            </p>
+          </div>
+          <button
+            onClick={handleSyncMetadata}
+            disabled={loading}
+            title="Synchroniser tous les paramètres système"
+            style={{
+              backgroundColor: '#16a085',
+              color: 'white',
+              padding: '10px 18px',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              opacity: loading ? 0.6 : 1,
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {loading ? '⏳ Synchronisation...' : '⚙️ Synchroniser'}
+          </button>
+        </div>
+      </div>
 
       <div className="tabs-container">
         <div className="tabs-nav">

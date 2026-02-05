@@ -401,6 +401,134 @@ function UserManagement() {
     }
   };
 
+  // ===== SYNCHRONISATION UTILISATEURS =====
+  const handleSyncUsersToFirebase = async () => {
+    if (!window.confirm('Synchroniser les utilisateurs locaux vers Firebase?\n\nCette opération enverra tous les utilisateurs non synchronisés vers Firebase.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/sync/users', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || `Erreur HTTP ${res.status}`);
+      }
+
+      alert(`✅ Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s) vers Firebase`);
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert(`❌ Erreur lors de la synchronisation vers Firebase: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSyncUsersFromFirebase = async () => {
+    if (!window.confirm('Synchroniser les utilisateurs depuis Firebase vers PostgreSQL?\n\nCette opération récupérera tous les utilisateurs Firebase non synchronisés.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/sync/users/from-firebase', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || `Erreur HTTP ${res.status}`);
+      }
+
+      alert(`✅ Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s) depuis Firebase`);
+      await fetchUsers(); // Rafraîchir la liste
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert(`❌ Erreur lors de la synchronisation depuis Firebase: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ===== SYNCHRONISATION ÉTAT DE BLOCAGE =====
+  const handleSyncBlockStatus = async () => {
+    if (!window.confirm('Synchroniser l\'état de blocage depuis Firebase?\n\nCette opération mettra à jour l\'état de blocage depuis Firebase (source de vérité).')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/sync/block-status', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || `Erreur HTTP ${res.status}`);
+      }
+
+      alert(`✅ Synchronisation réussie!\n${data.count} utilisateur(s) mis à jour`);
+      await fetchUsers(); // Rafraîchir la liste
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert(`❌ Erreur lors de la synchronisation de l'état de blocage: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSyncDeblocages = async () => {
+    if (!window.confirm('Synchroniser tous les déblocages vers Firebase?\n\nCette opération mettra à jour l\'état de déblocage de tous les utilisateurs.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:8080/api/sync/deblocages', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || `Erreur HTTP ${res.status}`);
+      }
+
+      alert(`✅ Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s)`);
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert(`❌ Erreur lors de la synchronisation des déblocages: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return <div className="loading">Chargement...</div>;
   }
@@ -455,6 +583,110 @@ function UserManagement() {
           <div className="stat-content">
             <div className="stat-value">{blockedUsers.length}</div>
             <div className="stat-label">Utilisateurs bloqués</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Synchronisation Section */}
+      <div className="sync-section" style={{ 
+        backgroundColor: '#f8f9fa', 
+        border: '1px solid #dee2e6', 
+        borderRadius: '8px', 
+        padding: '20px', 
+        marginBottom: '20px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+      }}>
+        <h3 style={{ marginTop: 0, color: '#2c3e50', marginBottom: '15px' }}>🔄 Synchronisation des données</h3>
+        
+        {/* Users Sync */}
+        <div style={{ marginBottom: '15px' }}>
+          <h4 style={{ color: '#34495e', marginBottom: '10px' }}>Synchroniser les Utilisateurs</h4>
+          <p style={{ color: '#7f8c8d', fontSize: '14px', marginBottom: '10px' }}>
+            Gérez la synchronisation bidirectionnelle entre la base de données locale (PostgreSQL) et Firebase
+          </p>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              className="btn-sync"
+              onClick={handleSyncUsersToFirebase}
+              title="Envoyer les utilisateurs locaux non synchronisés vers Firebase"
+              style={{
+                backgroundColor: '#3498db',
+                color: 'white',
+                padding: '10px 16px',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'background-color 0.3s'
+              }}
+            >
+              📤 Vers Firebase (PostgreSQL → Firebase)
+            </button>
+            <button
+              className="btn-sync"
+              onClick={handleSyncUsersFromFirebase}
+              title="Récupérer les utilisateurs Firebase non synchronisés"
+              style={{
+                backgroundColor: '#9b59b6',
+                color: 'white',
+                padding: '10px 16px',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'background-color 0.3s'
+              }}
+            >
+              📥 Depuis Firebase (Firebase → PostgreSQL)
+            </button>
+          </div>
+        </div>
+
+        {/* Block Status Sync */}
+        <div>
+          <h4 style={{ color: '#34495e', marginBottom: '10px' }}>Synchroniser l'État de Blocage</h4>
+          <p style={{ color: '#7f8c8d', fontSize: '14px', marginBottom: '10px' }}>
+            Synchronisez l'état de blocage des utilisateurs. Firebase est la source de vérité pour les blocages.
+          </p>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              className="btn-sync"
+              onClick={handleSyncBlockStatus}
+              title="Synchroniser l'état de blocage depuis Firebase vers PostgreSQL"
+              style={{
+                backgroundColor: '#e74c3c',
+                color: 'white',
+                padding: '10px 16px',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'background-color 0.3s'
+              }}
+            >
+              🔒 État de blocage
+            </button>
+            <button
+              className="btn-sync"
+              onClick={handleSyncDeblocages}
+              title="Synchroniser tous les déblocages vers Firebase"
+              style={{
+                backgroundColor: '#27ae60',
+                color: 'white',
+                padding: '10px 16px',
+                border: 'none',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'background-color 0.3s'
+              }}
+            >
+              🔓 Déblocages
+            </button>
           </div>
         </div>
       </div>

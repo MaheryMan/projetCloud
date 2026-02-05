@@ -64,7 +64,7 @@ export async function login(email: string, password: string): Promise<User> {
             // 4. Si mot de passe incorrect, incrémenter les tentatives
             // Firebase retourne auth/invalid-credential ou auth/wrong-password
             if (firebaseError.code === 'auth/wrong-password' || firebaseError.code === 'auth/invalid-credential') {
-                const failureResult = await incrementFailedAttempts(userUID, email)
+                const failureResult = await incrementFailedAttempts(userUID)
                 throw new Error(failureResult.message)
             }
             throw firebaseError

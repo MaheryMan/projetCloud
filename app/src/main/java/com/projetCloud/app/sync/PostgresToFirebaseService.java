@@ -9,6 +9,7 @@ import com.projetCloud.app.sync.dto.PostgresReportDTO;
 import com.projetCloud.app.utilisateurs.Utilisateur;
 import com.projetCloud.app.entreprises.EntrepriseRepository;
 import com.projetCloud.app.entreprises.Entreprise;
+import com.projetCloud.app.notifications.FcmNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,13 +38,34 @@ public class PostgresToFirebaseService {
     @Autowired
     private EntrepriseRepository entrepriseRepository;
 
+    @Autowired
+    private FcmNotificationService fcmNotificationService;
+
     /**
      * Synchronise un report PostgreSQL vers Firebase
      * UPSERT: UPDATE si firebase_id existe, INSERT sinon
+     * Envoie une notification si le status a changé
      */
     public void syncReportToFirebase(Signalement postgresSignalement) throws ExecutionException, InterruptedException {
         if (postgresSignalement == null || postgresSignalement.getUtilisateur() == null) {
             throw new IllegalArgumentException("Signalement ou utilisateur invalide");
+        }
+
+        // Récupérer l'ancien status depuis Firebase (pour détecter les changements)
+        String oldStatus = null;
+        if (postgresSignalement.getFirebaseId() != null && !postgresSignalement.getFirebaseId().isEmpty()) {
+            try {
+                DocumentSnapshot firebaseDoc = firestore
+                    .collection("reports")
+                    .document(postgresSignalement.getFirebaseId())
+                    .get()
+                    .get();
+                if (firebaseDoc.exists()) {
+                    oldStatus = firebaseDoc.getString("status");
+                }
+            } catch (Exception e) {
+                System.err.println("[Sync] Erreur récupération ancien status: " + e.getMessage());
+            }
         }
 
         // 1. Préparer le document Firebase
@@ -68,6 +90,12 @@ public class PostgresToFirebaseService {
             postgresSignalement.setSyncedAt(LocalDateTime.now());
             postgresSignalement.setIsSyncedToFirebase(true);
             signalementRepository.save(postgresSignalement);
+        }
+
+        // 5. Envoyer une notification si le status a changé
+        String newStatus = getStatusLabel(postgresSignalement.getIdStatus());
+        if (oldStatus != null && !oldStatus.equalsIgnoreCase(newStatus)) {
+            sendStatusChangeNotification(postgresSignalement, oldStatus, newStatus);
         }
 
         // 5. Synchroniser les photos
@@ -235,4 +263,45 @@ public class PostgresToFirebaseService {
         }
         return null;
     }
+
+    /**
+     * Envoie une notification FCM si le status a changé
+     */
+    private void sendStatusChangeNotification(Signalement signalement, String oldStatus, String newStatus) {
+        try {
+            // Récupérer le FCM token de l'utilisateur
+            Utilisateur utilisateur = signalement.getUtilisateur();
+            if (utilisateur == null || utilisateur.getFirebaseUid() == null) {
+                System.err.println("[Notification] Utilisateur ou Firebase UID invalide");
+                return;
+            }
+
+            // Récupérer le FCM token depuis Firebase
+            DocumentSnapshot userDoc = firestore
+                .collection("users")
+                .document(utilisateur.getFirebaseUid())
+                .get()
+                .get();
+
+            String fcmToken = userDoc.exists() ? userDoc.getString("fcmToken") : null;
+
+            if (fcmToken == null || fcmToken.isEmpty()) {
+                System.out.println("[Notification] Pas de FCM token pour l'utilisateur: " + utilisateur.getFirebaseUid());
+                return;
+            }
+
+            // Construire le type de signalement (ex: "Trou")
+            String reportType = signalement.getTypeSignalement() != null 
+                ? signalement.getTypeSignalement().getLibelle() 
+                : "Signalement";
+
+            // Envoyer la notification
+            fcmNotificationService.notifyStatusChange(fcmToken, reportType, oldStatus, newStatus);
+
+        } catch (Exception e) {
+            System.err.println("[Notification] Erreur envoi notification: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }
+
