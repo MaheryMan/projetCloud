@@ -1,7 +1,7 @@
 import { ref, type Ref } from 'vue'
 import L from 'leaflet'
 import { getAllReports, getReportsByUser } from '@/services/report.service'
-import { computeReportMetrics } from '@/utils/reportMetrics'
+import { computeReportMetrics, getStatusProgress } from '@/utils/reportMetrics'
 import type { Report } from '@/types/report.types'
 import { useMetadataStore } from '@/stores/metadata.store'
 import { normalizeString, compareNormalized, findNormalized } from '@/utils/stringNormalization'
@@ -179,6 +179,9 @@ export function useReportMap(options: UseReportMapOptions) {
   const addReportMarker = (report: Report) => {
     if (!map.value) return
 
+    const progress = getStatusProgress(report.status)
+    const progressColor = progress === 100 ? '#22c55e' : progress === 50 ? '#f59e0b' : '#3b82f6'
+
     const marker = L.marker([report.lat, report.lng], {
       icon: getMarkerIcon(report.type, report.status)
     }).bindPopup(
@@ -189,6 +192,15 @@ export function useReportMap(options: UseReportMapOptions) {
             <span class="popup-status ${report.status.toLowerCase().replace(/\s+/g, '_')}">${report.status}</span>
           </div>
           <p class="popup-description">${report.description}</p>
+          <div class="popup-progress-section">
+            <div class="popup-progress-header">
+              <span class="popup-progress-label">Avancement</span>
+              <span class="popup-progress-value" style="color: ${progressColor}">${progress}%</span>
+            </div>
+            <div class="popup-progress-bar">
+              <div class="popup-progress-fill" style="width: ${progress}%; background: ${progressColor}"></div>
+            </div>
+          </div>
           <div class="popup-details">
             <div class="popup-detail"><strong>Surface:</strong> ${(report.surfaceM2 || 0)} m²</div>
             <div class="popup-detail"><strong>Budget estimé:</strong> ${(report.budgetEstimated || 0)} Ar</div>

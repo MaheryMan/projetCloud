@@ -1209,6 +1209,48 @@
   border-top: 1px solid #f1f5f9;
 }
 
+/* Progress bar dans le popup */
+:global(.popup-progress-section) {
+  margin: 12px 0;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+:global(.popup-progress-header) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+:global(.popup-progress-label) {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+:global(.popup-progress-value) {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+:global(.popup-progress-bar) {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+:global(.popup-progress-fill) {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
 :global(.popup-photo) {
   margin: 12px 0;
   border-radius: 8px;
