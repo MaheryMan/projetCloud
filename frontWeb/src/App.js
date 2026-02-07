@@ -74,8 +74,8 @@ function App() {
   return (
     <Router>
       <div className="App">
-        {/* Firebase status bubble seulement pour les non-managers */}
-        {(!user || !(user.roles && user.roles.includes('Manager'))) && <FirebaseStatusBubble />}
+        {/* Firebase status bubble seulement pour les utilisateurs connectés non-managers */}
+        {user && !(user.roles && user.roles.includes('Manager')) && <FirebaseStatusBubble />}
         
         {/* ⭐ SIDEBAR - Affichée seulement pour les managers */}
         {user && user.roles && user.roles.includes('Manager') && (

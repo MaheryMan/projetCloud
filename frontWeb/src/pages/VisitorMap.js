@@ -70,7 +70,6 @@ function VisitorMap() {
   const [filterStatus, setFilterStatus] = useState('tous');
   const [filterType, setFilterType] = useState('tous');
   const [filterEntreprise, setFilterEntreprise] = useState('tous');
-  const [filterUser, setFilterUser] = useState(false);
 
   const position = [-18.909855, 47.525637];
 
@@ -150,13 +149,8 @@ function VisitorMap() {
       }
     }
 
-    // Filtre "Mes signalements"
-    if (filterUser && user) {
-      filtered = filtered.filter(s => s.utilisateur?.id === user.id);
-    }
-
     setFilteredSignalements(filtered);
-  }, [signalements, filterStatus, filterType, filterEntreprise, filterUser, user]);
+  }, [signalements, filterStatus, filterType, filterEntreprise]);
 
   // Calculer les statistiques dynamiquement depuis les signalements filtrés
   useEffect(() => {
@@ -341,27 +335,13 @@ function VisitorMap() {
           </select>
         </div>
 
-        {user && (
-          <div className="filter-group filter-checkbox">
-            <label>
-              <input 
-                type="checkbox" 
-                checked={filterUser} 
-                onChange={(e) => setFilterUser(e.target.checked)}
-              />
-              <span>Mes signalements uniquement</span>
-            </label>
-          </div>
-        )}
-
-        {(filterStatus !== 'tous' || filterType !== 'tous' || filterEntreprise !== 'tous' || filterUser) && (
+        {(filterStatus !== 'tous' || filterType !== 'tous' || filterEntreprise !== 'tous') && (
           <button 
             className="filter-reset-btn"
             onClick={() => {
               setFilterStatus('tous');
               setFilterType('tous');
               setFilterEntreprise('tous');
-              setFilterUser(false);
             }}
           >
             Réinitialiser les filtres
@@ -437,20 +417,6 @@ function VisitorMap() {
         </div>
       )}
 
-      {/* Bannière d'information pour utilisateurs non connectés */}
-      {!localStorage.getItem('token') && (
-        <div className="info-banner">
-          <div className="info-content">
-            <FaInfoCircle className="info-icon" />
-            <span>Connectez-vous pour signaler des problèmes sur la route</span>
-          </div>
-          <button className="info-action" onClick={() => navigate('/login')}>
-            Se connecter
-            <FaArrowRight />
-          </button>
-        </div>
-      )}
-
       <div className="map-wrapper">
         {loading ? (
           <div className="loading-overlay">
@@ -514,29 +480,6 @@ function VisitorMap() {
               })}
           </MapContainer>
 
-          {/* Contrôles de carte améliorés */}
-          <div className="map-controls">
-            <button 
-              className="control-button zoom-button"
-              onClick={() => {
-                const map = document.querySelector('.leaflet-container')?._leaflet_map;
-                if (map) map.zoomIn();
-              }}
-              title="Zoom +"
-            >
-              <FaPlus />
-            </button>
-            <button 
-              className="control-button zoom-button"
-              onClick={() => {
-                const map = document.querySelector('.leaflet-container')?._leaflet_map;
-                if (map) map.zoomOut();
-              }}
-              title="Zoom -"
-            >
-              <FaMinus />
-            </button>
-          </div>
           </>
         )}
       </div>

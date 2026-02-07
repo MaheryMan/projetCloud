@@ -85,7 +85,7 @@ body {
 .map-header {
   background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 50%, var(--color-primary-light) 100%);
   color: white;
-  padding: var(--spacing-3xl) var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-lg);
   text-align: center;
   box-shadow: var(--shadow-lg);
   position: relative;
@@ -106,10 +106,10 @@ body {
 }
 
 .map-header h1 {
-  font-size: 42px;
+  font-size: 28px;
   font-weight: 800;
-  margin-bottom: var(--spacing-md);
-  letter-spacing: -1px;
+  margin-bottom: var(--spacing-sm);
+  letter-spacing: -0.5px;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   position: relative;
   z-index: 1;
@@ -330,8 +330,8 @@ body {
 .filter-container {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-lg) var(--spacing-xl);
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--color-border);
@@ -438,7 +438,6 @@ body {
   border: 2px solid var(--glass-border);
   font-size: 15px;
   box-shadow: var(--shadow-md);
-  animation: pulse 2s infinite;
   position: relative;
   z-index: 1;
 }
@@ -457,11 +456,11 @@ body {
 /* Stats Container - Glassmorphism Cards */
 .stats-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--spacing-lg);
-  padding: var(--spacing-2xl) var(--spacing-lg);
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 3px;
+  padding: 3px var(--spacing-md);
   max-width: 1400px;
-  margin: -40px auto 0;
+  margin: -3px auto 0;
   position: relative;
   z-index: 100;
 }
@@ -469,11 +468,11 @@ body {
 .stat-card {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-xl);
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: 5px;
   box-shadow: var(--shadow-md);
   transition: all var(--transition-base);
   border: 1px solid var(--glass-border);
@@ -486,14 +485,14 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  width: 5px;
+  width: 2px;
   height: 100%;
   background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
   transition: width var(--transition-base);
 }
 
 .stat-card:hover {
-  transform: translateY(-6px) scale(1.02);
+  transform: translateY(-2px) scale(1.005);
   box-shadow: var(--shadow-xl);
   border-color: rgba(255, 215, 0, 0.4);
 }
@@ -504,9 +503,9 @@ body {
 }
 
 .stat-icon {
-  font-size: 48px;
+  font-size: 14px;
   line-height: 1;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
   transition: transform var(--transition-base);
 }
 
@@ -519,20 +518,20 @@ body {
 }
 
 .stat-value {
-  font-size: 32px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--color-primary-dark);
-  margin-bottom: var(--spacing-xs);
-  letter-spacing: -0.5px;
-  line-height: 1.1;
+  margin-bottom: 0;
+  letter-spacing: -0.2px;
+  line-height: 1;
 }
 
 .stat-label {
-  font-size: 13px;
+  font-size: 7px;
   color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 700;
+  letter-spacing: 0.2px;
+  font-weight: 600;
 }
 
 /* Map Container */
@@ -551,23 +550,10 @@ body {
   letter-spacing: 0.3px;
 }
 
-.loading::before {
-  content: '🗺️';
-  display: block;
-  font-size: 64px;
-  margin-bottom: var(--spacing-lg);
-  animation: bounce 1s infinite;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
 /* Leaflet Map Customization */
 .leaflet-container {
-  height: 75vh !important;
-  min-height: 600px;
+  height: 60vh !important;
+  min-height: 500px;
   border-radius: 0;
   z-index: 1;
   font-family: 'Inter', sans-serif;
@@ -1292,8 +1278,8 @@ body {
 /* Bouton Récap Toggle */
 .recap-toggle {
   max-width: 1400px;
-  margin: var(--spacing-lg) auto;
-  padding: var(--spacing-md) var(--spacing-lg);
+  margin: var(--spacing-sm) auto;
+  padding: var(--spacing-xs) var(--spacing-md);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border-radius: var(--radius-md);
@@ -1315,23 +1301,23 @@ body {
 .recap-toggle-text {
   font-weight: 600;
   color: var(--color-text-primary);
-  font-size: 16px;
+  font-size: 13px;
 }
 
 .recap-toggle-state {
   color: var(--color-primary);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
 }
 
 /* Carte Récap */
 .recap-card {
   max-width: 1400px;
-  margin: 0 auto var(--spacing-lg);
+  margin: 0 auto var(--spacing-xs);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-xs) var(--spacing-sm);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--color-border);
   animation: slideDown 0.3s ease;
@@ -1350,15 +1336,15 @@ body {
 
 .recap-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--spacing-xs);
 }
 
 .recap-item {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-md);
+  gap: 2px;
+  padding: 6px 8px;
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.5);
   transition: all var(--transition-base);
@@ -1371,15 +1357,15 @@ body {
 }
 
 .recap-label {
-  font-size: 12px;
+  font-size: 10px;
   color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   font-weight: 600;
 }
 
 .recap-value {
-  font-size: 20px;
+  font-size: 16px;
   color: var(--color-text-primary);
   font-weight: 700;
 }
@@ -1475,7 +1461,7 @@ body {
 /* Légende Améliorée */
 .map-legend {
   position: absolute;
-  bottom: var(--spacing-lg);
+  bottom: 100px;
   left: var(--spacing-lg);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);

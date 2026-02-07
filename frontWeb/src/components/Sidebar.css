@@ -86,16 +86,6 @@
 
 .status-dot.loading {
   background: #f59e0b;
-  animation: fade-pulse 2s ease-in-out infinite;
-}
-
-@keyframes fade-pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
 }
 
 .status-text {

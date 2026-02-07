@@ -4,7 +4,7 @@ import { FaMap, FaChartBar, FaClipboardList, FaUsers, FaChartLine, FaSync, FaCog
 import './Sidebar.css';
 
 function Sidebar({ user, onLogout }) {
-  const [isOnline, setIsOnline] = useState(null);
+  const [isOnline, setIsOnline] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -51,11 +51,11 @@ function Sidebar({ user, onLogout }) {
         </div>
         <div className="firebase-status">
           <span
-            className={`status-dot ${isOnline === true ? 'online' : isOnline === false ? 'offline' : 'loading'}`}
-            title={isOnline === true ? 'Connecté à Firebase' : isOnline === false ? 'Hors ligne Firebase' : 'Vérification...'}
+            className={`status-dot ${isOnline ? 'online' : 'offline'}`}
+            title={isOnline ? 'Connecté à Firebase' : 'Hors ligne Firebase'}
           ></span>
           <span className="status-text">
-            {isOnline === true ? 'En ligne' : isOnline === false ? 'Hors ligne' : 'Vérification...'}
+            {isOnline ? 'En ligne' : 'Hors ligne'}
           </span>
         </div>
       </div>
