@@ -2,7 +2,6 @@
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
-  margin-left: 260px;
 }
 
 .page-header {
@@ -237,7 +236,6 @@
 @media (max-width: 768px) {
   .statistics-container {
     padding: 1.25rem;
-    margin-left: 70px;
   }
 
   .page-header h1 {

@@ -800,7 +800,7 @@
 
 @media (max-width: 768px) {
   .user-management {
-    padding: 20px;
+    padding: 1.25rem;
   }
 
   .page-header h1 {

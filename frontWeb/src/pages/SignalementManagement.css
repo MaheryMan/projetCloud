@@ -27,7 +27,10 @@
 .signalement-management {
   font-family: 'Inter', sans-serif;
   background-color: var(--slate-50);
-  padding: 2rem 3rem;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100vh;
   color: var(--slate-900);
 }
 

@@ -241,8 +241,8 @@ function Synchronization() {
   return (
     <div className="synchronization-page">
       <header className="page-header">
-        <h1>Synchronisation Firebase</h1>
-        <p>Synchroniser les données avec le cloud</p>
+        <h1>🔄 Synchronisation Firebase</h1>
+        <p>Synchroniser les données avec le cloud en temps réel</p>
       </header>
 
       <div className="status-card">
@@ -352,7 +352,7 @@ function Synchronization() {
 
       <div className="sync-log-section">
         <div className="log-header">
-          <h2>📋 Journal de synchronisation</h2>
+          <h2>� Journal de synchronisation</h2>
           <button className="clear-btn" onClick={clearLog}>
             🗑️ Effacer
           </button>
