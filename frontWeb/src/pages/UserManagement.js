@@ -28,7 +28,8 @@ function UserManagement() {
     nom: '',
     prenom: '',
     email: '',
-    numTel: ''
+    numTel: '',
+    password: ''
   });
   const [syncLog, setSyncLog] = useState([]);
 
@@ -255,8 +256,8 @@ function UserManagement() {
 
   const handleCreateUser = async () => {
     // Validation
-    if (!newUser.nom.trim() || !newUser.prenom.trim() || !newUser.email.trim()) {
-      alert('Veuillez remplir tous les champs obligatoires');
+    if (!newUser.nom.trim() || !newUser.prenom.trim() || !newUser.email.trim() || !newUser.password.trim()) {
+      alert('Veuillez remplir tous les champs obligatoires (nom, prénom, email, mot de passe)');
       return;
     }
 
@@ -266,7 +267,8 @@ function UserManagement() {
         nom: newUser.nom.trim(),
         prenom: newUser.prenom.trim(),
         email: newUser.email.trim(),
-        numTel: newUser.numTel.trim() || null
+        numTel: newUser.numTel.trim() || null,
+        password: newUser.password.trim()
       };
 
       const response = await fetch('http://localhost:8080/api/users', {
@@ -289,7 +291,8 @@ function UserManagement() {
         nom: '',
         prenom: '',
         email: '',
-        numTel: ''
+        numTel: '',
+        password: ''
       });
       await fetchUsers();
     } catch (error) {
@@ -309,10 +312,10 @@ function UserManagement() {
   };
 
   const getStatusBadge = (user) => {
-    if (user.deleteLe) {
+    if (user.deletedAt || user.deleteLe) {
       return <span className="status-badge status-deleted">Supprimé</span>;
     }
-    if (user.tentatives >= 3) {
+    if ((user.tentativesConnexion || user.tentatives || 0) >= 3) {
       return <span className="status-badge status-blocked">Bloqué</span>;
     }
     return <span className="status-badge status-active">Actif</span>;
@@ -543,10 +546,6 @@ function UserManagement() {
     }
   };
 
-  if (loading) {
-    return <div className="loading">Chargement...</div>;
-  }
-
   if (error) {
     return (
       <div className="user-management">
@@ -564,6 +563,12 @@ function UserManagement() {
         <div>
           <h1>Gestion des Utilisateurs</h1>
           <p>Débloquer les comptes et gérer les utilisateurs</p>
+          {loading && (
+            <div className="inline-loading">
+              <div className="loading-spinner"></div>
+              <span>Chargement...</span>
+            </div>
+          )}
         </div>
         <div className="header-buttons">
           <button
@@ -701,8 +706,10 @@ function UserManagement() {
             </tr>
           </thead>
           <tbody>
-            {displayedUsers.map((user) => (
-              <tr key={user.id} className={user.tentatives >= 3 ? 'blocked-row' : ''}>
+            {displayedUsers.map((user) => {
+              const tentatives = user.tentativesConnexion || user.tentatives || 0;
+              return (
+              <tr key={user.id} className={tentatives >= 3 ? 'blocked-row' : ''}>
                 <td>
                   <div className="user-cell">
                     <div className="user-avatar">
@@ -721,22 +728,22 @@ function UserManagement() {
                 <td>{getStatusBadge(user)}</td>
                 <td>
                   <div className="attempts-cell">
-                    <span className={`attempts-badge ${user.tentatives >= 3 ? 'max-attempts' : ''}`}>
-                      {user.tentatives} / 3
+                    <span className={`attempts-badge ${tentatives >= 3 ? 'max-attempts' : ''}`}>
+                      {tentatives} / 3
                     </span>
                     <div className="attempts-bar">
                       <div 
                         className="attempts-progress" 
-                        style={{ width: `${(user.tentatives / 3) * 100}%` }}
+                        style={{ width: `${(tentatives / 3) * 100}%` }}
                       ></div>
                     </div>
                   </div>
                 </td>
                 <td>
-                  <div className="date-cell">{formatDate(user.creeLe)}</div>
+                  <div className="date-cell">{formatDate(user.createdAt || user.creeLe)}</div>
                 </td>
                 <td>
-                  <div className="date-cell">{formatDate(user.updateLe)}</div>
+                  <div className="date-cell">{formatDate(user.updatedAt || user.updateLe)}</div>
                 </td>
                 <td>
                   <div className="action-buttons">
@@ -773,7 +780,8 @@ function UserManagement() {
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
 
@@ -984,6 +992,17 @@ function UserManagement() {
                     value={newUser.numTel}
                     onChange={(e) => setNewUser({ ...newUser, numTel: e.target.value })}
                     placeholder="Entrez le numéro de téléphone"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="password">Mot de passe *</label>
+                  <input
+                    type="password"
+                    id="password"
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                    placeholder="Entrez le mot de passe"
                   />
                 </div>
               </div>

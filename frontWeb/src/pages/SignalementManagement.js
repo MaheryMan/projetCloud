@@ -491,15 +491,17 @@ const fetchEntreprises = async () => {
     }
   };
 
-  if (loading) {
-    return <div className="loading">Chargement...</div>;
-  }
-
   return (
     <div className="signalement-management">
       <header className="page-header">
         <h1>Gestion des Signalements</h1>
         <p>Gérer les informations et statuts des signalements</p>
+        {loading && (
+          <div className="inline-loading">
+            <div className="loading-spinner"></div>
+            <span>Chargement initial...</span>
+          </div>
+        )}
       </header>
 
       {/* Section de synchronisation */}
