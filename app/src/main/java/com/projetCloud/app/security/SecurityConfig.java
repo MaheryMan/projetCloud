@@ -45,12 +45,12 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/photos/upload").permitAll()
                 // Création de signalements publique (pour visiteurs non authentifiés)                // Lecture des signalements publique
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/signalements/**").permitAll()
-               .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/entreprises").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/entreprises").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/types-signalement").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/types-signalement/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/historiques/**").permitAll()
                 // Mobile_User: accès limité
                 .requestMatchers(org.springframework.http.HttpMethod.GET,
-                        "/api/types-signalement/**",
                         "/api/entreprises/**"
                 ).hasAnyAuthority("Mobile_User", "Manager")
                 .requestMatchers(org.springframework.http.HttpMethod.POST,

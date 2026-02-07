@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { 
   FaCheckCircle, FaTimes, FaMapMarkerAlt, 
   FaPlus, FaMinus, FaInfoCircle, FaArrowRight,
-  FaLayerGroup, FaClock, FaTools
+  FaLayerGroup, FaClock, FaTools, FaCrosshairs
 } from 'react-icons/fa';
 import { BiMoney } from 'react-icons/bi';
 import 'leaflet/dist/leaflet.css';
@@ -21,27 +21,42 @@ L.Icon.Default.mergeOptions({
 });
 
 
-const getMarkerIcon = (status) => {
+const getMarkerIcon = (status, typeIconClass) => {
   const colors = {
     'nouveau': '#e74c3c',
     'en_cours': '#f39c12',
     'termine': '#27ae60'
   };
 
+  // Mapping des icônes de la base de données vers SVG paths
+  const iconSvgPaths = {
+    'pothole': '<circle cx="16" cy="10" r="3" fill="currentColor"/>',
+    'construction': '<path d="M14 6h4v8h-4z" fill="currentColor"/><rect x="12" y="5" width="8" height="2" rx="1" fill="currentColor"/>',
+    'other': '<text x="16" y="13" font-size="10" font-weight="bold" text-anchor="middle" fill="currentColor">?</text>'
+  };
+
+  const color = colors[status] || '#3498db';
+  const iconSvg = iconSvgPaths[typeIconClass] || '<text x="16" y="13" font-size="10" font-weight="bold" text-anchor="middle" fill="currentColor">!</text>';
+
   return new L.Icon({
     iconUrl: `data:image/svg+xml;base64,${btoa(`
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${colors[status] || '#3498db'}" width="32" height="32">
-        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40" width="32" height="40">
+        <path d="M16 2C11.58 2 8 5.58 8 10c0 7 8 18 8 18s8-11 8-18c0-4.42-3.58-8-8-8z" fill="${color}"/>
+        <circle cx="16" cy="10" r="7" fill="white"/>
+        <g style="color: ${color};">
+          ${iconSvg}
+        </g>
       </svg>
     `)}`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32]
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
+    popupAnchor: [0, -40]
   });
 };
 
 function VisitorMap() {
   const navigate = useNavigate();
+  const [mapInstance, setMapInstance] = useState(null);
   const [signalements, setSignalements] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -70,6 +85,7 @@ function VisitorMap() {
   const [filterStatus, setFilterStatus] = useState('tous');
   const [filterType, setFilterType] = useState('tous');
   const [filterEntreprise, setFilterEntreprise] = useState('tous');
+  const [photoGallery, setPhotoGallery] = useState(null);
 
   const position = [-18.909855, 47.525637];
 
@@ -431,6 +447,7 @@ function VisitorMap() {
             center={position}
             zoom={17}
             style={{ height: '600px', width: '100%', borderRadius: '10px' }}
+            ref={setMapInstance}
           >
             <TileLayer
               url="http://localhost:8081/styles/osm-bright/{z}/{x}/{y}.png"
@@ -449,7 +466,7 @@ function VisitorMap() {
                   <Marker
                     key={signal.id}
                     position={[signal.latitude, signal.longitude]}
-                    icon={getMarkerIcon(statusKey)}
+                    icon={getMarkerIcon(statusKey, signal.typeSignalement?.icone)}
                   >
                     <Popup>
                       <div className="popup-content">
@@ -458,11 +475,22 @@ function VisitorMap() {
                           <div className="popup-photo">
                             <img 
                               src={signal.photos[0].url} 
-                              alt="Photo du signalement" 
+                              alt="Signalement" 
                               className="popup-photo-img"
                             />
                             {signal.photos.length > 1 && (
-                              <span className="popup-photo-count">+{signal.photos.length - 1} photo{signal.photos.length > 2 ? 's' : ''}</span>
+                              <>
+                                <span className="popup-photo-count">+{signal.photos.length - 1} photo{signal.photos.length > 2 ? 's' : ''}</span>
+                                <button 
+                                  className="popup-view-photos-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPhotoGallery(signal.photos);
+                                  }}
+                                >
+                                  Voir les photos
+                                </button>
+                              </>
                             )}
                           </div>
                         )}
@@ -480,9 +508,58 @@ function VisitorMap() {
               })}
           </MapContainer>
 
+          {/* Bouton de localisation */}
+          <button 
+            className="location-button" 
+            onClick={() => {
+              if (!navigator.geolocation) {
+                console.warn('La géolocalisation n\'est pas supportée par votre navigateur.');
+                return;
+              }
+              
+              if (!mapInstance) {
+                console.warn('Carte non encore chargée, veuillez réessayer dans un instant.');
+                return;
+              }
+
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  const { latitude, longitude } = pos.coords;
+                  mapInstance.flyTo([latitude, longitude], 16, { duration: 2 });
+                },
+                (error) => {
+                  console.error('Erreur de géolocalisation:', error);
+                  // Ne pas afficher d'alerte, juste logger l'erreur
+                }
+              );
+            }}
+            title="Me localiser"
+          >
+            <FaCrosshairs />
+          </button>
+
           </>
         )}
       </div>
+
+      {/* Modal galerie photos */}
+      {photoGallery && (
+        <div className="photo-gallery-modal" onClick={() => setPhotoGallery(null)}>
+          <div className="photo-gallery-content" onClick={(e) => e.stopPropagation()}>
+            <button className="photo-gallery-close" onClick={() => setPhotoGallery(null)}>
+              <FaTimes />
+            </button>
+            <h3>Photos du signalement ({photoGallery.length})</h3>
+            <div className="photo-gallery-grid">
+              {photoGallery.map((photo, index) => (
+                <div key={photo.id || index} className="photo-gallery-item">
+                  <img src={photo.url} alt={`Photo ${index + 1}`} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Légende flottante améliorée */}
       <div className={`map-legend ${showLegendExpanded ? 'expanded' : ''}`}>
