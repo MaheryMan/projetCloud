@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaCheckCircle, FaLock, FaHourglassHalf, FaRocket, FaUpload, FaDownload, FaGlobe, FaWifi, FaSync, FaBookmark, FaEdit } from 'react-icons/fa';
+import { FaTimes, FaCheckCircle, FaLock, FaHourglassHalf, FaRocket, FaUpload, FaDownload, FaGlobe, FaWifi, FaSync, FaBookmark, FaEdit, FaTerminal, FaChevronRight, FaChevronLeft } from 'react-icons/fa';
 import './Synchronization.css';
+import './sync-terminal.css';
 
 function Synchronization() {
   const [syncStatus, setSyncStatus] = useState({
@@ -11,6 +12,7 @@ function Synchronization() {
   });
   const [syncing, setSyncing] = useState(false);
   const [syncLog, setSyncLog] = useState([]);
+  const [terminalOpen, setTerminalOpen] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('checking');
 
   // Utilitaire générique pour appeler une API sync
@@ -351,26 +353,51 @@ function Synchronization() {
         </div>
       </div>
 
-      <div className="sync-log-section">
-        <div className="log-header">
-          <h2>Journal de synchronisation</h2>
-          <button className="clear-btn" onClick={clearLog}>
-            Effacer
-          </button>
+      {/* Terminal fixe à droite */}
+      <div className={`terminal-panel ${terminalOpen ? 'open' : 'closed'}`}>
+        <div className="terminal-header">
+          <div className="terminal-title">
+            <FaTerminal />
+            <span>Terminal</span>
+            {syncing && <div className="terminal-spinner"></div>}
+          </div>
+          <div className="terminal-controls">
+            <button className="terminal-clear-btn" onClick={clearLog} title="Effacer">
+              <FaTimes />
+            </button>
+            <button 
+              className="terminal-toggle-btn" 
+              onClick={() => setTerminalOpen(!terminalOpen)}
+              title={terminalOpen ? 'Réduire' : 'Agrandir'}
+            >
+              {terminalOpen ? <FaChevronRight /> : <FaChevronLeft />}
+            </button>
+          </div>
         </div>
         
-        <div className="log-container">
+        <div className="terminal-body">
           {syncLog.length === 0 ? (
-            <div className="log-empty">
-              Aucune activité de synchronisation
+            <div className="terminal-prompt">
+              <span className="prompt-symbol">$</span> En attente de synchronisation...
             </div>
           ) : (
             syncLog.map((log, index) => (
-              <div key={index} className={`log-entry log-${log.type}`}>
-                <span className="log-time">{log.timestamp}</span>
-                <span className="log-message">{log.message}</span>
+              <div key={index} className={`terminal-line terminal-${log.type}`}>
+                <span className="terminal-time">[{log.timestamp}]</span>
+                <span className="terminal-prefix">
+                  {log.type === 'success' && '✓'}
+                  {log.type === 'error' && '✗'}
+                  {log.type === 'info' && '→'}
+                </span>
+                <span className="terminal-text">{log.message}</span>
               </div>
             ))
+          )}
+          {syncing && (
+            <div className="terminal-line terminal-loading">
+              <span className="terminal-prefix">⟳</span>
+              <span className="terminal-text">Synchronisation en cours...</span>
+            </div>
           )}
         </div>
       </div>

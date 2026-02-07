@@ -21,6 +21,40 @@ L.Icon.Default.mergeOptions({
 });
 
 
+// Icône bleue pour la localisation de l'utilisateur
+const getUserLocationIcon = () => {
+  return new L.Icon({
+    iconUrl: `data:image/svg+xml;base64,${btoa(`
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+        <defs>
+          <radialGradient id="userGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#2E5C8A;stop-opacity:1" />
+          </radialGradient>
+          <filter id="userShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
+            <feOffset dx="0" dy="1" result="offsetblur"/>
+            <feComponentTransfer>
+              <feFuncA type="linear" slope="0.4"/>
+            </feComponentTransfer>
+            <feMerge>
+              <feMergeNode/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <g filter="url(#userShadow)">
+          <circle cx="12" cy="12" r="8" fill="url(#userGrad)" stroke="white" stroke-width="2"/>
+          <circle cx="12" cy="12" r="3" fill="white" opacity="0.9"/>
+        </g>
+      </svg>
+    `)}`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -12]
+  });
+};
+
 const getMarkerIcon = (status, typeIconClass) => {
   const colors = {
     'nouveau': '#e74c3c',
@@ -30,7 +64,7 @@ const getMarkerIcon = (status, typeIconClass) => {
 
   // Mapping des icônes de la base de données vers SVG paths
   const iconSvgPaths = {
-    'pothole': '<circle cx="16" cy="10" r="3" fill="currentColor"/>',
+    'pothole': '<circle cx="16" cy="10" r="2.5" fill="currentColor"/>',
     'construction': '<path d="M14 6h4v8h-4z" fill="currentColor"/><rect x="12" y="5" width="8" height="2" rx="1" fill="currentColor"/>',
     'other': '<text x="16" y="13" font-size="10" font-weight="bold" text-anchor="middle" fill="currentColor">?</text>'
   };
@@ -40,23 +74,49 @@ const getMarkerIcon = (status, typeIconClass) => {
 
   return new L.Icon({
     iconUrl: `data:image/svg+xml;base64,${btoa(`
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40" width="32" height="40">
-        <path d="M16 2C11.58 2 8 5.58 8 10c0 7 8 18 8 18s8-11 8-18c0-4.42-3.58-8-8-8z" fill="${color}"/>
-        <circle cx="16" cy="10" r="7" fill="white"/>
-        <g style="color: ${color};">
-          ${iconSvg}
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 38 48" width="38" height="48">
+        <defs>
+          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+            <feOffset dx="0" dy="2" result="offsetblur"/>
+            <feComponentTransfer>
+              <feFuncA type="linear" slope="0.3"/>
+            </feComponentTransfer>
+            <feMerge>
+              <feMergeNode/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <linearGradient id="grad-${status}" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:${color};stop-opacity:1" />
+            <stop offset="100%" style="stop-color:${color};stop-opacity:0.8" />
+          </linearGradient>
+        </defs>
+        <g filter="url(#shadow)">
+          <path d="M19 3C13.48 3 9 7.48 9 13c0 8 10 22 10 22s10-14 10-22c0-5.52-4.48-10-10-10z" 
+                fill="url(#grad-${status})" 
+                stroke="white" 
+                stroke-width="1.5"/>
+          <circle cx="19" cy="13" r="8" fill="white" opacity="0.95"/>
+          <circle cx="19" cy="13" r="7.5" fill="white"/>
+          <g style="color: ${color};">
+            <g transform="translate(3, 3)">
+              ${iconSvg}
+            </g>
+          </g>
         </g>
       </svg>
     `)}`,
-    iconSize: [32, 40],
-    iconAnchor: [16, 40],
-    popupAnchor: [0, -40]
+    iconSize: [38, 48],
+    iconAnchor: [19, 48],
+    popupAnchor: [0, -48]
   });
 };
 
 function VisitorMap() {
   const navigate = useNavigate();
   const [mapInstance, setMapInstance] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
   const [signalements, setSignalements] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -120,6 +180,28 @@ function VisitorMap() {
     localStorage.removeItem('token');
     window.location.href = '/';
   };
+
+  // Géolocalisation de l'utilisateur
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        },
+        (error) => {
+          console.log('Géolocalisation désactivée ou non disponible:', error.message);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     // Charger l'utilisateur connecté
@@ -454,6 +536,21 @@ function VisitorMap() {
               attribution='&copy; Carte locale Antananarivo'
             />
             
+            {/* Marqueur de localisation de l'utilisateur */}
+            {userLocation && (
+              <Marker
+                position={[userLocation.lat, userLocation.lng]}
+                icon={getUserLocationIcon()}
+              >
+                <Popup>
+                  <div className="popup-content">
+                    <h3>📍 Votre position</h3>
+                    <p>Vous êtes ici</p>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
+
             {filteredSignalements
               .filter(signal => [4, 5, 6].includes(signal.idStatus))
               .map((signal) => {

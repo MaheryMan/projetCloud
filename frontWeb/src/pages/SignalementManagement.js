@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaCamera, FaSync, FaUpload, FaDownload } from 'react-icons/fa';
+import { FaCamera, FaSync, FaUpload, FaDownload, FaTerminal, FaTimes } from 'react-icons/fa';
 import './SignalementManagement.css';
+import './sync-terminal.css';
 
 function SignalementManagement() {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ function SignalementManagement() {
   const [typesSignalement, setTypesSignalement] = useState([]);
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
+  const [syncLog, setSyncLog] = useState([]);
 
 
   useEffect(() => {
@@ -356,6 +358,32 @@ const fetchEntreprises = async () => {
     return ent ? ent.nom : 'Non attribuée';
   };
 
+  const addLog = (message, type = 'info', options = {}) => {
+    const timestamp = new Date().toLocaleTimeString('fr-FR');
+    const entry = { 
+      message, 
+      type, 
+      timestamp,
+      badge: options.badge || null,
+      icon: options.icon || null
+    };
+    setSyncLog(prev => [...prev, entry]);
+  };
+
+  const addSessionSeparator = (sessionName) => {
+    const timestamp = new Date().toLocaleTimeString('fr-FR');
+    setSyncLog(prev => [...prev, { 
+      type: 'session', 
+      message: sessionName,
+      timestamp,
+      separator: true
+    }]);
+  };
+
+  const clearLog = () => {
+    setSyncLog([]);
+  };
+
   const handleSyncFirebaseToPostgres = async () => {
     if (!window.confirm('Êtes-vous sûr de vouloir synchroniser les signalements de Firebase vers PostgreSQL ?')) {
       return;
@@ -364,6 +392,9 @@ const fetchEntreprises = async () => {
     try {
       setSyncLoading(true);
       setSyncMessage(null);
+      addSessionSeparator('FIREBASE → POSTGRESQL');
+      addLog('Démarrage de la synchronisation...', 'info');
+      
       const token = localStorage.getItem('token');
       
       const response = await fetch('http://localhost:8080/api/sync/firebase-to-postgres', {
@@ -379,6 +410,10 @@ const fetchEntreprises = async () => {
       }
 
       const data = await response.json();
+      addLog('Synchronisation réussie!', 'success', { 
+        badge: `${data.successCount} signalements`,
+        icon: '✅' 
+      });
       setSyncMessage({
         type: 'success',
         text: `Synchronisation réussie! ${data.successCount} signalement(s) synchronisé(s).`,
@@ -387,11 +422,13 @@ const fetchEntreprises = async () => {
 
       // Recharger la liste des signalements
       await fetchSignalements();
+      addLog('Liste des signalements rechargée', 'success');
 
       // Masquer le message après 5 secondes
       setTimeout(() => setSyncMessage(null), 5000);
     } catch (error) {
       console.error('Erreur:', error);
+      addLog(`Erreur: ${error.message}`, 'error', { icon: '❌' });
       setSyncMessage({
         type: 'error',
         text: 'Erreur lors de la synchronisation'
@@ -408,6 +445,8 @@ const fetchEntreprises = async () => {
 
     try {
       setSyncLoading(true);
+      addSessionSeparator('POSTGRESQL → FIREBASE');
+      addLog('Démarrage de la synchronisation...', 'info');
       setSyncMessage(null);
       const token = localStorage.getItem('token');
       
@@ -424,6 +463,10 @@ const fetchEntreprises = async () => {
       }
 
       const data = await response.json();
+      addLog('Synchronisation réussie!', 'success', { 
+        badge: `${data.successCount} signalements`,
+        icon: '✅' 
+      });
       setSyncMessage({
         type: 'success',
         text: `Synchronisation réussie! ${data.successCount} signalement(s) synchronisé(s).`,
@@ -432,11 +475,13 @@ const fetchEntreprises = async () => {
 
       // Recharger la liste des signalements
       await fetchSignalements();
+      addLog('Liste des signalements rechargée', 'success');
 
       // Masquer le message après 5 secondes
       setTimeout(() => setSyncMessage(null), 5000);
     } catch (error) {
       console.error('Erreur:', error);
+      addLog(`Erreur: ${error.message}`, 'error', { icon: '❌' });
       setSyncMessage({
         type: 'error',
         text: 'Erreur lors de la synchronisation'
@@ -464,23 +509,70 @@ const fetchEntreprises = async () => {
           <p>Gérer la synchronisation bidirectionnelle des signalements</p>
         </div>
         
-        <div className="sync-buttons">
-          <button 
-            className="btn-sync primary" 
-            onClick={handleSyncFirebaseToPostgres} 
-            disabled={syncLoading}
-            title="Firebase → PostgreSQL"
-          >
-            <FaDownload /> Depuis Firebase
-          </button>
-          <button 
-            className="btn-sync secondary" 
-            onClick={handleSyncPostgresToFirebase} 
-            disabled={syncLoading}
-            title="PostgreSQL → Firebase"
-          >
-            <FaUpload /> Vers Firebase
-          </button>
+        <div className="sync-content">
+          <div className="sync-buttons">
+            <button 
+              className="btn-sync primary" 
+              onClick={handleSyncFirebaseToPostgres} 
+              disabled={syncLoading}
+              title="Firebase → PostgreSQL"
+            >
+              <FaDownload /> Depuis Firebase
+            </button>
+            <button 
+              className="btn-sync secondary" 
+              onClick={handleSyncPostgresToFirebase} 
+              disabled={syncLoading}
+              title="PostgreSQL → Firebase"
+            >
+              <FaUpload /> Vers Firebase
+            </button>
+          </div>
+
+          <div className="sync-terminal">
+            <div className="sync-terminal-header">
+              <span><FaTerminal /> Logs</span>
+              <button className="sync-terminal-clear" onClick={clearLog} title="Effacer">
+                <FaTimes />
+              </button>
+            </div>
+            <div className="sync-terminal-body">
+              {syncLog.length === 0 ? (
+                <div className="sync-terminal-empty">En attente...</div>
+              ) : (
+                syncLog.map((log, index) => (
+                  <React.Fragment key={index}>
+                    {log.type === 'session' ? (
+                      <div className="sync-terminal-separator">{log.message}</div>
+                    ) : (
+                      <div className={`sync-terminal-line sync-${log.type}`}>
+                        <span className="sync-time">{log.timestamp}</span>
+                        <span className="sync-icon">
+                          {log.icon || (
+                            <>
+                              {log.type === 'success' && '✓'}
+                              {log.type === 'error' && '✗'}
+                              {log.type === 'info' && '→'}
+                            </>
+                          )}
+                        </span>
+                        <span className="sync-message-text">
+                          {log.message}
+                          {log.badge && <span className="sync-badge">{log.badge}</span>}
+                        </span>
+                      </div>
+                    )}
+                  </React.Fragment>
+                ))
+              )}
+              {syncLoading && (
+                <div className="sync-terminal-line sync-loading">
+                  <span className="sync-icon">⟳</span>
+                  <span className="sync-message-text">En cours...</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {syncMessage && (

@@ -1,0 +1,182 @@
+/* Sync Terminal Inline Styles */
+
+.sync-content {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-top: 15px;
+}
+
+.sync-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.sync-terminal {
+  flex: 1;
+  background: #1e1e1e;
+  border-radius: 6px;
+  border: 1px solid #333;
+  min-height: 120px;
+  max-height: 250px;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.sync-terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #2d2d2d;
+  border-bottom: 1px solid #333;
+  border-radius: 6px 6px 0 0;
+}
+
+.sync-terminal-header span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #00ff00;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.sync-terminal-clear {
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 5px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.sync-terminal-clear:hover {
+  background: #404040;
+  color: #ff4444;
+}
+
+.sync-terminal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+  color: #e0e0e0;
+}
+
+.sync-terminal-empty {
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  padding: 15px 10px;
+  font-size: 11px;
+}
+
+.sync-terminal-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 3px 0;
+  line-height: 1.4;
+}
+
+.sync-time {
+  color: #666;
+  font-size: 10px;
+  min-width: 45px;
+  flex-shrink: 0;
+}
+
+.sync-icon {
+  flex-shrink: 0;
+  font-weight: bold;
+}
+
+.sync-message-text {
+  flex: 1;
+  word-break: break-word;
+}
+
+.sync-terminal-line.sync-success .sync-icon {
+  color: #00ff00;
+}
+
+.sync-terminal-line.sync-error .sync-icon {
+  color: #ff4444;
+}
+
+.sync-terminal-line.sync-info .sync-icon {
+  color: #4da6ff;
+}
+
+.sync-terminal-line.sync-loading .sync-icon {
+  color: #ffaa00;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.sync-badge {
+  display: inline-block;
+  background: #404040;
+  color: #fff;
+  padding: 2px 8px;
+  margin-left: 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.sync-terminal-separator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 6px 8px;
+  background: #2a2a2a;
+  border-left: 3px solid #00ff00;
+  border-radius: 3px;
+  color: #00ff00;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+/* Scrollbar personnalisé pour le terminal */
+.sync-terminal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sync-terminal-body::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.sync-terminal-body::-webkit-scrollbar-thumb {
+  background: #404040;
+  border-radius: 4px;
+}
+
+.sync-terminal-body::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .sync-content {
+    flex-direction: column;
+  }
+  
+  .sync-buttons {
+    width: 100%;
+  }
+  
+  .sync-terminal {
+    width: 100%;
+  }
+}

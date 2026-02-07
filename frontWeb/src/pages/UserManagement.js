@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { fetchWithAuth } from '../services/authService';
-import { FaCheckCircle, FaTimes, FaPlus, FaLock, FaUnlock, FaKey, FaUsers, FaMobileAlt, FaExclamationTriangle, FaCalendar, FaBolt, FaUpload, FaDownload, FaSync, FaClipboardList } from 'react-icons/fa';
+import { FaCheckCircle, FaTimes, FaPlus, FaLock, FaUnlock, FaKey, FaUsers, FaMobileAlt, FaExclamationTriangle, FaCalendar, FaBolt, FaUpload, FaDownload, FaSync, FaClipboardList, FaTerminal } from 'react-icons/fa';
 import './UserManagement.css';
+import './sync-terminal.css';
 import { auth, googleProvider } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
 
@@ -29,6 +30,7 @@ function UserManagement() {
     email: '',
     numTel: ''
   });
+  const [syncLog, setSyncLog] = useState([]);
 
   useEffect(() => {
     fetchUsers();
@@ -371,6 +373,32 @@ function UserManagement() {
   };
 
   // ===== SYNCHRONISATION UTILISATEURS =====
+  const addLog = (message, type = 'info', options = {}) => {
+    const timestamp = new Date().toLocaleTimeString('fr-FR');
+    const entry = { 
+      message, 
+      type, 
+      timestamp,
+      badge: options.badge || null,
+      icon: options.icon || null
+    };
+    setSyncLog(prev => [...prev, entry]);
+  };
+
+  const addSessionSeparator = (sessionName) => {
+    const timestamp = new Date().toLocaleTimeString('fr-FR');
+    setSyncLog(prev => [...prev, { 
+      type: 'session', 
+      message: sessionName,
+      timestamp,
+      separator: true
+    }]);
+  };
+
+  const clearLog = () => {
+    setSyncLog([]);
+  };
+
   const handleSyncUsersToFirebase = async () => {
     if (!window.confirm('Synchroniser les utilisateurs locaux vers Firebase?\n\nCette opération enverra tous les utilisateurs non synchronisés vers Firebase.')) {
       return;
@@ -378,6 +406,9 @@ function UserManagement() {
 
     try {
       setLoading(true);
+      addSessionSeparator('POSTGRESQL → FIREBASE');
+      addLog('Démarrage de la synchronisation...', 'info');
+      
       const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:8080/api/sync/users', {
         method: 'POST',
@@ -393,9 +424,14 @@ function UserManagement() {
         throw new Error(data.message || `Erreur HTTP ${res.status}`);
       }
 
+      addLog('Synchronisation réussie!', 'success', { 
+        badge: `${data.count} utilisateurs`,
+        icon: '✅' 
+      });
       alert(`Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s) vers Firebase`);
     } catch (error) {
       console.error('Erreur:', error);
+      addLog(`Erreur: ${error.message}`, 'error', { icon: '❌' });
       alert(`Erreur lors de la synchronisation vers Firebase: ${error.message}`);
     } finally {
       setLoading(false);
@@ -409,6 +445,9 @@ function UserManagement() {
 
     try {
       setLoading(true);
+      addSessionSeparator('FIREBASE → POSTGRESQL');
+      addLog('Récupération des utilisateurs...', 'info');
+      
       const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:8080/api/sync/users/from-firebase', {
         method: 'POST',
@@ -424,10 +463,16 @@ function UserManagement() {
         throw new Error(data.message || `Erreur HTTP ${res.status}`);
       }
 
+      addLog('Synchronisation réussie!', 'success', { 
+        badge: `${data.count} utilisateurs`,
+        icon: '✅' 
+      });
       alert(`Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s) depuis Firebase`);
       await fetchUsers(); // Rafraîchir la liste
+      addLog('Liste des utilisateurs rechargée', 'success');
     } catch (error) {
       console.error('Erreur:', error);
+      addLog(`Erreur: ${error.message}`, 'error', { icon: '❌' });
       alert(`Erreur lors de la synchronisation depuis Firebase: ${error.message}`);
     } finally {
       setLoading(false);
@@ -563,19 +608,66 @@ function UserManagement() {
           <p>Gérer la synchronisation bidirectionnelle des données</p>
         </div>
         
-        <div className="sync-buttons">
-          <button className="btn-sync primary" onClick={handleSyncUsersToFirebase} title="PostgreSQL → Firebase">
-            <FaUpload /> Vers Firebase
-          </button>
-          <button className="btn-sync secondary" onClick={handleSyncUsersFromFirebase} title="Firebase → PostgreSQL">
-            <FaDownload /> Depuis Firebase
-          </button>
-          <button className="btn-sync danger" onClick={handleSyncBlockStatus} title="Synchroniser l'état de blocage">
-            <FaLock /> État blocage
-          </button>
-          <button className="btn-sync success" onClick={handleSyncDeblocages} title="Synchroniser les déblocages">
-            <FaUnlock /> Déblocages
-          </button>
+        <div className="sync-content">
+          <div className="sync-buttons">
+            <button className="btn-sync primary" onClick={handleSyncUsersToFirebase} title="PostgreSQL → Firebase">
+              <FaUpload /> Vers Firebase
+            </button>
+            <button className="btn-sync secondary" onClick={handleSyncUsersFromFirebase} title="Firebase → PostgreSQL">
+              <FaDownload /> Depuis Firebase
+            </button>
+            <button className="btn-sync danger" onClick={handleSyncBlockStatus} title="Synchroniser l'état de blocage">
+              <FaLock /> État blocage
+            </button>
+            <button className="btn-sync success" onClick={handleSyncDeblocages} title="Synchroniser les déblocages">
+              <FaUnlock /> Déblocages
+            </button>
+          </div>
+
+          <div className="sync-terminal">
+            <div className="sync-terminal-header">
+              <span><FaTerminal /> Logs</span>
+              <button className="sync-terminal-clear" onClick={clearLog} title="Effacer">
+                <FaTimes />
+              </button>
+            </div>
+            <div className="sync-terminal-body">
+              {syncLog.length === 0 ? (
+                <div className="sync-terminal-empty">En attente...</div>
+              ) : (
+                syncLog.map((log, index) => (
+                  <React.Fragment key={index}>
+                    {log.type === 'session' ? (
+                      <div className="sync-terminal-separator">{log.message}</div>
+                    ) : (
+                      <div className={`sync-terminal-line sync-${log.type}`}>
+                        <span className="sync-time">{log.timestamp}</span>
+                        <span className="sync-icon">
+                          {log.icon || (
+                            <>
+                              {log.type === 'success' && '✓'}
+                              {log.type === 'error' && '✗'}
+                              {log.type === 'info' && '→'}
+                            </>
+                          )}
+                        </span>
+                        <span className="sync-message-text">
+                          {log.message}
+                          {log.badge && <span className="sync-badge">{log.badge}</span>}
+                        </span>
+                      </div>
+                    )}
+                  </React.Fragment>
+                ))
+              )}
+              {loading && (
+                <div className="sync-terminal-line sync-loading">
+                  <span className="sync-icon">⟳</span>
+                  <span className="sync-message-text">En cours...</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

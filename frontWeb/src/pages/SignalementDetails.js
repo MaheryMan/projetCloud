@@ -224,26 +224,27 @@ function SignalementDetails() {
         </div>
 
         <div className="details-sidebar">
-          {signalement.photos && signalement.photos.length > 0 && (
-            <div className="info-card">
-              <h2>Photos</h2>
-              <div className="photos-gallery">
-                {signalement.photos.map((photo, index) => (
-                  <a 
-                    key={photo.id || index} 
-                    href={photo.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="photo-item"
-                  >
-                    <img src={photo.url} alt={`Photo ${index + 1}`} />
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {signalement.photos && signalement.photos.length > 0 && (
+        <div className="info-card photos-card">
+          <h2>Photos ({signalement.photos.length})</h2>
+          <div className="photos-gallery">
+            {signalement.photos.map((photo, index) => (
+              <a 
+                key={photo.id || index} 
+                href={photo.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="photo-item"
+              >
+                <img src={photo.url} alt={`Photo ${index + 1}`} />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
