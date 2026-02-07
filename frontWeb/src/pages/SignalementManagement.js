@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaCamera } from 'react-icons/fa';
+import { FaCamera, FaSync, FaUpload, FaDownload } from 'react-icons/fa';
 import './SignalementManagement.css';
 
 function SignalementManagement() {
@@ -456,6 +456,40 @@ const fetchEntreprises = async () => {
         <h1>Gestion des Signalements</h1>
         <p>Gérer les informations et statuts des signalements</p>
       </header>
+
+      {/* Section de synchronisation */}
+      <div className="sync-section">
+        <div className="sync-header">
+          <h3><FaSync /> Synchronisation Firebase</h3>
+          <p>Gérer la synchronisation bidirectionnelle des signalements</p>
+        </div>
+        
+        <div className="sync-buttons">
+          <button 
+            className="btn-sync primary" 
+            onClick={handleSyncFirebaseToPostgres} 
+            disabled={syncLoading}
+            title="Firebase → PostgreSQL"
+          >
+            <FaDownload /> Depuis Firebase
+          </button>
+          <button 
+            className="btn-sync secondary" 
+            onClick={handleSyncPostgresToFirebase} 
+            disabled={syncLoading}
+            title="PostgreSQL → Firebase"
+          >
+            <FaUpload /> Vers Firebase
+          </button>
+        </div>
+
+        {syncMessage && (
+          <div className={`sync-message ${syncMessage.type}`}>
+            {syncMessage.text}
+            {syncMessage.details && <div className="sync-details">{syncMessage.details}</div>}
+          </div>
+        )}
+      </div>
 
       <div className="filters-section">
         <div className="search-box">

@@ -38,7 +38,6 @@ function Sidebar({ user, onLogout }) {
     { path: '/signalements', label: 'Signalements', icon: <FaClipboardList /> },
     { path: '/users', label: 'Utilisateurs', icon: <FaUsers /> },
     { path: '/statistics', label: 'Statistiques', icon: <FaChartLine /> },
-    { path: '/sync', label: 'Synchronisation', icon: <FaSync /> },
     { path: '/settings', label: 'Paramètres', icon: <FaCog /> }
   ];
 

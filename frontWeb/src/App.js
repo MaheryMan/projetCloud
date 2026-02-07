@@ -10,7 +10,6 @@ import SignalementManagement from './pages/SignalementManagement';
 import SignalementDetails from './pages/SignalementDetails';
 import UserManagement from './pages/UserManagement';
 import Statistics from './pages/Statistics';
-import Synchronization from './pages/Synchronization';
 import Settings from './pages/Settings';
 import { startSessionMonitoring, stopSessionMonitoring } from './services/authService';
 import './App.css';
@@ -155,14 +154,6 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Statistics />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/sync" 
-              element={
-                <ProtectedRoute>
-                  <Synchronization />
                 </ProtectedRoute>
               } 
             />
