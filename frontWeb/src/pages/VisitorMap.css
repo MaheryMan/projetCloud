@@ -288,6 +288,44 @@ body {
   transform: translateY(0);
 }
 
+/* Login Button - Manager Access */
+.login-btn {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  position: fixed;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.login-btn::before {
+  content: '🔐';
+  font-size: 16px;
+}
+
+.login-btn:hover {
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+.login-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+
 /* Filter Container */
 .filter-container {
   display: flex;

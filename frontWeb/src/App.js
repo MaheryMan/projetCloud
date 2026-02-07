@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import FirebaseStatusBubble from './components/FirebaseStatusBubble';
 import Login from './components/Login';
 import Register from './components/Register';
-import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
 import VisitorMap from './pages/VisitorMap';
 import ManagerDashboard from './pages/ManagerDashboard';
 import SignalementManagement from './pages/SignalementManagement';
@@ -75,14 +75,16 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <FirebaseStatusBubble />
-        {/* ⭐ NAVBAR - Affichée seulement pour les managers */}
+        {/* Firebase status bubble seulement pour les non-managers */}
+        {(!user || !(user.roles && user.roles.includes('Manager'))) && <FirebaseStatusBubble />}
+        
+        {/* ⭐ SIDEBAR - Affichée seulement pour les managers */}
         {user && user.roles && user.roles.includes('Manager') && (
-          <Navbar user={user} onLogout={handleLogout} />
+          <Sidebar user={user} onLogout={handleLogout} />
         )}
         
-        {/* ⭐ CONTENU PRINCIPAL après la navbar */}
-        <main className={`main-content ${!user || !(user.roles && user.roles.includes('Manager')) ? 'visitor-mode' : ''}`}>
+        {/* ⭐ CONTENU PRINCIPAL avec padding pour la sidebar */}
+        <main className={`main-content ${!user || !(user.roles && user.roles.includes('Manager')) ? 'visitor-mode' : 'with-sidebar'}`}>
           <Routes>
             {/* Route publique - Carte visiteur */}
             <Route path="/" element={<VisitorMap />} />

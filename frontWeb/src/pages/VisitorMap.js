@@ -103,7 +103,7 @@ function VisitorMap() {
     setUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-    window.location.href = '/login';
+    window.location.href = '/';
   };
 
   useEffect(() => {
@@ -409,12 +409,19 @@ const handleSubmitSignalement = async () => {
 
   return (
     <div className="visitor-map-container">
-      {localStorage.getItem('token') && (
+      {localStorage.getItem('token') ? (
         <button 
           className="logout-btn"
           onClick={handleLogout}
         >
           Déconnexion
+        </button>
+      ) : (
+        <button 
+          className="login-btn"
+          onClick={() => navigate('/login')}
+        >
+          Connexion Manager
         </button>
       )}
 

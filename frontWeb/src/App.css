@@ -1,4 +1,4 @@
-/* App.css - Structure corrigée */
+/* App.css - Structure avec Sidebar */
 
 /* Reset global */
 * {
@@ -15,23 +15,25 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Container principal - VERTICAL avec Flexbox */
+/* Container principal */
 .App {
   display: flex;
-  flex-direction: column;  /* ⭐ VERTICAL = Navbar en haut */
   min-height: 100vh;
   width: 100%;
-  /* ❌ PAS de justify-content: center */
-  /* ❌ PAS de align-items: center */
-  /* ❌ PAS de padding: 20px sur le container principal */
 }
 
-/* Contenu principal - prend tout l'espace restant */
+/* Contenu principal */
 .main-content {
   flex: 1;
   width: 100%;
   display: flex;
   flex-direction: column;
+  transition: margin-left 0.3s ease;
+}
+
+/* Main content avec sidebar */
+.main-content.with-sidebar {
+  margin-left: 260px;
 }
 
 /* Pour les pages d'authentification seulement */
@@ -73,13 +75,19 @@ html, body {
   .page-container h1 {
     font-size: 24px;
   }
+
+  /* Ajuster le margin pour la sidebar réduite sur mobile */
+  .main-content.with-sidebar {
+    margin-left: 70px;
+  }
 }
 
-/* Mode visiteur - Plein écran sans navbar */
+/* Mode visiteur - Plein écran sans sidebar */
 .main-content.visitor-mode {
   height: 100vh;
   padding: 0;
   margin: 0;
+  margin-left: 0 !important;
 }
 
 .visitor-mode .page-container {
