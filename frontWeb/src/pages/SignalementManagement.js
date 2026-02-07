@@ -13,6 +13,7 @@ function SignalementManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [showEditModal, setShowEditModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [entreprises, setEntreprises] = useState([]);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -182,6 +183,7 @@ const fetchEntreprises = async () => {
       idEntreprise: signal.idEntreprise ?? signal.entrepriseId ?? '',
       idStatus: signal.idStatus ?? signal.status ?? '',
     });
+    setShowEditModal(true);
   };
 
   const handleCancelEdit = () => {
@@ -189,6 +191,7 @@ const fetchEntreprises = async () => {
     setEditForm({});
     setPhotoFile(null);
     setPhotoPreview(null);
+    setShowEditModal(false);
   };
 
   const handleSave = async (id) => {
@@ -236,6 +239,8 @@ const fetchEntreprises = async () => {
       setEditForm({});
       setPhotoFile(null);
       setPhotoPreview(null);
+      setShowEditModal(false);
+      alert('Signalement mis à jour avec succès');
     } catch (error) {
       console.error('Erreur:', error);
       alert('Erreur lors de la mise à jour');
@@ -536,175 +541,64 @@ const fetchEntreprises = async () => {
             {filteredSignalements.map((signal) => (
               <tr 
                 key={signal.id}
-                className={editingId === signal.id ? 'editing-row' : 'clickable-row'}
-                onClick={editingId !== signal.id ? () => navigate(`/signalements/${signal.id}`) : undefined}
+                className='clickable-row'
+                onClick={() => navigate(`/signalements/${signal.id}`)}
               >
-                {editingId === signal.id ? (
-                  <>
-                  
-                    <td>{formatDate(signal.lastHistoriqueDate || signal.createdAt)}</td>
-                    <td>
-                      <select
-                        value={editForm.idStatus}
-                        onChange={(e) => setEditForm({ ...editForm, idStatus: parseInt(e.target.value) })}
-                        className="edit-select"
-                        style={{ minWidth: 110 }}
-                      >
-                        <option value={4}>Nouveau</option>
-                        <option value={5}>En cours</option>
-                        <option value={6}>Terminé</option>
-                      </select>
-                    </td>
-                    <td className="photo-cell">
-                      <div className="photo-upload-section">
-                        {photoPreview ? (
-                          <div className="photo-preview">
-                            <img src={photoPreview} alt="Aperçu" />
-                            <button
-                              type="button"
-                              className="btn-remove-photo"
-                              onClick={() => {
-                                setPhotoFile(null);
-                                setPhotoPreview(null);
-                              }}
-                              title="Supprimer la photo"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ) : editForm.photoUrl ? (
-                          <div className="photo-preview">
-                            <img src={editForm.photoUrl} alt="Signalement" />
-                            <button
-                              type="button"
-                              className="btn-remove-photo"
-                              onClick={() => setEditForm({ ...editForm, photoUrl: null })}
-                              title="Supprimer la photo"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ) : (
-                          <label className="photo-upload-label">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handlePhotoChange}
-                              disabled={uploadingPhoto}
-                              style={{ display: 'none' }}
-                            />
-                            <span className="upload-icon"><FaCamera /></span>
-                            <span className="upload-text">
-                              {uploadingPhoto ? 'Upload...' : 'Ajouter photo'}
-                            </span>
-                          </label>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        value={editForm.surfaceM2 ?? 0}
-                        onChange={(e) => setEditForm({ ...editForm, surfaceM2: parseFloat(e.target.value) })}
-                        className="edit-input"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        value={editForm.budget ?? 0}
-                        onChange={(e) => setEditForm({ ...editForm, budget: parseFloat(e.target.value) })}
-                        className="edit-input"
-                      />
-                    </td>
-                    <td>
-                      <select
-                        value={editForm.idEntreprise ?? ''}
-                        onChange={(e) => setEditForm({ ...editForm, idEntreprise: parseInt(e.target.value) })}
-                        className="edit-select"
-                      >
-                        <option value="">Sélectionner une entreprise</option>
-                        {entreprises.map((ent) => (
-                          <option key={ent.id} value={ent.id}>
-                            {ent.nom}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="location-cell">
-                      {signal.latitude.toFixed(4)}, {signal.longitude.toFixed(4)}
-                    </td>
-                    <td>
-                      <div className="action-buttons">
-                        <button className="btn-save" onClick={() => handleSave(signal.id)}>
-                          ✓
-                        </button>
-                        <button className="btn-cancel" onClick={handleCancelEdit}>
-                          ✕
-                        </button>
-                      </div>
-                    </td>
-                  </>
-                ) : (
-                  <>
-                 
-                  <td>
-                    {signal.lastHistoriqueDate
-                      ? formatDate(signal.lastHistoriqueDate)
-                      : signal.createdAt
-                      ? formatDate(signal.createdAt)
-                      : 'N/A'}
-                  </td>
-                    <td>
-                      <span className={getStatusClass(signal.idStatus)}>
-                        {getStatusLabel(signal.idStatus)}
+                <td>
+                  {signal.lastHistoriqueDate
+                    ? formatDate(signal.lastHistoriqueDate)
+                    : signal.createdAt
+                    ? formatDate(signal.createdAt)
+                    : 'N/A'}
+                </td>
+                <td>
+                  <span className={getStatusClass(signal.idStatus)}>
+                    {getStatusLabel(signal.idStatus)}
+                  </span>
+                </td>
+                <td className="photo-cell">
+                  {signal.photos && signal.photos.length > 0 ? (
+                    <div className="photo-link-wrapper">
+                      <span className="photo-link">
+                        <FaCamera /> {signal.photos.length} photo{signal.photos.length > 1 ? 's' : ''}
                       </span>
-                    </td>
-                    <td className="photo-cell">
-                      {signal.photos && signal.photos.length > 0 ? (
-                        <div className="photo-link-wrapper">
-                          <span className="photo-link">
-                            <FaCamera /> {signal.photos.length} photo{signal.photos.length > 1 ? 's' : ''}
-                          </span>
-                          <div className="photo-preview-tooltip">
-                            <div className="photo-grid">
-                              {signal.photos.map((photo, index) => (
-                                <a 
-                                  key={photo.id || index} 
-                                  href={photo.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="photo-thumbnail"
-                                >
-                                  <img src={photo.url} alt={`Photo ${index + 1}`} />
-                                </a>
-                              ))}
-                            </div>
-                          </div>
+                      <div className="photo-preview-tooltip">
+                        <div className="photo-grid">
+                          {signal.photos.map((photo, index) => (
+                            <a 
+                              key={photo.id || index} 
+                              href={photo.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="photo-thumbnail"
+                            >
+                              <img src={photo.url} alt={`Photo ${index + 1}`} />
+                            </a>
+                          ))}
                         </div>
-                      ) : (
-                        <span className="no-photo">Aucune photo</span>
-                      )}
-                    </td>
-                    <td>{signal.surfaceM2} m²</td>
-                    <td>{formatCurrency(signal.budget)}</td>
-                    <td>{getEntrepriseName(signal.idEntreprise)}</td>
-                    
-                    <td className="location-cell">
-                       {signal.latitude.toFixed(4)}, {signal.longitude.toFixed(4)}
-                    </td>
-                    <td>
-                      <div className="action-buttons" onClick={(e) => e.stopPropagation()}>
-                        <button className="btn-edit" onClick={() => handleEdit(signal)}>
-                          Éditer
-                        </button>
-                        <button className="btn-delete" onClick={() => handleDelete(signal.id)}>
-                          Supprimer
-                        </button>
                       </div>
-                    </td>
-                  </>
-                )}
+                    </div>
+                  ) : (
+                    <span className="no-photo">Aucune photo</span>
+                  )}
+                </td>
+                <td>{signal.surfaceM2} m²</td>
+                <td>{formatCurrency(signal.budget)}</td>
+                <td>{getEntrepriseName(signal.idEntreprise)}</td>
+                
+                <td className="location-cell">
+                   {signal.latitude.toFixed(4)}, {signal.longitude.toFixed(4)}
+                </td>
+                <td>
+                  <div className="action-buttons" onClick={(e) => e.stopPropagation()}>
+                    <button className="btn-edit" onClick={() => handleEdit(signal)}>
+                      Éditer
+                    </button>
+                    <button className="btn-delete" onClick={() => handleDelete(signal.id)}>
+                      Supprimer
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -716,6 +610,154 @@ const fetchEntreprises = async () => {
           </div>
         )}
       </div>
+
+      {/* Modal d'édition de signalement */}
+      {showEditModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Modifier le signalement</h2>
+              <button 
+                className="btn-close-modal" 
+                onClick={handleCancelEdit}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="user-form">
+                <div className="form-group">
+                  <label htmlFor="statut">Statut *</label>
+                  <select
+                    id="statut"
+                    value={editForm.idStatus || ''}
+                    onChange={(e) => setEditForm({ ...editForm, idStatus: parseInt(e.target.value) })}
+                    style={{ color: '#2c3e50', backgroundColor: 'white' }}
+                  >
+                    <option value={4}>Nouveau</option>
+                    <option value={5}>En cours</option>
+                    <option value={6}>Terminé</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="photo">Photo</label>
+                  <div className="photo-upload-section">
+                    {photoPreview ? (
+                      <div className="photo-preview">
+                        <img src={photoPreview} alt="Aperçu" />
+                        <button
+                          type="button"
+                          className="btn-remove-photo"
+                          onClick={() => {
+                            setPhotoFile(null);
+                            setPhotoPreview(null);
+                          }}
+                          title="Supprimer la photo"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : editForm.photoUrl ? (
+                      <div className="photo-preview">
+                        <img src={editForm.photoUrl} alt="Signalement" />
+                        <button
+                          type="button"
+                          className="btn-remove-photo"
+                          onClick={() => setEditForm({ ...editForm, photoUrl: null })}
+                          title="Supprimer la photo"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="photo-upload-label">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoChange}
+                          disabled={uploadingPhoto}
+                          style={{ display: 'none' }}
+                        />
+                        <span className="upload-icon"><FaCamera /></span>
+                        <span className="upload-text">
+                          {uploadingPhoto ? 'Upload...' : 'Ajouter photo'}
+                        </span>
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="surface">Surface (m²) *</label>
+                  <input
+                    type="number"
+                    id="surface"
+                    value={editForm.surfaceM2 ?? 0}
+                    onChange={(e) => setEditForm({ ...editForm, surfaceM2: parseFloat(e.target.value) })}
+                    placeholder="Entrez la surface"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="budget">Budget *</label>
+                  <input
+                    type="number"
+                    id="budget"
+                    value={editForm.budget ?? 0}
+                    onChange={(e) => setEditForm({ ...editForm, budget: parseFloat(e.target.value) })}
+                    placeholder="Entrez le budget"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="entreprise">Entreprise</label>
+                  <select
+                    id="entreprise"
+                    value={editForm.idEntreprise ?? ''}
+                    onChange={(e) => setEditForm({ ...editForm, idEntreprise: parseInt(e.target.value) })}
+                    style={{ color: '#2c3e50', backgroundColor: 'white' }}
+                  >
+                    <option value="">Sélectionner une entreprise</option>
+                    {entreprises.map((ent) => (
+                      <option key={ent.id} value={ent.id}>
+                        {ent.nom}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="description">Description</label>
+                  <textarea
+                    id="description"
+                    value={editForm.description || ''}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    placeholder="Entrez une description"
+                    rows="4"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                className="btn-save-config" 
+                onClick={() => handleSave(editingId)}
+              >
+                Enregistrer
+              </button>
+              <button 
+                className="btn-close-modal" 
+                onClick={handleCancelEdit}
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

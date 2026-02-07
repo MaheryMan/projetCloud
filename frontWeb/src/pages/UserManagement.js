@@ -27,11 +27,7 @@ function UserManagement() {
     nom: '',
     prenom: '',
     email: '',
-    numTel: '',
-    idSource: '',
-    idStatus: '',
-    password: '',
-    confirmPassword: ''
+    numTel: ''
   });
 
   useEffect(() => {
@@ -257,26 +253,9 @@ function UserManagement() {
 
   const handleCreateUser = async () => {
     // Validation
-    if (!newUser.nom.trim() || !newUser.prenom.trim() || !newUser.email.trim() || !newUser.idSource || !newUser.idStatus) {
+    if (!newUser.nom.trim() || !newUser.prenom.trim() || !newUser.email.trim()) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
-    }
-
-    // Validation du mot de passe pour les utilisateurs locaux
-    const selectedSource = sources.find(s => s.id == newUser.idSource);
-    if (selectedSource?.providerType === 'local') {
-      if (!newUser.password.trim()) {
-        alert('Le nouveau mot de passe est obligatoire pour les utilisateurs locaux');
-        return;
-      }
-      if (!newUser.confirmPassword.trim()) {
-        alert('La confirmation du mot de passe est obligatoire');
-        return;
-      }
-      if (newUser.password !== newUser.confirmPassword) {
-        alert('Les mots de passe ne correspondent pas');
-        return;
-      }
     }
 
     try {
@@ -285,15 +264,8 @@ function UserManagement() {
         nom: newUser.nom.trim(),
         prenom: newUser.prenom.trim(),
         email: newUser.email.trim(),
-        numTel: newUser.numTel.trim() || null,
-        idSource: parseInt(newUser.idSource),
-        idStatus: parseInt(newUser.idStatus)
+        numTel: newUser.numTel.trim() || null
       };
-
-      // Ajouter le mot de passe seulement pour les utilisateurs locaux
-      if (selectedSource?.providerType === 'local') {
-        userData.password = newUser.password.trim();
-      }
 
       const response = await fetch('http://localhost:8080/api/users', {
         method: 'POST',
@@ -315,11 +287,7 @@ function UserManagement() {
         nom: '',
         prenom: '',
         email: '',
-        numTel: '',
-        idSource: '',
-        idStatus: '',
-        password: '',
-        confirmPassword: ''
+        numTel: ''
       });
       await fetchUsers();
     } catch (error) {
@@ -925,74 +893,6 @@ function UserManagement() {
                     onChange={(e) => setNewUser({ ...newUser, numTel: e.target.value })}
                     placeholder="Entrez le numéro de téléphone"
                   />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="idSource">Source *</label>
-                  <select
-                    id="idSource"
-                    value={newUser.idSource}
-                    onChange={(e) => setNewUser({ ...newUser, idSource: e.target.value })}
-                    style={{ color: '#2c3e50', backgroundColor: 'white' }}
-                  >
-                    <option value="" style={{ color: '#2c3e50', backgroundColor: 'white' }}>Sélectionnez une source</option>
-                    {sources.map(source => (
-                      <option key={source.id} value={source.id} style={{ color: '#2c3e50', backgroundColor: 'white' }}>
-                        {source.libelle}
-                      </option>
-                    ))}
-                  </select>
-                 
-                </div>
-
-                {sources.find(s => s.id == newUser.idSource)?.providerType === 'local' && (
-                  <>
-                    <div className="form-group">
-                      <label htmlFor="password">Nouveau mot de passe *</label>
-                      <input
-                        type="password"
-                        id="password"
-                        value={newUser.password}
-                        onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                        placeholder="Entrez le nouveau mot de passe"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="confirmPassword">Confirmer mot de passe *</label>
-                      <input
-                        type="password"
-                        id="confirmPassword"
-                        value={newUser.confirmPassword}
-                        onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
-                        placeholder="Confirmez le mot de passe"
-                      />
-                      {newUser.password && newUser.confirmPassword && newUser.password !== newUser.confirmPassword && (
-                        <small style={{ color: '#e74c3c' }}>Les mots de passe ne correspondent pas</small>
-                      )}
-                      {newUser.password && newUser.confirmPassword && newUser.password === newUser.confirmPassword && (
-                        <small style={{ color: '#27ae60' }}>Les mots de passe correspondent</small>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                <div className="form-group">
-                  <label htmlFor="idStatus">Statut *</label>
-                  <select
-                    id="idStatus"
-                    value={newUser.idStatus}
-                    onChange={(e) => setNewUser({ ...newUser, idStatus: e.target.value })}
-                    style={{ color: '#2c3e50', backgroundColor: 'white' }}
-                  >
-                    <option value="" style={{ color: '#2c3e50', backgroundColor: 'white' }}>Sélectionnez un statut</option>
-                    {statuses.map(status => (
-                      <option key={status.id} value={status.id} style={{ color: '#2c3e50', backgroundColor: 'white' }}>
-                        {status.libelle}
-                      </option>
-                    ))}
-                  </select>
-             
                 </div>
               </div>
             </div>
