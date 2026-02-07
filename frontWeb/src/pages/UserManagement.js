@@ -571,7 +571,7 @@ function UserManagement() {
 
       <div className="stats-cards">
         <div className="stat-card">
-          <div className="stat-icon"></div>
+          <div className="stat-icon">👥</div>
           <div className="stat-content">
             <div className="stat-value">{users.length}</div>
             <div className="stat-label">Total utilisateurs</div>
@@ -579,7 +579,7 @@ function UserManagement() {
         </div>
 
         <div className="stat-card danger">
-          <div className="stat-icon"></div>
+          <div className="stat-icon">🔒</div>
           <div className="stat-content">
             <div className="stat-value">{blockedUsers.length}</div>
             <div className="stat-label">Utilisateurs bloqués</div>
@@ -588,106 +588,25 @@ function UserManagement() {
       </div>
 
       {/* Synchronisation Section */}
-      <div className="sync-section" style={{ 
-        backgroundColor: '#f8f9fa', 
-        border: '1px solid #dee2e6', 
-        borderRadius: '8px', 
-        padding: '20px', 
-        marginBottom: '20px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-      }}>
-        <h3 style={{ marginTop: 0, color: '#2c3e50', marginBottom: '15px' }}>🔄 Synchronisation des données</h3>
-        
-        {/* Users Sync */}
-        <div style={{ marginBottom: '15px' }}>
-          <h4 style={{ color: '#34495e', marginBottom: '10px' }}>Synchroniser les Utilisateurs</h4>
-          <p style={{ color: '#7f8c8d', fontSize: '14px', marginBottom: '10px' }}>
-            Gérez la synchronisation bidirectionnelle entre la base de données locale (PostgreSQL) et Firebase
-          </p>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button
-              className="btn-sync"
-              onClick={handleSyncUsersToFirebase}
-              title="Envoyer les utilisateurs locaux non synchronisés vers Firebase"
-              style={{
-                backgroundColor: '#3498db',
-                color: 'white',
-                padding: '10px 16px',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                transition: 'background-color 0.3s'
-              }}
-            >
-              📤 Vers Firebase (PostgreSQL → Firebase)
-            </button>
-            <button
-              className="btn-sync"
-              onClick={handleSyncUsersFromFirebase}
-              title="Récupérer les utilisateurs Firebase non synchronisés"
-              style={{
-                backgroundColor: '#9b59b6',
-                color: 'white',
-                padding: '10px 16px',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                transition: 'background-color 0.3s'
-              }}
-            >
-              📥 Depuis Firebase (Firebase → PostgreSQL)
-            </button>
-          </div>
+      <div className="sync-section">
+        <div className="sync-header">
+          <h3>🔄 Synchronisation Firebase</h3>
+          <p>Gérer la synchronisation bidirectionnelle des données</p>
         </div>
-
-        {/* Block Status Sync */}
-        <div>
-          <h4 style={{ color: '#34495e', marginBottom: '10px' }}>Synchroniser l'État de Blocage</h4>
-          <p style={{ color: '#7f8c8d', fontSize: '14px', marginBottom: '10px' }}>
-            Synchronisez l'état de blocage des utilisateurs. Firebase est la source de vérité pour les blocages.
-          </p>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button
-              className="btn-sync"
-              onClick={handleSyncBlockStatus}
-              title="Synchroniser l'état de blocage depuis Firebase vers PostgreSQL"
-              style={{
-                backgroundColor: '#e74c3c',
-                color: 'white',
-                padding: '10px 16px',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                transition: 'background-color 0.3s'
-              }}
-            >
-              🔒 État de blocage
-            </button>
-            <button
-              className="btn-sync"
-              onClick={handleSyncDeblocages}
-              title="Synchroniser tous les déblocages vers Firebase"
-              style={{
-                backgroundColor: '#27ae60',
-                color: 'white',
-                padding: '10px 16px',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                transition: 'background-color 0.3s'
-              }}
-            >
-              🔓 Déblocages
-            </button>
-          </div>
+        
+        <div className="sync-buttons">
+          <button className="btn-sync primary" onClick={handleSyncUsersToFirebase} title="PostgreSQL → Firebase">
+            📤 Vers Firebase
+          </button>
+          <button className="btn-sync secondary" onClick={handleSyncUsersFromFirebase} title="Firebase → PostgreSQL">
+            📥 Depuis Firebase
+          </button>
+          <button className="btn-sync danger" onClick={handleSyncBlockStatus} title="Synchroniser l'état de blocage">
+            🔒 État blocage
+          </button>
+          <button className="btn-sync success" onClick={handleSyncDeblocages} title="Synchroniser les déblocages">
+            🔓 Déblocages
+          </button>
         </div>
       </div>
 
@@ -710,49 +629,67 @@ function UserManagement() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Nom complet</th>
-              <th>Email</th>
-              <th>Téléphone</th>
-              <th>Statut</th>
-              <th>Tentatives</th>
-              <th>Créé le</th>
-              <th>Dernière mise à jour</th>
-              <th>Actions</th>
+              <th>👤 Utilisateur</th>
+              <th>📧 Email</th>
+              <th>📱 Téléphone</th>
+              <th>🔐 Statut</th>
+              <th>⚠️ Tentatives</th>
+              <th>📅 Créé le</th>
+              <th>🔄 Mis à jour</th>
+              <th>⚡ Actions</th>
             </tr>
           </thead>
           <tbody>
             {displayedUsers.map((user) => (
               <tr key={user.id} className={user.tentatives >= 3 ? 'blocked-row' : ''}>
-                <td>#{user.id}</td>
                 <td>
-                  <div className="user-name">
-                    <strong>{user.prenom} {user.nom}</strong>
+                  <div className="user-cell">
+                    <div className="user-avatar">
+                      {user.prenom?.[0]?.toUpperCase()}{user.nom?.[0]?.toUpperCase()}
+                    </div>
+                    <div className="user-info">
+                      <div className="user-name">{user.prenom} {user.nom}</div>
+                      <div className="user-id">ID: #{user.id}</div>
+                    </div>
                   </div>
                 </td>
-                <td>{user.email}</td>
+                <td>
+                  <div className="email-cell">{user.email}</div>
+                </td>
                 <td>{user.numTel || 'N/A'}</td>
                 <td>{getStatusBadge(user)}</td>
                 <td>
-                  <span className={`attempts ${user.tentatives >= 3 ? 'max-attempts' : ''}`}>
-                    {user.tentatives} / 3
-                  </span>
+                  <div className="attempts-cell">
+                    <span className={`attempts-badge ${user.tentatives >= 3 ? 'max-attempts' : ''}`}>
+                      {user.tentatives} / 3
+                    </span>
+                    <div className="attempts-bar">
+                      <div 
+                        className="attempts-progress" 
+                        style={{ width: `${(user.tentatives / 3) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
                 </td>
-                <td>{formatDate(user.creeLe)}</td>
-                <td>{formatDate(user.updateLe)}</td>
+                <td>
+                  <div className="date-cell">{formatDate(user.creeLe)}</div>
+                </td>
+                <td>
+                  <div className="date-cell">{formatDate(user.updateLe)}</div>
+                </td>
                 <td>
                   <div className="action-buttons">
                     {(filterType === 'blocked') && (
                       <button
-                        className="btn-unblock"
+                        className="btn-action btn-unblock"
                         onClick={() => handleUnblock(user.id)}
                         title="Débloquer l'utilisateur"
                       >
-                         Débloquer
+                        🔓
                       </button>
                     )}
                     <button
-                      className="btn-history"
+                      className="btn-action btn-history"
                       onClick={() => {
                         const userHistory = getUserHistory(user.id);
                         setSelectedUserHistory({
@@ -761,16 +698,16 @@ function UserManagement() {
                         });
                         setShowHistoryModal(true);
                       }}
-                      title="Voir l'historique des déblocages"
+                      title={`Voir l'historique (${getDeblocageCountForUser(user.id)} déblocages)`}
                     >
-                       Historique ({getDeblocageCountForUser(user.id)})
+                      📋
                     </button>
                     <button
-                      className="btn-reset"
+                      className="btn-action btn-reset"
                       onClick={() => handleResetPassword(user.id)}
                       title="Réinitialiser le mot de passe"
                     >
-                       Reset
+                      🔑
                     </button>
                   </div>
                 </td>
