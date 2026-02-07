@@ -8,10 +8,14 @@ function SignalementDetails() {
   const [signalement, setSignalement] = useState(null);
   const [loading, setLoading] = useState(true);
   const [historique, setHistorique] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [statuses, setStatuses] = useState([]);
 
   useEffect(() => {
     fetchSignalementDetails();
     fetchHistorique();
+    fetchUsers();
+    fetchStatuses();
   }, [id]);
 
   const fetchSignalementDetails = async () => {
@@ -33,7 +37,7 @@ function SignalementDetails() {
   const fetchHistorique = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/signalements/${id}/historique`, {
+      const response = await fetch(`http://localhost:8080/api/historiques/signalement/${id}`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (response.ok) {
@@ -42,6 +46,36 @@ function SignalementDetails() {
       }
     } catch (error) {
       console.error('Erreur historique:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/users', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data);
+      }
+    } catch (error) {
+      console.error('Erreur utilisateurs:', error);
+    }
+  };
+
+  const fetchStatuses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/status', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStatuses(data);
+      }
+    } catch (error) {
+      console.error('Erreur statuts:', error);
     }
   };
 
@@ -64,6 +98,8 @@ function SignalementDetails() {
   };
 
   const getStatusLabel = (statusId) => {
+    const status = statuses.find(s => s.id === statusId);
+    if (status) return status.libelle;
     const map = {
       1: 'Actif',
       2: 'Bloqué',
@@ -75,6 +111,11 @@ function SignalementDetails() {
       8: 'Créé'
     };
     return map[statusId] || statusId;
+  };
+
+  const getUserName = (userId) => {
+    const user = users.find(u => u.id === userId);
+    return user ? `${user.prenom} ${user.nom}` : 'Utilisateur inconnu';
   };
 
   const getStatusClass = (statusId) => {
@@ -155,12 +196,26 @@ function SignalementDetails() {
 
           {historique.length > 0 && (
             <div className="info-card">
-              <h2>Historique</h2>
+              <h2>Historique des changements de statut</h2>
               <div className="historique-list">
                 {historique.map((item, index) => (
-                  <div key={index} className="historique-item">
-                    <div className="historique-date">{formatDate(item.date)}</div>
-                    <div className="historique-action">{item.action || item.description}</div>
+                  <div key={item.id || index} className="historique-item">
+                    <div className="historique-header">
+                      <div className="historique-date">{formatDate(item.createdAt)}</div>
+                      <span className={getStatusClass(item.idStatus)}>
+                        {getStatusLabel(item.idStatus)}
+                      </span>
+                    </div>
+                    <div className="historique-body">
+                      <div className="historique-user">
+                        <strong>Par:</strong> {getUserName(item.idUtilisateur)}
+                      </div>
+                      {item.commentaire && (
+                        <div className="historique-comment">
+                          <strong>Commentaire:</strong> {item.commentaire}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

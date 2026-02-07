@@ -179,29 +179,65 @@
 .historique-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .historique-item {
-  display: flex;
-  gap: 1rem;
   padding: 1rem;
   background: #f8fafc;
   border-radius: 8px;
-  border-left: 3px solid #2563eb;
+  border-left: 4px solid #2563eb;
+  transition: all 0.2s ease;
+}
+
+.historique-item:hover {
+  background: #f1f5f9;
+  transform: translateX(4px);
+}
+
+.historique-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .historique-date {
   font-size: 0.8125rem;
   color: #64748b;
-  font-weight: 500;
-  min-width: 140px;
+  font-weight: 600;
 }
 
-.historique-action {
-  color: #1e293b;
+.historique-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.historique-user {
   font-size: 0.875rem;
-  flex: 1;
+  color: #475569;
+}
+
+.historique-user strong {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.historique-comment {
+  font-size: 0.875rem;
+  color: #64748b;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 4px;
+  font-style: italic;
+}
+
+.historique-comment strong {
+  color: #1e293b;
+  font-style: normal;
 }
 
 /* Photos Gallery */
