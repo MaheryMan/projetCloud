@@ -488,6 +488,18 @@ function VisitorMap() {
                     <Popup>
                       <div className="popup-content">
                         <h3>{signal.typeSignalement?.libelle || 'Type inconnu'}</h3>
+                        {signal.photos && signal.photos.length > 0 && (
+                          <div className="popup-photo">
+                            <img 
+                              src={signal.photos[0].url} 
+                              alt="Photo du signalement" 
+                              className="popup-photo-img"
+                            />
+                            {signal.photos.length > 1 && (
+                              <span className="popup-photo-count">+{signal.photos.length - 1} photo{signal.photos.length > 2 ? 's' : ''}</span>
+                            )}
+                          </div>
+                        )}
                         <div className="popup-info">
                           <p><strong>Date:</strong> {formatDate(signal.lastHistoriqueDate || signal.createdAt)}</p>
                           <p><strong>Statut:</strong> <span className={getStatusClass(statusKey)}>{getStatusLabel(statusKey)}</span></p>
