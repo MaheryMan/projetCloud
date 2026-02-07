@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './SignalementManagement.css';
 
 function SignalementManagement() {
+  const navigate = useNavigate();
   const [signalements, setSignalements] = useState([]);
   const [filteredSignalements, setFilteredSignalements] = useState([]);
   const [filterStatus, setFilterStatus] = useState('all');
@@ -511,32 +513,7 @@ const fetchEntreprises = async () => {
               Réinitialiser
             </button>
           )}
-
-          <button 
-            className="sync-btn"
-            onClick={handleSyncFirebaseToPostgres}
-            disabled={syncLoading}
-            title="Synchroniser les signalements de Firebase vers PostgreSQL"
-          >
-            {syncLoading ? '⏳ Synchronisation...' : '🔄 Synchroniser Firebase'}
-          </button>
-
-          <button 
-            className="sync-btn"
-            onClick={handleSyncPostgresToFirebase}
-            disabled={syncLoading}
-            title="Synchroniser les signalements de PostgreSQL vers Firebase"
-          >
-            {syncLoading ? '⏳ Synchronisation...' : '🔄 Synchroniser PostgreSQL'}
-          </button>
         </div>
-
-        {syncMessage && (
-          <div className={`sync-message sync-message-${syncMessage.type}`}>
-            <span>{syncMessage.text}</span>
-            {syncMessage.details && <small>{syncMessage.details}</small>}
-          </div>
-        )}
       </div>
 
       <div className="table-container">
@@ -556,7 +533,11 @@ const fetchEntreprises = async () => {
           </thead>
           <tbody>
             {filteredSignalements.map((signal) => (
-              <tr key={signal.id}>
+              <tr 
+                key={signal.id}
+                className={editingId === signal.id ? 'editing-row' : 'clickable-row'}
+                onClick={editingId !== signal.id ? () => navigate(`/signalements/${signal.id}`) : undefined}
+              >
                 {editingId === signal.id ? (
                   <>
                   
@@ -712,7 +693,7 @@ const fetchEntreprises = async () => {
                        {signal.latitude.toFixed(4)}, {signal.longitude.toFixed(4)}
                     </td>
                     <td>
-                      <div className="action-buttons">
+                      <div className="action-buttons" onClick={(e) => e.stopPropagation()}>
                         <button className="btn-edit" onClick={() => handleEdit(signal)}>
                           Éditer
                         </button>

@@ -7,6 +7,7 @@ import Navbar from './components/Navbar';
 import VisitorMap from './pages/VisitorMap';
 import ManagerDashboard from './pages/ManagerDashboard';
 import SignalementManagement from './pages/SignalementManagement';
+import SignalementDetails from './pages/SignalementDetails';
 import UserManagement from './pages/UserManagement';
 import Statistics from './pages/Statistics';
 import Synchronization from './pages/Synchronization';
@@ -128,6 +129,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <SignalementManagement />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/signalements/:id" 
+              element={
+                <ProtectedRoute>
+                  <SignalementDetails />
                 </ProtectedRoute>
               } 
             />
