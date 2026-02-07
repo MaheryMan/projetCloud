@@ -8,41 +8,11 @@ function ManagerDashboard() {
     enCours: 0,
     termine: 0,
     surfaceTotal: 0,
-    chiffreAffaire: 0, // Somme totale de tous les budgets
-    avancement: 0 // (terminés / (en cours + terminés)) * 100
+    chiffreAffaire: 0,
+    avancement: 0
   });
   const [recentSignalements, setRecentSignalements] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Ajout pour la synchronisation
-  const [syncing, setSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState(null);
-
-  // Fonction utilitaire pour synchroniser les utilisateurs
-  const handleSyncUsers = async () => {
-    setSyncing(true);
-    setSyncMessage(null);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/sync/users', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setSyncMessage({ type: 'success', text: data.message || 'Synchronisation réussie.' });
-      } else {
-        setSyncMessage({ type: 'error', text: data.message || 'Erreur lors de la synchronisation.' });
-      }
-    } catch (error) {
-      setSyncMessage({ type: 'error', text: 'Erreur réseau ou serveur.' });
-    } finally {
-      setSyncing(false);
-    }
-  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -51,7 +21,6 @@ function ManagerDashboard() {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('token');
-      
       const [signalementsRes, statsRes] = await Promise.all([
         fetch('http://localhost:8080/api/signalements/recent', {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -60,20 +29,8 @@ function ManagerDashboard() {
           headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);
-
       const signalementsData = await signalementsRes.json();
       const statsData = await statsRes.json();
-
-      // Debug - afficher les statuts des signalements
-      console.log('Tous les signalements:', signalementsData);
-      signalementsData.forEach(s => {
-        console.log(`Signalement #${s.id}: statut=${s.idStatus}`);
-      });
-
-      // Debug
-      console.log('Stats reçues:', statsData);
-
-      // Convertir les valeurs en nombres
       const processedStats = {
         totalSignalements: parseInt(statsData.totalSignalements) || 0,
         nouveau: parseInt(statsData.nouveau) || 0,
@@ -83,11 +40,6 @@ function ManagerDashboard() {
         chiffreAffaire: parseFloat(statsData.chiffreAffaire) || 0,
         avancement: parseInt(statsData.avancement) || 0
       };
-
-      console.log('Stats traitées:', processedStats);
-      console.log('Formule avancement: ((', processedStats.enCours, ' × 0.5) + ', processedStats.termine, ') / ', 
-        (processedStats.nouveau + processedStats.enCours + processedStats.termine), ' × 100 = ', processedStats.avancement, '%');
-
       setRecentSignalements(signalementsData);
       setStats(processedStats);
     } catch (error) {
@@ -147,47 +99,42 @@ function ManagerDashboard() {
 
       <div className="stats-grid">
         <div className="stat-card primary">
-          <div className="stat-icon"></div>
+          <div className="stat-icon">📋</div>
           <div className="stat-content">
             <h3>Total Signalements</h3>
             <div className="stat-value">{stats.totalSignalements}</div>
           </div>
         </div>
-
         <div className="stat-card red">
-          <div className="stat-icon"></div>
+          <div className="stat-icon">➕</div>
           <div className="stat-content">
             <h3>Nouveaux</h3>
             <div className="stat-value">{stats.nouveau}</div>
           </div>
         </div>
-
         <div className="stat-card orange">
-          <div className="stat-icon"></div>
+          <div className="stat-icon">⏳</div>
           <div className="stat-content">
             <h3>En cours</h3>
             <div className="stat-value">{stats.enCours}</div>
           </div>
         </div>
-
         <div className="stat-card green">
-          <div className="stat-icon"></div>
+          <div className="stat-icon">✅</div>
           <div className="stat-content">
             <h3>Terminés</h3>
             <div className="stat-value">{stats.termine}</div>
           </div>
         </div>
-
         <div className="stat-card blue">
-          <div className="stat-icon"></div>
+          <div className="stat-icon">📏</div>
           <div className="stat-content">
             <h3>Surface Totale</h3>
             <div className="stat-value">{stats.surfaceTotal} m²</div>
           </div>
         </div>
-
         <div className="stat-card purple">
-          <div className="stat-icon"></div>
+          <div className="stat-icon">💰</div>
           <div className="stat-content">
             <h3>Chiffre d'affaire</h3>
             <div className="stat-value">{formatCurrency(stats.chiffreAffaire)}</div>
@@ -228,7 +175,7 @@ function ManagerDashboard() {
             <tbody>
               {recentSignalements.map((signal) => (
                 <tr key={signal.id}>
-                      <td>
+                  <td>
                     {signal.lastHistoriqueDate
                       ? formatDate(signal.lastHistoriqueDate)
                       : signal.createdAt
@@ -237,7 +184,7 @@ function ManagerDashboard() {
                   </td>
                   <td>
                     <div className="location">
-                       {signal.latitude?.toFixed(4)}, {signal.longitude?.toFixed(4)}
+                      {signal.latitude?.toFixed(4)}, {signal.longitude?.toFixed(4)}
                     </div>
                   </td>
                   <td>
@@ -248,42 +195,11 @@ function ManagerDashboard() {
                   <td>{signal.surfaceM2} m²</td>
                   <td>{formatCurrency(signal.budget)}</td>
                   <td>{getEntrepriseName(signal.idEntreprise)}</td>
-                    
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
-
-      <div className="quick-actions">
-        <h2>Actions rapides</h2>
-        <div className="action-buttons">
-          <button className="action-btn" onClick={() => window.location.href = '/signalements'}>
-             Gérer les signalements
-          </button>
-          <button className="action-btn" onClick={() => window.location.href = '/users'}>
-             Gérer les utilisateurs
-          </button>
-          <button
-            className="action-btn"
-            onClick={handleSyncUsers}
-            disabled={syncing}
-            style={{ background: '#6c47ff', color: 'white' }}
-          >
-            {syncing ? 'Synchronisation...' : 'Synchroniser'}
-          </button>
-        </div>
-        {/* Message de feedback synchronisation */}
-        {syncMessage && (
-          <div style={{
-            marginTop: 12,
-            color: syncMessage.type === 'success' ? 'green' : 'red',
-            fontWeight: 500
-          }}>
-            {syncMessage.text}
-          </div>
-        )}
       </div>
     </div>
   );

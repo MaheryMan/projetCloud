@@ -3,13 +3,44 @@
   --bg-main: #f1f5f9;
   --card-bg: #ffffff;
   --pro-blue: #2563eb;
+  --pro-blue-light: #3b82f6;
+  --pro-blue-dark: #1e40af;
   --slate-900: #0f172a;
   --slate-600: #475569;
+  --slate-200: #e2e8f0;
 }
 
 .manager-dashboard {
   background-color: var(--bg-main);
   padding: 2.5rem;
+  min-height: 100vh;
+}
+
+.dashboard-header {
+  margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+  font-size: 32px;
+  color: var(--pro-blue);
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+}
+
+.dashboard-header p {
+  color: var(--slate-600);
+  font-size: 16px;
+  margin: 0;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 20px;
+  color: var(--pro-blue);
+  font-weight: 600;
 }
 
 /* --- KPI CARDS --- */
@@ -25,62 +56,91 @@
   padding: 1.5rem;
   border-radius: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  display: block; /* Stack verticalement */
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: box-shadow 0.2s;
 }
 
-.stat-card::before { display: none; } /* On retire l'ancienne bordure */
+.stat-card.primary,
+.stat-card.blue {
+  border-left: 6px solid var(--pro-blue);
+}
+.stat-card.red,
+.stat-card.orange,
+.stat-card.green,
+.stat-card.purple {
+  border-left: 6px solid var(--pro-blue-light);
+}
+
+.stat-card:hover {
+  box-shadow: 0 8px 16px -2px rgba(37, 99, 235, 0.10);
+}
+
+.stat-icon {
+  font-size: 32px;
+  line-height: 1;
+}
 
 .stat-content h3 {
-  font-size: 14px;
-  color: var(--slate-600);
+  font-size: 15px;
+  color: var(--pro-blue-dark);
   margin-bottom: 0.5rem;
+  font-weight: 600;
 }
 
 .stat-value {
   font-size: 32px;
   letter-spacing: -1px;
-  color: var(--slate-900);
-}
-
-/* --- WIDGET GRID (Bento Box Style) --- */
-.dashboard-main-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1.5rem;
-  margin-top: 2rem;
+  color: var(--pro-blue);
+  font-weight: bold;
 }
 
 /* Style commun aux widgets */
-.progress-section, .recent-section, .mini-map-widget {
+.progress-section, .recent-section {
   background: white;
   border-radius: 16px;
   padding: 1.5rem;
   border: 1px solid var(--slate-200);
+  margin-top: 2rem;
 }
 
-/* --- MINI-MAP WIDGET --- */
-.mini-map-container {
-  height: 200px;
-  background: #e2e8f0;
-  border-radius: 12px;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--slate-500);
-  font-size: 13px;
+.progress-section h2,
+.recent-section h2,
+.quick-actions h2 {
+  font-size: 20px;
+  color: var(--pro-blue-dark);
+  margin: 0 0 1rem 0;
+  font-weight: 600;
 }
+
+/* Suppression du mini-map-widget inutilisé */
 
 /* --- PROGRESS BAR (Vercel Style) --- */
 .progress-bar-container {
-  height: 8px;
+  height: 16px;
   background: var(--slate-200);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
 }
 
 .progress-bar {
-  background: var(--pro-blue);
-  box-shadow: 0 0 15px rgba(37, 99, 235, 0.3);
+  background: linear-gradient(90deg, var(--pro-blue) 60%, var(--pro-blue-light) 100%);
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.15);
+  height: 100%;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  transition: width 0.4s;
+}
+
+.progress-text {
+  color: #fff;
+  font-weight: bold;
+  padding-right: 12px;
+  font-size: 14px;
 }
 
 .progress-info {
@@ -95,4 +155,104 @@
   font-size: 14px;
   color: var(--slate-600);
   font-weight: 500;
+}
+
+/* Table des signalements */
+.table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table thead {
+  background: var(--bg-main);
+}
+
+.data-table th {
+  padding: 12px;
+  text-align: left;
+  font-size: 14px;
+  color: var(--pro-blue-dark);
+  font-weight: 600;
+  border-bottom: 2px solid var(--slate-200);
+}
+
+.data-table td {
+  padding: 12px;
+  font-size: 14px;
+  color: var(--slate-900);
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.data-table tbody tr:hover {
+  background: var(--bg-main);
+}
+
+.location {
+  color: var(--slate-600);
+  font-family: monospace;
+  font-size: 13px;
+}
+
+/* Badges de statut */
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.status-1,
+.status-badge.status-4 {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.status-5 {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.status-6 {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.status-2,
+.status-badge.status-7 {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.status-3 {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .manager-dashboard {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
