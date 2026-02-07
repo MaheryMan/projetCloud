@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FaMap, FaChartBar, FaClipboardList, FaUsers, FaChartLine, FaSync, FaCog } from 'react-icons/fa';
 import './Sidebar.css';
 
 function Sidebar({ user, onLogout }) {
@@ -32,13 +33,13 @@ function Sidebar({ user, onLogout }) {
   };
 
   const menuItems = [
-    { path: '/', label: 'Carte', icon: '🗺️' },
-    { path: '/dashboard', label: 'Tableau de bord', icon: '📊' },
-    { path: '/signalements', label: 'Signalements', icon: '📋' },
-    { path: '/users', label: 'Utilisateurs', icon: '👥' },
-    { path: '/statistics', label: 'Statistiques', icon: '📈' },
-    { path: '/sync', label: 'Synchronisation', icon: '🔄' },
-    { path: '/settings', label: 'Paramètres', icon: '⚙️' }
+    { path: '/', label: 'Carte', icon: <FaMap /> },
+    { path: '/dashboard', label: 'Tableau de bord', icon: <FaChartBar /> },
+    { path: '/signalements', label: 'Signalements', icon: <FaClipboardList /> },
+    { path: '/users', label: 'Utilisateurs', icon: <FaUsers /> },
+    { path: '/statistics', label: 'Statistiques', icon: <FaChartLine /> },
+    { path: '/sync', label: 'Synchronisation', icon: <FaSync /> },
+    { path: '/settings', label: 'Paramètres', icon: <FaCog /> }
   ];
 
   return (
@@ -46,7 +47,7 @@ function Sidebar({ user, onLogout }) {
       {/* Header avec Firebase status */}
       <div className="sidebar-header">
         <div className="sidebar-brand">
-          <span className="brand-icon">🗺️</span>
+          <span className="brand-icon"><FaMap /></span>
           <span className="brand-text">Manager</span>
         </div>
         <div className="firebase-status">

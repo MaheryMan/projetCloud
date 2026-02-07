@@ -1,7 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { 
+  FaCheckCircle, FaTimes, FaMapMarkerAlt, 
+  FaPlus, FaMinus, FaInfoCircle, FaArrowRight,
+  FaLayerGroup, FaClock, FaTools
+} from 'react-icons/fa';
+import { BiMoney } from 'react-icons/bi';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './VisitorMap.css';
@@ -45,26 +51,20 @@ function VisitorMap() {
   });
   const [displayStats, setDisplayStats] = useState({
     total: 0,
+    termines: 0,
+    nouveaux: 0,
+    enCours: 0,
     surfaceTotal: 0,
     budgetTotal: 0,
     avancement: 0
   });
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [newSignalement, setNewSignalement] = useState({
-    latitude: 0,
-    longitude: 0,
-    description: '',
-    surface: 0,
-    idTypeSignalement: '',
-    photos: [] // Array de fichiers photos
-  });
-  const [photoPreviewUrls, setPhotoPreviewUrls] = useState([]);
-  const [isAddingMode, setIsAddingMode] = useState(false);
   const [typesSignalement, setTypesSignalement] = useState([]);
   const [entreprises, setEntreprises] = useState([]);
   const [user, setUser] = useState(null);
   const [filteredSignalements, setFilteredSignalements] = useState([]);
+  const [showRecap, setShowRecap] = useState(false);
+  const [showLegendExpanded, setShowLegendExpanded] = useState(false);
 
   // États pour les filtres
   const [filterStatus, setFilterStatus] = useState('tous');
@@ -161,13 +161,18 @@ function VisitorMap() {
   // Calculer les statistiques dynamiquement depuis les signalements filtrés
   useEffect(() => {
     const total = filteredSignalements.length;
+    const termines = filteredSignalements.filter(s => s.idStatus === 6).length;
+    const nouveaux = filteredSignalements.filter(s => s.idStatus === 4).length;
+    const enCours = filteredSignalements.filter(s => s.idStatus === 5).length;
     const surfaceTotal = filteredSignalements.reduce((sum, s) => sum + (s.surfaceM2 || 0), 0);
     const budgetTotal = filteredSignalements.reduce((sum, s) => sum + (s.budget || 0), 0);
-    const termines = filteredSignalements.filter(s => s.idStatus === 6).length;
     const avancement = total > 0 ? Math.round((termines / total) * 100) : 0;
 
     setDisplayStats({
       total,
+      termines,
+      nouveaux,
+      enCours,
       surfaceTotal,
       budgetTotal,
       avancement
@@ -250,150 +255,6 @@ function VisitorMap() {
     return `status-badge status-${status}`;
   };
 
-  const handleMapClick = (e) => {
-    if (isAddingMode) {
-      // Vérifier si l'utilisateur est connecté (token présent)
-      getAuthToken().then(token => {
-        if (!token) {
-          setIsAddingMode(false);
-          setShowModal(false);
-          alert('Vous devez être connecté pour ajouter un signalement.');
-          navigate('/login');
-        } else {
-          setNewSignalement({
-            ...newSignalement,
-            latitude: e.latlng.lat,
-            longitude: e.latlng.lng
-          });
-          setShowModal(true);
-        }
-      });
-    }
-  };
-
-const handleSubmitSignalement = async () => {
-    try {
-      // Récupérer l'ID utilisateur depuis localStorage (si connecté)
-      const token = await getAuthToken();
-      const userId = localStorage.getItem('user');
-      
-      // Upload des photos vers Firebase Storage ou autre service
-      const photoUrls = await uploadPhotos(newSignalement.photos);
-      
-      // Préparer les headers
-      const headers = {
-        'Content-Type': 'application/json'
-      };
-      // Ajouter le token si l'utilisateur est connecté
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      const response = await fetch('http://localhost:8080/api/signalements', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({
-          latitude: newSignalement.latitude,
-          longitude: newSignalement.longitude,
-          description: newSignalement.description,
-          surfaceM2: newSignalement.surface || 0,
-          budget: 0, // Budget par défaut
-          idTypeSignalement: parseInt(newSignalement.idTypeSignalement), // Convertir en nombre
-          idStatus: 1, // Statut "nouveau" par défaut
-          idEntreprise: null,
-          photoUrls: photoUrls, // Array d'URLs de photos
-          // Utiliser l'ID de l'utilisateur connecté OU l'ID anonyme (1)
-          idUtilisateur: userId ? parseInt(userId) : 1
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erreur ${response.status}: ${errorText}`);
-      }
-
-      alert('✅ Signalement ajouté avec succès !');
-      setShowModal(false);
-      setIsAddingMode(false);
-      setNewSignalement({ latitude: 0, longitude: 0, description: '', surface: 0, idTypeSignalement: '', photos: [] });
-      setPhotoPreviewUrls([]);
-      await fetchSignalements();
-    } catch (error) {
-      console.error('Erreur:', error);
-      alert('❌ Erreur lors de l\'ajout du signalement: ' + error.message);
-    }
-  };
-
-  // Fonction pour uploader les photos vers le backend
-  const uploadPhotos = async (photos) => {
-    if (!photos || photos.length === 0) return [];
-    
-    try {
-      const formData = new FormData();
-      photos.forEach(photo => {
-        formData.append('files', photo);
-      });
-      
-      const response = await fetch('http://localhost:8080/api/photos/upload', {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erreur upload: ${errorText}`);
-      }
-      
-      const uploadedUrls = await response.json();
-      return uploadedUrls;
-    } catch (error) {
-      console.error('Erreur lors de l\'upload des photos:', error);
-      throw error;
-    }
-  };
-
-  // Gestion de la sélection de photos
-  const handlePhotoChange = (e) => {
-    const files = Array.from(e.target.files);
-    const maxPhotos = 5; // Limite de 5 photos
-    
-    if (newSignalement.photos.length + files.length > maxPhotos) {
-      alert(`Vous ne pouvez ajouter que ${maxPhotos} photos maximum`);
-      return;
-    }
-    
-    // Ajouter les nouvelles photos
-    setNewSignalement({
-      ...newSignalement,
-      photos: [...newSignalement.photos, ...files]
-    });
-    
-    // Créer les URLs de prévisualisation
-    const newPreviewUrls = files.map(file => URL.createObjectURL(file));
-    setPhotoPreviewUrls([...photoPreviewUrls, ...newPreviewUrls]);
-  };
-
-  // Supprimer une photo
-  const handleRemovePhoto = (index) => {
-    const newPhotos = [...newSignalement.photos];
-    newPhotos.splice(index, 1);
-    setNewSignalement({
-      ...newSignalement,
-      photos: newPhotos
-    });
-    
-    const newPreviews = [...photoPreviewUrls];
-    URL.revokeObjectURL(newPreviews[index]); // Libérer la mémoire
-    newPreviews.splice(index, 1);
-    setPhotoPreviewUrls(newPreviews);
-  };
-
-  const MapClickHandler = () => {
-    useMapEvents({
-      click: handleMapClick
-    });
-    return null;
-  };
-
   const getEntrepriseName = (idEntreprise) => {
     console.log('getEntrepriseName called with:', idEntreprise);
     console.log('entreprises array:', entreprises);
@@ -409,21 +270,24 @@ const handleSubmitSignalement = async () => {
 
   return (
     <div className="visitor-map-container">
-      {localStorage.getItem('token') ? (
-        <button 
-          className="logout-btn"
-          onClick={handleLogout}
-        >
-          Déconnexion
-        </button>
-      ) : (
-        <button 
-          className="login-btn"
-          onClick={() => navigate('/login')}
-        >
-          Connexion Manager
-        </button>
-      )}
+      {/* Header avec boutons d'authentification */}
+      <div className="map-header-actions">
+        {localStorage.getItem('token') ? (
+          <button 
+            className="logout-btn"
+            onClick={handleLogout}
+          >
+            Déconnexion
+          </button>
+        ) : (
+          <button 
+            className="login-btn"
+            onClick={() => navigate('/login')}
+          >
+            Connexion Manager
+          </button>
+        )}
+      </div>
 
       {/* Barre de filtres */}
       <div className="filter-container">
@@ -507,42 +371,96 @@ const handleSubmitSignalement = async () => {
 
       <div className="stats-container">
         <div className="stat-card">
-          <div className="stat-icon"></div>
+          <div className="stat-icon-wrapper primary">
+            <FaMapMarkerAlt className="stat-icon" />
+          </div>
           <div className="stat-content">
             <div className="stat-value">{displayStats.total}</div>
-            <div className="stat-label">Signalements</div>
+            <div className="stat-label">Total</div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon"></div>
+          <div className="stat-icon-wrapper success">
+            <FaCheckCircle className="stat-icon" />
+          </div>
           <div className="stat-content">
-            <div className="stat-value">{displayStats.surfaceTotal} m²</div>
-            <div className="stat-label">Surface totale</div>
+            <div className="stat-value">{displayStats.termines}</div>
+            <div className="stat-label">Terminé</div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon"></div>
+          <div className="stat-icon-wrapper warning">
+            <FaClock className="stat-icon" />
+          </div>
           <div className="stat-content">
-            <div className="stat-value">{formatCurrency(displayStats.budgetTotal)}</div>
-            <div className="stat-label">Budget total</div>
+            <div className="stat-value">{displayStats.nouveaux}</div>
+            <div className="stat-label">Nouveau</div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon"></div>
+          <div className="stat-icon-wrapper info">
+            <FaTools className="stat-icon" />
+          </div>
           <div className="stat-content">
-            <div className="stat-value">{displayStats.avancement}%</div>
-            <div className="stat-label">Avancement</div>
+            <div className="stat-value">{displayStats.enCours}</div>
+            <div className="stat-label">En cours</div>
           </div>
         </div>
       </div>
 
+      {/* Bouton Récap Toggle */}
+      <div className="recap-toggle" onClick={() => setShowRecap(!showRecap)}>
+        <span className="recap-toggle-text">Récap</span>
+        <span className="recap-toggle-state">{showRecap ? 'Masquer' : 'Afficher'}</span>
+      </div>
+
+      {/* Section Récap */}
+      {showRecap && (
+        <div className="recap-card">
+          <div className="recap-content">
+            <div className="recap-item">
+              <span className="recap-label">Surface totale</span>
+              <span className="recap-value">{displayStats.surfaceTotal.toFixed(0)} m²</span>
+            </div>
+            <div className="recap-item">
+              <span className="recap-label">Budget total</span>
+              <span className="recap-value">{formatCurrency(displayStats.budgetTotal)}</span>
+            </div>
+            <div className="recap-item">
+              <span className="recap-label">Avancement</span>
+              <span className="recap-value">{displayStats.avancement}%</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bannière d'information pour utilisateurs non connectés */}
+      {!localStorage.getItem('token') && (
+        <div className="info-banner">
+          <div className="info-content">
+            <FaInfoCircle className="info-icon" />
+            <span>Connectez-vous pour signaler des problèmes sur la route</span>
+          </div>
+          <button className="info-action" onClick={() => navigate('/login')}>
+            Se connecter
+            <FaArrowRight />
+          </button>
+        </div>
+      )}
+
       <div className="map-wrapper">
         {loading ? (
-          <div className="loading">Chargement de la carte...</div>
+          <div className="loading-overlay">
+            <div className="loading-content">
+              <div className="loading-spinner"></div>
+              <span>Chargement de la carte...</span>
+            </div>
+          </div>
         ) : (
+          <>
           <MapContainer
             center={position}
             zoom={17}
@@ -552,8 +470,6 @@ const handleSubmitSignalement = async () => {
               url="http://localhost:8081/styles/osm-bright/{z}/{x}/{y}.png"
               attribution='&copy; Carte locale Antananarivo'
             />
-            
-            <MapClickHandler />
             
             {filteredSignalements
               .filter(signal => [4, 5, 6].includes(signal.idStatus))
@@ -585,141 +501,66 @@ const handleSubmitSignalement = async () => {
                 );
               })}
           </MapContainer>
+
+          {/* Contrôles de carte améliorés */}
+          <div className="map-controls">
+            <button 
+              className="control-button zoom-button"
+              onClick={() => {
+                const map = document.querySelector('.leaflet-container')?._leaflet_map;
+                if (map) map.zoomIn();
+              }}
+              title="Zoom +"
+            >
+              <FaPlus />
+            </button>
+            <button 
+              className="control-button zoom-button"
+              onClick={() => {
+                const map = document.querySelector('.leaflet-container')?._leaflet_map;
+                if (map) map.zoomOut();
+              }}
+              title="Zoom -"
+            >
+              <FaMinus />
+            </button>
+          </div>
+          </>
         )}
       </div>
 
-      <div className="legend">
-        <h3>Légende</h3>
-        <div className="legend-items">
-          <div className="legend-item">
-            <span className="legend-marker nouveau"></span>
-            <span>Nouveau</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-marker en_cours"></span>
-            <span>En cours</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-marker termine"></span>
-            <span>Terminé</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Bouton flottant pour ajouter un signalement */}
-      <button 
-        className={`floating-add-btn ${isAddingMode ? 'active' : ''}`}
-        onClick={() => setIsAddingMode(!isAddingMode)}
-        title={isAddingMode ? 'Annuler' : 'Ajouter un signalement'}
-      >
-        {isAddingMode ? '✕' : '+'}
-      </button>
-
-      {/* Message d'info en mode ajout */}
-      {isAddingMode && (
-        <div className="floating-add-info">
-           Cliquez sur la carte pour placer un signalement
-        </div>
-      )}
-
-      {/* Modal pour ajouter un signalement */}
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Nouveau Signalement</h2>
-            <p className="modal-coords">
-               Position: {newSignalement.latitude.toFixed(5)}, {newSignalement.longitude.toFixed(5)}
-            </p>
-            
-            <div className="modal-form">
-              <div className="form-group">
-                <label>Type de signalement *</label>
-                <select
-                  value={newSignalement.idTypeSignalement}
-                  onChange={(e) => setNewSignalement({...newSignalement, idTypeSignalement: e.target.value})}
-                  required
-                >
-                  <option value="">Sélectionnez un type</option>
-                  {typesSignalement.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.libelle}
-                    </option>
-                  ))}
-                </select>
+      {/* Légende flottante améliorée */}
+      <div className={`map-legend ${showLegendExpanded ? 'expanded' : ''}`}>
+        <button 
+          className="legend-toggle"
+          onClick={() => setShowLegendExpanded(!showLegendExpanded)}
+        >
+          <FaLayerGroup />
+          <span className="legend-toggle-text">Légende</span>
+        </button>
+        {showLegendExpanded && (
+          <div className="legend-items">
+            <div className="legend-item">
+              <div className="legend-marker nouveau">
+                <span className="legend-marker-icon">●</span>
               </div>
-
-              <div className="form-group">
-                <label>Type de probleme *</label>
-                <textarea
-                  value={newSignalement.description}
-                  onChange={(e) => setNewSignalement({...newSignalement, description: e.target.value})}
-                  placeholder="Décrivez le problème routier..."
-                  rows="4"
-                  required
-                />
+              <span className="legend-text">Nouveau</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-marker en_cours">
+                <span className="legend-marker-icon">●</span>
               </div>
-
-              <div className="form-group">
-                <label>Surface estimée (m²)</label>
-                <input
-                  type="number"
-                  value={newSignalement.surface}
-                  onChange={(e) => setNewSignalement({...newSignalement, surface: parseFloat(e.target.value)})}
-                  placeholder="Surface en m²"
-                  min="0"
-                />
+              <span className="legend-text">En cours</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-marker termine">
+                <span className="legend-marker-icon">●</span>
               </div>
-
-              <div className="form-group">
-                <label>Photos (max 5)</label>
-                <div className="photo-upload-section">
-                  <input
-                    type="file"
-                    id="photo-upload"
-                    multiple
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                    style={{ display: 'none' }}
-                  />
-                  <label htmlFor="photo-upload" className="photo-upload-btn">
-                    📷 Ajouter des photos ({newSignalement.photos.length}/5)
-                  </label>
-                  
-                  {photoPreviewUrls.length > 0 && (
-                    <div className="photo-previews">
-                      {photoPreviewUrls.map((url, index) => (
-                        <div key={index} className="photo-preview-item">
-                          <img src={url} alt={`Photo ${index + 1}`} />
-                          <button
-                            type="button"
-                            className="remove-photo-btn"
-                            onClick={() => handleRemovePhoto(index)}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="modal-actions">
-                <button className="btn-cancel" onClick={() => setShowModal(false)}>
-                  Annuler
-                </button>
-                <button 
-                  className="btn-submit" 
-                  onClick={handleSubmitSignalement}
-                  disabled={!newSignalement.description || !newSignalement.idTypeSignalement}
-                >
-                  Confirmer
-                </button>
-              </div>
+              <span className="legend-text">Terminé</span>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

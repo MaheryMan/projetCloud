@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { FaClipboardList, FaPlus, FaHourglassHalf, FaCheckCircle, FaRulerCombined } from 'react-icons/fa';
+import { BiMoney } from 'react-icons/bi';
 import './ManagerDashboard.css';
 
 function ManagerDashboard() {
@@ -99,42 +101,42 @@ function ManagerDashboard() {
 
       <div className="stats-grid">
         <div className="stat-card primary">
-          <div className="stat-icon">📋</div>
+          <div className="stat-icon"><FaClipboardList /></div>
           <div className="stat-content">
             <h3>Total Signalements</h3>
             <div className="stat-value">{stats.totalSignalements}</div>
           </div>
         </div>
         <div className="stat-card red">
-          <div className="stat-icon">➕</div>
+          <div className="stat-icon"><FaPlus /></div>
           <div className="stat-content">
             <h3>Nouveaux</h3>
             <div className="stat-value">{stats.nouveau}</div>
           </div>
         </div>
         <div className="stat-card orange">
-          <div className="stat-icon">⏳</div>
+          <div className="stat-icon"><FaHourglassHalf /></div>
           <div className="stat-content">
             <h3>En cours</h3>
             <div className="stat-value">{stats.enCours}</div>
           </div>
         </div>
         <div className="stat-card green">
-          <div className="stat-icon">✅</div>
+          <div className="stat-icon"><FaCheckCircle /></div>
           <div className="stat-content">
             <h3>Terminés</h3>
             <div className="stat-value">{stats.termine}</div>
           </div>
         </div>
         <div className="stat-card blue">
-          <div className="stat-icon">📏</div>
+          <div className="stat-icon"><FaRulerCombined /></div>
           <div className="stat-content">
             <h3>Surface Totale</h3>
             <div className="stat-value">{stats.surfaceTotal} m²</div>
           </div>
         </div>
         <div className="stat-card purple">
-          <div className="stat-icon">💰</div>
+          <div className="stat-icon"><BiMoney /></div>
           <div className="stat-content">
             <h3>Chiffre d'affaire</h3>
             <div className="stat-value">{formatCurrency(stats.chiffreAffaire)}</div>

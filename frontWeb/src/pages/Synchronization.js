@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FaTimes, FaCheckCircle, FaLock, FaHourglassHalf, FaRocket, FaUpload, FaDownload, FaGlobe, FaWifi, FaSync, FaBookmark, FaEdit } from 'react-icons/fa';
 import './Synchronization.css';
 
 function Synchronization() {
@@ -15,11 +16,11 @@ function Synchronization() {
   // Utilitaire générique pour appeler une API sync
   const callSyncApi = async (endpoint, label) => {
     if (!syncStatus.isOnline) {
-      alert('❌ Pas de connexion Internet. Synchronisation impossible.');
+      alert('Pas de connexion Internet. Synchronisation impossible.');
       return;
     }
     setSyncing(true);
-    addLog(`⏳ Appel de ${label}...`, 'info');
+    addLog(`Appel de ${label}...`, 'info');
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:8080/api/sync/${endpoint}`, {
@@ -28,13 +29,13 @@ function Synchronization() {
       });
       const data = await response.json();
       if (response.ok) {
-        addLog(`✅ ${label} : ${data.message || 'Succès'} (${data.syncedCount !== undefined ? data.syncedCount : ''})`, 'success');
+        addLog(`${label} : ${data.message || 'Succès'} (${data.syncedCount !== undefined ? data.syncedCount : ''})`, 'success');
       } else {
-        addLog(`❌ ${label} : ${data.message || 'Erreur'}`, 'error');
+        addLog(`${label} : ${data.message || 'Erreur'}`, 'error');
       }
       await fetchSyncStatus();
     } catch (error) {
-      addLog(`❌ ${label} : Erreur réseau ou serveur`, 'error');
+      addLog(`${label} : Erreur réseau ou serveur`, 'error');
     } finally {
       setSyncing(false);
     }
@@ -76,18 +77,18 @@ function Synchronization() {
 
   const handleSyncToFirebase = async () => {
     if (!syncStatus.isOnline) {
-      alert('❌ Pas de connexion Internet. Synchronisation impossible.');
+      alert('Pas de connexion Internet. Synchronisation impossible.');
       return;
     }
 
     setSyncing(true);
-    addLog('🚀 Démarrage de la synchronisation vers Firebase...', 'info');
+    addLog('Démarrage de la synchronisation vers Firebase...', 'info');
 
     try {
       const token = localStorage.getItem('token');
       
       // Envoyer les signalements vers Firebase
-      addLog('📤 Envoi des signalements...', 'info');
+      addLog('Envoi des signalements...', 'info');
       const signalementsRes = await fetch('http://localhost:8080/api/sync/push-signalements', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -96,10 +97,10 @@ function Synchronization() {
       if (!signalementsRes.ok) throw new Error('Erreur envoi signalements');
       
       const signalementsData = await signalementsRes.json();
-      addLog(`✅ ${signalementsData.count} signalements envoyés`, 'success');
+      addLog(`${signalementsData.count} signalements envoyés`, 'success');
 
       // Envoyer les utilisateurs vers Firebase
-      addLog('📤 Envoi des utilisateurs...', 'info');
+      addLog('Envoi des utilisateurs...', 'info');
       const usersRes = await fetch('http://localhost:8080/api/sync/push-users', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -108,14 +109,14 @@ function Synchronization() {
       if (!usersRes.ok) throw new Error('Erreur envoi utilisateurs');
       
       const usersData = await usersRes.json();
-      addLog(`✅ ${usersData.count} utilisateurs envoyés`, 'success');
+      addLog(`${usersData.count} utilisateurs envoyés`, 'success');
 
-      addLog('🎉 Synchronisation vers Firebase terminée avec succès !', 'success');
+      addLog('Synchronisation vers Firebase terminée avec succès !', 'success');
       
       await fetchSyncStatus();
     } catch (error) {
       console.error('Erreur:', error);
-      addLog(`❌ Erreur: ${error.message}`, 'error');
+      addLog(`Erreur: ${error.message}`, 'error');
     } finally {
       setSyncing(false);
     }
@@ -123,18 +124,18 @@ function Synchronization() {
 
   const handleSyncFromFirebase = async () => {
     if (!syncStatus.isOnline) {
-      alert('❌ Pas de connexion Internet. Synchronisation impossible.');
+      alert('Pas de connexion Internet. Synchronisation impossible.');
       return;
     }
 
     setSyncing(true);
-    addLog('🚀 Démarrage de la synchronisation depuis Firebase...', 'info');
+    addLog('Démarrage de la synchronisation depuis Firebase...', 'info');
 
     try {
       const token = localStorage.getItem('token');
       
       // Récupérer les signalements depuis Firebase
-      addLog('📥 Récupération des signalements...', 'info');
+      addLog('Récupération des signalements...', 'info');
       const signalementsRes = await fetch('http://localhost:8080/api/sync/pull-signalements', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -143,33 +144,33 @@ function Synchronization() {
       if (!signalementsRes.ok) throw new Error('Erreur récupération signalements');
       
       const signalementsData = await signalementsRes.json();
-      addLog(`✅ ${signalementsData.count} nouveaux signalements récupérés`, 'success');
+      addLog(`${signalementsData.count} nouveaux signalements récupérés`, 'success');
 
-      addLog('🎉 Synchronisation depuis Firebase terminée avec succès !', 'success');
+      addLog('Synchronisation depuis Firebase terminée avec succès !', 'success');
       
       await fetchSyncStatus();
     } catch (error) {
       console.error('Erreur:', error);
-      addLog(`❌ Erreur: ${error.message}`, 'error');
+      addLog(`Erreur: ${error.message}`, 'error');
     } finally {
       setSyncing(false);
     }
   };
 
   const handleFullSync = async () => {
-    addLog('🔄 Synchronisation complète...', 'info');
+    addLog('Synchronisation complète...', 'info');
     await handleSyncFromFirebase();
     await handleSyncToFirebase();
   };
 
   const handleSyncBlockStatus = async () => {
     if (!syncStatus.isOnline) {
-      alert('❌ Pas de connexion Internet. Synchronisation impossible.');
+      alert('Pas de connexion Internet. Synchronisation impossible.');
       return;
     }
 
     setSyncing(true);
-    addLog('🔒 Synchronisation de l\'état de blocage depuis Firebase...', 'info');
+    addLog('Synchronisation de l\'état de blocage depuis Firebase...', 'info');
 
     try {
       const token = localStorage.getItem('token');
@@ -182,12 +183,12 @@ function Synchronization() {
       if (!response.ok) throw new Error('Erreur synchronisation blocage');
       
       const data = await response.json();
-      addLog(`✅ État de blocage synchronisé pour ${data.count} utilisateurs`, 'success');
+      addLog(`État de blocage synchronisé pour ${data.count} utilisateurs`, 'success');
       
       await fetchSyncStatus();
     } catch (error) {
       console.error('Erreur:', error);
-      addLog(`❌ Erreur: ${error.message}`, 'error');
+      addLog(`Erreur: ${error.message}`, 'error');
     } finally {
       setSyncing(false);
     }
@@ -195,12 +196,12 @@ function Synchronization() {
 
   const handleSyncDeblocage = async () => {
     if (!syncStatus.isOnline) {
-      alert('❌ Pas de connexion Internet. Synchronisation impossible.');
+      alert('Pas de connexion Internet. Synchronisation impossible.');
       return;
     }
 
     setSyncing(true);
-    addLog(`📤 Synchronisation de tous les déblocages vers Firebase...`, 'info');
+    addLog(`Synchronisation de tous les déblocages vers Firebase...`, 'info');
 
     try {
       const token = localStorage.getItem('token');
@@ -213,12 +214,12 @@ function Synchronization() {
       if (!response.ok) throw new Error('Erreur synchronisation déblocage');
       
       const data = await response.json();
-      addLog(`✅ ${data.count} utilisateurs synchronisés vers Firebase`, 'success');
+      addLog(`${data.count} utilisateurs synchronisés vers Firebase`, 'success');
       
       await fetchSyncStatus();
     } catch (error) {
       console.error('Erreur:', error);
-      addLog(`❌ Erreur: ${error.message}`, 'error');
+      addLog(`Erreur: ${error.message}`, 'error');
     } finally {
       setSyncing(false);
     }
@@ -241,7 +242,7 @@ function Synchronization() {
   return (
     <div className="synchronization-page">
       <header className="page-header">
-        <h1>🔄 Synchronisation Firebase</h1>
+        <h1><FaSync /> Synchronisation Firebase</h1>
         <p>Synchroniser les données avec le cloud en temps réel</p>
       </header>
 
@@ -250,9 +251,9 @@ function Synchronization() {
           <div className={`status-indicator ${connectionStatus}`}>
             <span className="status-dot"></span>
             <span className="status-text">
-              {connectionStatus === 'online' ? '🌐 En ligne' : 
-               connectionStatus === 'offline' ? '📴 Hors ligne' : 
-               '⏳ Vérification...'}
+              {connectionStatus === 'online' ? <><FaGlobe /> En ligne</> : 
+               connectionStatus === 'offline' ? <><FaWifi /> Hors ligne</> : 
+               <><FaHourglassHalf /> Vérification...</>}
             </span>
           </div>
           
@@ -261,7 +262,7 @@ function Synchronization() {
             onClick={checkConnectionStatus}
             disabled={syncing}
           >
-            🔄 Vérifier la connexion
+            <FaSync /> Vérifier la connexion
           </button>
         </div>
 
@@ -283,48 +284,48 @@ function Synchronization() {
 
       <div className="sync-actions">
         <div className="action-card">
-          <div className="action-icon">📤</div>
+          <div className="action-icon"><FaUpload /></div>
           <h3>Synchroniser utilisateurs locaux → Firebase</h3>
           <p>POST /api/sync/users</p>
           <button className="action-btn" onClick={() => callSyncApi('users', 'Utilisateurs locaux → Firebase')} disabled={syncing || !syncStatus.isOnline}>
-            {syncing ? '⏳...' : 'Synchroniser'}
+            {syncing ? <><FaHourglassHalf />...</> : 'Synchroniser'}
           </button>
         </div>
         <div className="action-card">
-          <div className="action-icon">📥</div>
+          <div className="action-icon"><FaDownload /></div>
           <h3>Synchroniser utilisateurs Firebase → PostgreSQL</h3>
           <p>POST /api/sync/users/from-firebase</p>
           <button className="action-btn" onClick={() => callSyncApi('users/from-firebase', 'Utilisateurs Firebase → PostgreSQL')} disabled={syncing || !syncStatus.isOnline}>
-            {syncing ? '⏳...' : 'Synchroniser'}
+            {syncing ? <><FaHourglassHalf />...</> : 'Synchroniser'}
           </button>
         </div>
         <div className="action-card">
-          <div className="action-icon">📝</div>
+          <div className="action-icon"><FaEdit /></div>
           <h3>Synchroniser modifications hors ligne</h3>
           <p>POST /api/sync/users/offline-changes</p>
           <button className="action-btn" onClick={() => callSyncApi('users/offline-changes', 'Modifications hors ligne')} disabled={syncing || !syncStatus.isOnline}>
-            {syncing ? '⏳...' : 'Synchroniser'}
+            {syncing ? <><FaHourglassHalf />...</> : 'Synchroniser'}
           </button>
         </div>
         <div className="action-card">
-          <div className="action-icon">🔖</div>
+          <div className="action-icon"><FaBookmark /></div>
           <h3>Synchroniser métadonnées</h3>
           <p>POST /api/sync/metadata</p>
           <button className="action-btn" onClick={() => callSyncApi('metadata', 'Métadonnées')} disabled={syncing || !syncStatus.isOnline}>
-            {syncing ? '⏳...' : 'Synchroniser'}
+            {syncing ? <><FaHourglassHalf />...</> : 'Synchroniser'}
           </button>
         </div>
         <div className="action-card">
-          <div className="action-icon">🔄</div>
+          <div className="action-icon"><FaSync /></div>
           <h3>Synchronisation bi-directionnelle des signalements</h3>
           <p>POST /api/sync/signalements/bidirectional</p>
           <button className="action-btn" onClick={() => callSyncApi('signalements/bidirectional', 'Sync bi-directionnelle signalements')} disabled={syncing || !syncStatus.isOnline}>
-            {syncing ? '⏳...' : 'Synchroniser'}
+            {syncing ? <><FaHourglassHalf />...</> : 'Synchroniser'}
           </button>
         </div>
 
         <div className="action-card">
-          <div className="action-icon">🔒</div>
+          <div className="action-icon"><FaLock /></div>
           <h3>Synchroniser l'état de blocage</h3>
           <p>Importer l'état de blocage depuis Firebase (source de vérité)</p>
           <button 
@@ -332,12 +333,12 @@ function Synchronization() {
             onClick={handleSyncBlockStatus}
             disabled={syncing || !syncStatus.isOnline}
           >
-            {syncing ? '⏳ Synchronisation...' : '🔒 Synchroniser blocage'}
+            {syncing ? <><FaHourglassHalf /> Synchronisation...</> : <><FaLock /> Synchroniser blocage</>}
           </button>
         </div>
 
         <div className="action-card">
-          <div className="action-icon">📤</div>
+          <div className="action-icon"><FaUpload /></div>
           <h3>Synchroniser le déblocage</h3>
           <p>Envoyer l'état de déblocage PostgreSQL vers Firebase</p>
           <button 
@@ -345,16 +346,16 @@ function Synchronization() {
             onClick={handleSyncDeblocage}
             disabled={syncing || !syncStatus.isOnline}
           >
-            {syncing ? '⏳ Synchronisation...' : '📤 Synchroniser déblocage'}
+            {syncing ? <><FaHourglassHalf /> Synchronisation...</> : <><FaUpload /> Synchroniser déblocage</>}
           </button>
         </div>
       </div>
 
       <div className="sync-log-section">
         <div className="log-header">
-          <h2>� Journal de synchronisation</h2>
+          <h2>Journal de synchronisation</h2>
           <button className="clear-btn" onClick={clearLog}>
-            🗑️ Effacer
+            Effacer
           </button>
         </div>
         
@@ -375,7 +376,7 @@ function Synchronization() {
       </div>
 
       <div className="info-box">
-        <h3>ℹ️ Informations sur la synchronisation</h3>
+        <h3>Informations sur la synchronisation</h3>
         <ul>
           <li>La synchronisation nécessite une connexion Internet active</li>
           <li><strong>Récupérer</strong> : Importe les signalements créés via l'application mobile depuis Firebase</li>

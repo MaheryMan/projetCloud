@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getPhotoCacheStats, clearPhotoCache } from '../services/photoCache';
+import { FaBox, FaTrash } from 'react-icons/fa';
 
 /**
  * Composant pour afficher les stats du cache des photos
@@ -36,7 +37,7 @@ export function PhotoCacheStats() {
   return (
     <div className="cache-stats">
       <div className="cache-stats-content">
-        <h3>📦 Cache Photos Offline</h3>
+        <h3><FaBox /> Cache Photos Offline</h3>
         <ul>
           <li>
             <strong>Photos en cache:</strong> {stats.count}
@@ -50,7 +51,7 @@ export function PhotoCacheStats() {
         </ul>
         {stats.count > 0 && (
           <button onClick={handleClearCache} className="cache-clear-btn">
-            🗑️ Vider le cache
+            <FaTrash /> Vider le cache
           </button>
         )}
       </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { FaCog, FaCheckCircle, FaBuilding, FaSync, FaClipboardList } from 'react-icons/fa';
 import './Settings.css';
 
 function Settings() {
@@ -79,11 +80,11 @@ function Settings() {
         throw new Error(data.message || `Erreur HTTP ${res.status}`);
       }
 
-      alert(`✅ Synchronisation réussie!\n${data.count} élément(s) de configuration synchronisé(s)`);
+      alert(`Synchronisation réussie!\n${data.count} élément(s) de configuration synchronisé(s)`);
       await fetchAllData(); // Rafraîchir les données
     } catch (error) {
       console.error('Erreur:', error);
-      alert(`❌ Erreur lors de la synchronisation des métadonnées: ${error.message}`);
+      alert(`Erreur lors de la synchronisation des métadonnées: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -186,7 +187,7 @@ function Settings() {
   return (
     <div className="settings">
       <header className="page-header">
-        <h1>⚙️ Paramètres</h1>
+        <h1><FaCog /> Paramètres</h1>
         <p>Gérer les types de signalements, les entreprises et les statuts</p>
       </header>
 
@@ -201,7 +202,7 @@ function Settings() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <div style={{ flex: 1 }}>
-            <h4 style={{ color: '#0f172a', marginTop: 0, marginBottom: '8px', fontWeight: 700, fontSize: '16px' }}>🔄 Synchroniser les Paramètres</h4>
+            <h4 style={{ color: '#0f172a', marginTop: 0, marginBottom: '8px', fontWeight: 700, fontSize: '16px' }}><FaSync /> Synchroniser les Paramètres</h4>
             <p style={{ color: '#475569', fontSize: '14px', margin: 0, lineHeight: 1.6 }}>
               Synchronisez les métadonnées (statuts, entreprises, types de signalement) entre PostgreSQL et Firebase
             </p>
@@ -225,7 +226,7 @@ function Settings() {
               transition: 'all 0.2s ease'
             }}
           >
-            {loading ? '⏳ Synchronisation...' : '⚙️ Synchroniser'}
+            {loading ? <><FaSync /> Synchronisation...</> : <><FaCog /> Synchroniser</>}
           </button>
         </div>
       </div>
@@ -239,7 +240,7 @@ function Settings() {
               resetForm();
             }}
           >
-            📋 Types de signalement ({typesSignalement.length})
+            <FaClipboardList /> Types de signalement ({typesSignalement.length})
           </button>
           <button
             className={`tab-btn ${activeTab === 'entreprises' ? 'active' : ''}`}
@@ -248,7 +249,7 @@ function Settings() {
               resetForm();
             }}
           >
-            🏢 Entreprises ({entreprises.length})
+            <FaBuilding /> Entreprises ({entreprises.length})
           </button>
           <button
             className={`tab-btn ${activeTab === 'status' ? 'active' : ''}`}
@@ -257,7 +258,7 @@ function Settings() {
               resetForm();
             }}
           >
-            ✅ Statuts ({statuses.length})
+            <FaCheckCircle /> Statuts ({statuses.length})
           </button>
         </div>
       </div>
@@ -269,7 +270,7 @@ function Settings() {
         {activeTab === 'types-signalement' && (
           <div className="tab-content">
             <div className="section-header">
-              <h2>📋 Types de signalement</h2>
+              <h2><FaClipboardList /> Types de signalement</h2>
               <button
                 className="btn-primary"
                 onClick={() => {
@@ -406,7 +407,7 @@ function Settings() {
         {activeTab === 'entreprises' && (
           <div className="tab-content">
             <div className="section-header">
-              <h2>🏢 Entreprises</h2>
+              <h2><FaBuilding /> Entreprises</h2>
               <button
                 className="btn-primary"
                 onClick={() => {
@@ -529,7 +530,7 @@ function Settings() {
         {activeTab === 'status' && (
           <div className="tab-content">
             <div className="section-header">
-              <h2>✅ Statuts</h2>
+              <h2><FaCheckCircle /> Statuts</h2>
               <button
                 className="btn-primary"
                 onClick={() => {
@@ -625,7 +626,7 @@ function Settings() {
       </div>
 
       <div className="info-box">
-        <h3>ℹ️ Informations</h3>
+        <h3>Informations</h3>
         <ul>
           <li><strong>Types de signalement:</strong> Ajoutez ou modifiez les catégories de problèmes routiers</li>
           <li><strong>Entreprises:</strong> Gérez les entreprises responsables des réparations</li>

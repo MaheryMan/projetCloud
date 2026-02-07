@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchWithAuth } from '../services/authService';
+import { FaCheckCircle, FaTimes, FaPlus, FaLock, FaUnlock, FaKey, FaUsers, FaMobileAlt, FaExclamationTriangle, FaCalendar, FaBolt, FaUpload, FaDownload, FaSync, FaClipboardList } from 'react-icons/fa';
 import './UserManagement.css';
 import { auth, googleProvider } from '../firebase';
 import { signInWithPopup } from 'firebase/auth';
@@ -183,11 +184,11 @@ function UserManagement() {
         throw new Error(errorData.message || `Erreur HTTP ${res.status}`);
       }
 
-      alert('✅ Utilisateur débloqué avec succès');
+      alert('Utilisateur débloqué avec succès');
       await fetchUsers(); // Rafraîchir la liste
     } catch (error) {
       console.error('Erreur:', error);
-      alert(`❌ Erreur lors du déblocage: ${error.message}`);
+      alert(`Erreur lors du déblocage: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -424,10 +425,10 @@ function UserManagement() {
         throw new Error(data.message || `Erreur HTTP ${res.status}`);
       }
 
-      alert(`✅ Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s) vers Firebase`);
+      alert(`Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s) vers Firebase`);
     } catch (error) {
       console.error('Erreur:', error);
-      alert(`❌ Erreur lors de la synchronisation vers Firebase: ${error.message}`);
+      alert(`Erreur lors de la synchronisation vers Firebase: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -455,11 +456,11 @@ function UserManagement() {
         throw new Error(data.message || `Erreur HTTP ${res.status}`);
       }
 
-      alert(`✅ Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s) depuis Firebase`);
+      alert(`Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s) depuis Firebase`);
       await fetchUsers(); // Rafraîchir la liste
     } catch (error) {
       console.error('Erreur:', error);
-      alert(`❌ Erreur lors de la synchronisation depuis Firebase: ${error.message}`);
+      alert(`Erreur lors de la synchronisation depuis Firebase: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -488,11 +489,11 @@ function UserManagement() {
         throw new Error(data.message || `Erreur HTTP ${res.status}`);
       }
 
-      alert(`✅ Synchronisation réussie!\n${data.count} utilisateur(s) mis à jour`);
+      alert(`Synchronisation réussie!\n${data.count} utilisateur(s) mis à jour`);
       await fetchUsers(); // Rafraîchir la liste
     } catch (error) {
       console.error('Erreur:', error);
-      alert(`❌ Erreur lors de la synchronisation de l'état de blocage: ${error.message}`);
+      alert(`Erreur lors de la synchronisation de l'état de blocage: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -520,10 +521,10 @@ function UserManagement() {
         throw new Error(data.message || `Erreur HTTP ${res.status}`);
       }
 
-      alert(`✅ Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s)`);
+      alert(`Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s)`);
     } catch (error) {
       console.error('Erreur:', error);
-      alert(`❌ Erreur lors de la synchronisation des déblocages: ${error.message}`);
+      alert(`Erreur lors de la synchronisation des déblocages: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -557,7 +558,7 @@ function UserManagement() {
             onClick={() => setShowCreateModal(true)}
             title="Créer un nouvel utilisateur"
           >
-            ➕ Créer un utilisateur
+            <FaPlus /> Créer un utilisateur
           </button>
           <button
             className="btn-config"
@@ -571,7 +572,7 @@ function UserManagement() {
 
       <div className="stats-cards">
         <div className="stat-card">
-          <div className="stat-icon">👥</div>
+          <div className="stat-icon"><FaUsers /></div>
           <div className="stat-content">
             <div className="stat-value">{users.length}</div>
             <div className="stat-label">Total utilisateurs</div>
@@ -579,7 +580,7 @@ function UserManagement() {
         </div>
 
         <div className="stat-card danger">
-          <div className="stat-icon">🔒</div>
+          <div className="stat-icon"><FaLock /></div>
           <div className="stat-content">
             <div className="stat-value">{blockedUsers.length}</div>
             <div className="stat-label">Utilisateurs bloqués</div>
@@ -590,22 +591,22 @@ function UserManagement() {
       {/* Synchronisation Section */}
       <div className="sync-section">
         <div className="sync-header">
-          <h3>🔄 Synchronisation Firebase</h3>
+          <h3><FaSync /> Synchronisation Firebase</h3>
           <p>Gérer la synchronisation bidirectionnelle des données</p>
         </div>
         
         <div className="sync-buttons">
           <button className="btn-sync primary" onClick={handleSyncUsersToFirebase} title="PostgreSQL → Firebase">
-            📤 Vers Firebase
+            <FaUpload /> Vers Firebase
           </button>
           <button className="btn-sync secondary" onClick={handleSyncUsersFromFirebase} title="Firebase → PostgreSQL">
-            📥 Depuis Firebase
+            <FaDownload /> Depuis Firebase
           </button>
           <button className="btn-sync danger" onClick={handleSyncBlockStatus} title="Synchroniser l'état de blocage">
-            🔒 État blocage
+            <FaLock /> État blocage
           </button>
           <button className="btn-sync success" onClick={handleSyncDeblocages} title="Synchroniser les déblocages">
-            🔓 Déblocages
+            <FaUnlock /> Déblocages
           </button>
         </div>
       </div>
@@ -629,14 +630,14 @@ function UserManagement() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>👤 Utilisateur</th>
-              <th>📧 Email</th>
-              <th>📱 Téléphone</th>
-              <th>🔐 Statut</th>
-              <th>⚠️ Tentatives</th>
-              <th>📅 Créé le</th>
-              <th>🔄 Mis à jour</th>
-              <th>⚡ Actions</th>
+              <th>Utilisateur</th>
+              <th>Email</th>
+              <th><FaMobileAlt /> Téléphone</th>
+              <th>Statut</th>
+              <th><FaExclamationTriangle /> Tentatives</th>
+              <th><FaCalendar /> Créé le</th>
+              <th>Mis à jour</th>
+              <th><FaBolt /> Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -685,7 +686,7 @@ function UserManagement() {
                         onClick={() => handleUnblock(user.id)}
                         title="Débloquer l'utilisateur"
                       >
-                        🔓
+                        <FaUnlock />
                       </button>
                     )}
                     <button
@@ -700,14 +701,14 @@ function UserManagement() {
                       }}
                       title={`Voir l'historique (${getDeblocageCountForUser(user.id)} déblocages)`}
                     >
-                      📋
+                      <FaClipboardList />
                     </button>
                     <button
                       className="btn-action btn-reset"
                       onClick={() => handleResetPassword(user.id)}
                       title="Réinitialiser le mot de passe"
                     >
-                      🔑
+                      <FaKey />
                     </button>
                   </div>
                 </td>
@@ -739,7 +740,7 @@ function UserManagement() {
           onClick={handleCreateGoogleAccount}
           title="Créer un compte Google"
         >
-          ➕ Créer compte Google
+          <FaPlus /> Créer compte Google
         </button>
       </div>
 

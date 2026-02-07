@@ -1237,3 +1237,423 @@ body {
   font-style: italic;
   padding: var(--spacing-lg);
 }
+/* ===========================================
+   NOUVEAUX STYLES INSPIRÉS DE LA VUE
+   =========================================== */
+
+/* Header Actions */
+.map-header-actions {
+  position: absolute;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
+  z-index: 1000;
+}
+
+/* Icônes de stats avec couleurs */
+.stat-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition-base);
+}
+
+.stat-icon-wrapper.primary {
+  background: rgba(30, 58, 138, 0.1);
+  color: var(--color-primary);
+}
+
+.stat-icon-wrapper.success {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+}
+
+.stat-icon-wrapper.warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+}
+
+.stat-icon-wrapper.info {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--color-info);
+}
+
+.stat-icon-wrapper .stat-icon {
+  font-size: 24px;
+}
+
+.stat-card:hover .stat-icon-wrapper {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Bouton Récap Toggle */
+.recap-toggle {
+  max-width: 1400px;
+  margin: var(--spacing-lg) auto;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.recap-toggle:hover {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.recap-toggle-text {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: 16px;
+}
+
+.recap-toggle-state {
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Carte Récap */
+.recap-card {
+  max-width: 1400px;
+  margin: 0 auto var(--spacing-lg);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.recap-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.recap-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.5);
+  transition: all var(--transition-base);
+}
+
+.recap-item:hover {
+  background: rgba(255, 255, 255, 0.8);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.recap-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.recap-value {
+  font-size: 20px;
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+
+/* Bannière d'Information */
+.info-banner {
+  max-width: 1400px;
+  margin: var(--spacing-lg) auto;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(30, 58, 138, 0.1) 100%);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  animation: slideDown 0.3s ease;
+}
+
+.info-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.info-icon {
+  font-size: 20px;
+  color: var(--color-info);
+}
+
+.info-action {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.info-action:hover {
+  background: var(--color-primary-dark);
+  transform: translateX(4px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Contrôles de Carte */
+.map-controls {
+  position: absolute;
+  bottom: var(--spacing-3xl);
+  right: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  z-index: 1000;
+}
+
+.control-button {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text-primary);
+  font-size: 18px;
+}
+
+.control-button:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: scale(1.1);
+  box-shadow: var(--shadow-lg);
+}
+
+.control-button:active {
+  transform: scale(0.95);
+}
+
+/* Légende Améliorée */
+.map-legend {
+  position: absolute;
+  bottom: var(--spacing-lg);
+  left: var(--spacing-lg);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+  z-index: 1000;
+  transition: all var(--transition-base);
+}
+
+.legend-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 0;
+  transition: all var(--transition-base);
+}
+
+.legend-toggle:hover {
+  color: var(--color-primary);
+}
+
+.legend-toggle svg {
+  font-size: 18px;
+}
+
+.map-legend.expanded {
+  padding: var(--spacing-md);
+}
+
+.map-legend .legend-items {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.map-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.legend-marker {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.legend-marker.nouveau {
+  background: var(--status-nouveau);
+  color: white;
+}
+
+.legend-marker.en_cours {
+  background: var(--status-en-cours);
+  color: white;
+}
+
+.legend-marker.termine {
+  background: var(--status-termine);
+  color: white;
+}
+
+.legend-text {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+/* Overlay de Chargement Amélioré */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-content span {
+  font-size: 16px;
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+/* Responsive pour les nouveaux éléments */
+@media (max-width: 768px) {
+  .map-header-actions {
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+  }
+
+  .stat-icon-wrapper {
+    width: 40px;
+    height: 40px;
+  }
+
+  .stat-icon-wrapper .stat-icon {
+    font-size: 20px;
+  }
+
+  .recap-toggle {
+    margin: var(--spacing-md);
+  }
+
+  .recap-card {
+    margin: 0 var(--spacing-md) var(--spacing-md);
+  }
+
+  .info-banner {
+    margin: var(--spacing-md);
+    flex-direction: column;
+    gap: var(--spacing-md);
+    text-align: center;
+  }
+
+  .info-action {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .map-controls {
+    bottom: var(--spacing-xl);
+    right: var(--spacing-md);
+  }
+
+  .map-legend {
+    bottom: var(--spacing-md);
+    left: var(--spacing-md);
+  }
+}

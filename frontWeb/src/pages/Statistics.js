@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchWithAuth } from '../services/authService';
+import { FaChartBar, FaCheckCircle, FaChartLine, FaBolt, FaTools, FaSearch, FaClipboardList, FaClock } from 'react-icons/fa';
+import { MdSpeed } from 'react-icons/md';
 import './Statistics.css';
 
 function Statistics() {
@@ -178,13 +180,13 @@ function Statistics() {
   return (
     <div className="statistics-container">
       <div className="page-header">
-        <h1>📊 Statistiques de Traitement</h1>
+        <h1><FaChartBar /> Statistiques de Traitement</h1>
       </div>
 
       {/* Vue d'ensemble */}
       <div className="stats-cards">
         <div className="stat-card">
-          <div className="stat-icon">📋</div>
+          <div className="stat-icon"><FaClipboardList /></div>
           <div className="stat-content">
             <h3>Total Signalements</h3>
             <div className="stat-value">{statistics.total}</div>
@@ -192,7 +194,7 @@ function Statistics() {
         </div>
 
         <div className="stat-card highlight">
-          <div className="stat-icon">⏱️</div>
+          <div className="stat-icon"><FaClock /></div>
           <div className="stat-content">
             <h3>Délai Moyen Global</h3>
             <div className="stat-value">{formatDelai(statistics.delaiMoyen)}</div>
@@ -201,7 +203,7 @@ function Statistics() {
         </div>
 
         <div className="stat-card highlight">
-          <div className="stat-icon">✅</div>
+          <div className="stat-icon"><FaCheckCircle /></div>
           <div className="stat-content">
             <h3>Délai Moyen (Terminés)</h3>
             <div className="stat-value">{formatDelai(statistics.delaiMoyenTermine)}</div>
@@ -210,14 +212,14 @@ function Statistics() {
         </div>
 
         <div className="stat-card">
-          <div className="stat-icon">📈</div>
+          <div className="stat-icon"><FaChartLine /></div>
           <div className="stat-content">
             <h3>Délai Min / Max</h3>
             <div className="stat-value-small">
-              ⚡ Min: {formatDelai(statistics.delaiMin)}
+              <FaBolt /> Min: {formatDelai(statistics.delaiMin)}
             </div>
             <div className="stat-value-small">
-              🐢 Max: {formatDelai(statistics.delaiMax)}
+              <MdSpeed /> Max: {formatDelai(statistics.delaiMax)}
             </div>
           </div>
         </div>
@@ -225,7 +227,7 @@ function Statistics() {
 
       {/* Répartition par statut */}
       <div className="stats-section">
-        <h2>📊 Répartition par Statut</h2>
+        <h2><FaChartBar /> Répartition par Statut</h2>
         <div className="stats-table-wrapper">
           <table className="stats-table">
             <thead>
@@ -258,7 +260,7 @@ function Statistics() {
 
       {/* Statistiques par type */}
       <div className="stats-section">
-        <h2>🏗️ Délai Moyen par Type de Travaux</h2>
+        <h2><FaTools /> Délai Moyen par Type de Travaux</h2>
         <div className="stats-table-wrapper">
           <table className="stats-table">
             <thead>
@@ -285,7 +287,7 @@ function Statistics() {
 
       {/* Tableau détaillé des délais */}
       <div className="stats-section">
-        <h2>🔍 Détails des Délais de Traitement</h2>
+        <h2><FaSearch /> Détails des Délais de Traitement</h2>
         <div className="stats-table-wrapper">
           <table className="stats-table">
             <thead>

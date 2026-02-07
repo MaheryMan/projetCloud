@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaCamera } from 'react-icons/fa';
 import './SignalementManagement.css';
 
 function SignalementManagement() {
@@ -592,7 +593,7 @@ const fetchEntreprises = async () => {
                               disabled={uploadingPhoto}
                               style={{ display: 'none' }}
                             />
-                            <span className="upload-icon">📷</span>
+                            <span className="upload-icon"><FaCamera /></span>
                             <span className="upload-text">
                               {uploadingPhoto ? 'Upload...' : 'Ajouter photo'}
                             </span>
@@ -663,7 +664,7 @@ const fetchEntreprises = async () => {
                       {signal.photos && signal.photos.length > 0 ? (
                         <div className="photo-link-wrapper">
                           <span className="photo-link">
-                            📷 {signal.photos.length} photo{signal.photos.length > 1 ? 's' : ''}
+                            <FaCamera /> {signal.photos.length} photo{signal.photos.length > 1 ? 's' : ''}
                           </span>
                           <div className="photo-preview-tooltip">
                             <div className="photo-grid">
