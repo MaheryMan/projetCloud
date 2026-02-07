@@ -186,23 +186,23 @@ function Settings() {
   return (
     <div className="settings">
       <header className="page-header">
-        <h1>Paramètres</h1>
+        <h1>⚙️ Paramètres</h1>
         <p>Gérer les types de signalements, les entreprises et les statuts</p>
       </header>
 
       {/* Synchronisation Section */}
       <div style={{ 
-        backgroundColor: '#f8f9fa', 
-        border: '1px solid #dee2e6', 
-        borderRadius: '8px', 
-        padding: '15px', 
-        marginBottom: '20px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+        backgroundColor: 'white', 
+        border: '2px solid #e2e8f0', 
+        borderRadius: '12px', 
+        padding: '20px', 
+        marginBottom: '24px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <div style={{ flex: 1 }}>
-            <h4 style={{ color: '#34495e', marginTop: 0, marginBottom: '5px' }}>🔄 Synchroniser les Paramètres</h4>
-            <p style={{ color: '#7f8c8d', fontSize: '13px', margin: 0 }}>
+            <h4 style={{ color: '#0f172a', marginTop: 0, marginBottom: '8px', fontWeight: 700, fontSize: '16px' }}>🔄 Synchroniser les Paramètres</h4>
+            <p style={{ color: '#475569', fontSize: '14px', margin: 0, lineHeight: 1.6 }}>
               Synchronisez les métadonnées (statuts, entreprises, types de signalement) entre PostgreSQL et Firebase
             </p>
           </div>
@@ -211,16 +211,18 @@ function Settings() {
             disabled={loading}
             title="Synchroniser tous les paramètres système"
             style={{
-              backgroundColor: '#16a085',
+              background: 'linear-gradient(135deg, #2563eb, #1e40af)',
               color: 'white',
-              padding: '10px 18px',
+              padding: '12px 24px',
               border: 'none',
-              borderRadius: '5px',
+              borderRadius: '8px',
               cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: '14px',
-              fontWeight: '500',
+              fontWeight: '600',
               opacity: loading ? 0.6 : 1,
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              boxShadow: loading ? 'none' : '0 2px 8px rgba(37, 99, 235, 0.3)',
+              transition: 'all 0.2s ease'
             }}
           >
             {loading ? '⏳ Synchronisation...' : '⚙️ Synchroniser'}
@@ -237,7 +239,7 @@ function Settings() {
               resetForm();
             }}
           >
-            Types de signalement ({typesSignalement.length})
+            📋 Types de signalement ({typesSignalement.length})
           </button>
           <button
             className={`tab-btn ${activeTab === 'entreprises' ? 'active' : ''}`}
@@ -246,7 +248,7 @@ function Settings() {
               resetForm();
             }}
           >
-             Entreprises ({entreprises.length})
+            🏢 Entreprises ({entreprises.length})
           </button>
           <button
             className={`tab-btn ${activeTab === 'status' ? 'active' : ''}`}
@@ -255,7 +257,7 @@ function Settings() {
               resetForm();
             }}
           >
-             Statuts ({statuses.length})
+            ✅ Statuts ({statuses.length})
           </button>
         </div>
       </div>
@@ -267,7 +269,7 @@ function Settings() {
         {activeTab === 'types-signalement' && (
           <div className="tab-content">
             <div className="section-header">
-              <h2>Types de signalement</h2>
+              <h2>📋 Types de signalement</h2>
               <button
                 className="btn-primary"
                 onClick={() => {
@@ -404,7 +406,7 @@ function Settings() {
         {activeTab === 'entreprises' && (
           <div className="tab-content">
             <div className="section-header">
-              <h2>Entreprises</h2>
+              <h2>🏢 Entreprises</h2>
               <button
                 className="btn-primary"
                 onClick={() => {
@@ -527,7 +529,7 @@ function Settings() {
         {activeTab === 'status' && (
           <div className="tab-content">
             <div className="section-header">
-              <h2>Statuts</h2>
+              <h2>✅ Statuts</h2>
               <button
                 className="btn-primary"
                 onClick={() => {
@@ -623,12 +625,13 @@ function Settings() {
       </div>
 
       <div className="info-box">
-        <h3>Informations</h3>
+        <h3>ℹ️ Informations</h3>
         <ul>
           <li><strong>Types de signalement:</strong> Ajoutez ou modifiez les catégories de problèmes routiers</li>
           <li><strong>Entreprises:</strong> Gérez les entreprises responsables des réparations</li>
           <li><strong>Statuts:</strong> Définissez les états possibles des signalements et utilisateurs</li>
           <li>Tous les champs marqués d'un <strong>*</strong> sont obligatoires</li>
+          <li><strong>Synchronisation:</strong> Utilisez le bouton en haut pour synchroniser les paramètres avec Firebase</li>
         </ul>
       </div>
     </div>
