@@ -28,7 +28,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(authz -> authz
-                // Permettre l'accès aux endpoints publics
+                // IMPORTANT: Les règles plus spécifiques DOIVENT être en premier
+                
+                // 1. Endpoints de synchronisation - PUBLICS (AVANT /api/**)
+                .requestMatchers("/api/sync/**").permitAll()
+                
+                // 2. Autres endpoints publics
                 .requestMatchers(
                     "/api/auth/login",
                     "/api/auth/register",
@@ -38,17 +43,19 @@ public class SecurityConfig {
                     "/v3/api-docs/**",
                     "/actuator/**",
                     "/api/connectivity/**",
-                    "/api/sync/**",
                     "/uploads/photos/**"
                 ).permitAll()
-                // Upload de photos publique
+                
+                // 3. Upload de photos publique
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/photos/upload").permitAll()
-                // Création de signalements publique (pour visiteurs non authentifiés)                // Lecture des signalements publique
+                
+                // 4. Lecture des signalements publique
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/signalements/**").permitAll()
                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/entreprises").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/types-signalement").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/historiques/**").permitAll()
-                // Mobile_User: accès limité
+                
+                // 5. Mobile_User: accès limité
                 .requestMatchers(org.springframework.http.HttpMethod.GET,
                         "/api/types-signalement/**",
                         "/api/entreprises/**"
@@ -56,9 +63,11 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.POST,
                         "/api/entreprises"
                 ).hasAnyAuthority("Mobile_User", "Manager")
-                // Configurations: uniquement pour les Managers
+                
+                // 6. Configurations: uniquement pour les Managers
                 .requestMatchers("/api/configurations/**").hasAuthority("Manager")
-                // Manager: accès total au reste de l'API
+                
+                // 7. Manager: accès total au reste de l'API (règle générique EN DERNIER)
                 .requestMatchers("/api/**").hasAuthority("Manager")
                 // Tous les autres endpoints nécessitent une authentification
                 .anyRequest().authenticated()

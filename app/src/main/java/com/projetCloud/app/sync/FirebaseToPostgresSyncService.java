@@ -256,9 +256,9 @@ public class FirebaseToPostgresSyncService {
      * @return Photo existante ou empty
      */
     private Optional<Photo> findExistingPhotoByImgbbUrl(String imgbbUrl, Long signalementId) {
-        // D'abord chercher par URL directe (cas ancien)
-        Optional<Photo> photoByUrl = photoRepository.findByUrl(imgbbUrl);
-        if (photoByUrl.isPresent() && photoByUrl.get().getSignalement().getId().equals(signalementId)) {
+        // D'abord chercher par URL directe ET signalement (évite les doublons)
+        Optional<Photo> photoByUrl = photoRepository.findByUrlAndSignalementId(imgbbUrl, signalementId);
+        if (photoByUrl.isPresent()) {
             return photoByUrl;
         }
 

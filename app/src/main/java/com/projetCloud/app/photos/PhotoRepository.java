@@ -19,6 +19,15 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
     Optional<Photo> findByUrl(String url);
 
     /**
+     * Trouve une photo par son URL pour un signalement spécifique
+     * @param url URL de la photo
+     * @param signalementId ID du signalement
+     * @return Photo optionnelle
+     */
+    @Query("SELECT p FROM Photo p WHERE p.url = :url AND p.signalement.id = :signalementId")
+    Optional<Photo> findByUrlAndSignalementId(@Param("url") String url, @Param("signalementId") Long signalementId);
+
+    /**
      * Trouve toutes les photos par nom de fichier
      * @param fileName nom du fichier
      * @return Liste des photos
