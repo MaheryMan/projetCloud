@@ -13,18 +13,32 @@ import com.projetCloud.app.signalements.SignalementRepository;
 import com.projetCloud.app.typesSignalement.TypeSignalementRepository;
 import com.projetCloud.app.utilisateurs.Utilisateur;
 import com.projetCloud.app.utilisateurs.UtilisateurRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Service pour synchroniser les données Firebase vers PostgreSQL
  */
 @Service
 public class FirebaseToPostgresSyncService {
+
+    private static final Logger logger = LoggerFactory.getLogger(FirebaseToPostgresSyncService.class);
 
     @Autowired
     private SignalementService signalementService;
@@ -43,6 +57,12 @@ public class FirebaseToPostgresSyncService {
 
     @Autowired
     private PhotoRepository photoRepository;
+
+    @Value("${file.upload-dir:uploads/photos}")
+    private String uploadDir;
+
+    @Value("${server.port:8080}")
+    private String serverPort;
 
     /**
      * Synchronise un report Firebase vers PostgreSQL
@@ -120,29 +140,31 @@ public class FirebaseToPostgresSyncService {
             return;
         }
 
-        // 2. Traiter les photos Firebase
+        // 2. Traiter les photos Firebase - Télécharger depuis imgbb et sauvegarder localement
         for (FirebasePhotoDTO firebasePhoto : firebasePhotos) {
             try {
-                // Chercher si la photo existe déjà par URL
-                Optional<Photo> existingPhoto = photoRepository.findByUrl(firebasePhoto.getImgbbUrl());
+                String imgbbUrl = firebasePhoto.getImgbbUrl();
+                
+                // Chercher si la photo existe déjà (par URL imgbb OU par description contenant l'URL)
+                Optional<Photo> existingPhoto = findExistingPhotoByImgbbUrl(imgbbUrl, postgresSignalement.getId());
 
                 Photo photo;
-                if (existingPhoto.isPresent() && existingPhoto.get().getSignalement().getId().equals(postgresSignalement.getId())) {
-                    // La photo existe pour ce signalement: la mettre à jour
+                if (existingPhoto.isPresent()) {
+                    // La photo existe déjà pour ce signalement - juste mettre à jour
                     photo = existingPhoto.get();
                     photo.setUploadedAt(firebasePhoto.getUploadedAt());
+                    photoRepository.save(photo);
+                    logger.debug("Photo existante mise à jour pour signalement {}", postgresSignalement.getId());
                 } else {
-                    // Créer une nouvelle photo
-                    photo = new Photo();
-                    photo.setUrl(firebasePhoto.getImgbbUrl());
-                    photo.setSignalement(postgresSignalement);
-                    photo.setCreatedAt(LocalDateTime.now());
-                    photo.setUploadedAt(firebasePhoto.getUploadedAt());
+                    // Télécharger l'image depuis imgbb et créer une nouvelle photo
+                    photo = downloadAndSavePhoto(firebasePhoto, postgresSignalement);
+                    if (photo != null) {
+                        photoRepository.save(photo);
+                        logger.info("✅ Nouvelle photo téléchargée pour signalement {}", postgresSignalement.getId());
+                    }
                 }
-
-                photoRepository.save(photo);
             } catch (Exception e) {
-                System.err.println("Erreur sauvegarde photo: " + e.getMessage());
+                logger.error("Erreur sauvegarde photo pour signalement {}: {}", postgresSignalement.getId(), e.getMessage());
             }
         }
 
@@ -225,5 +247,142 @@ public class FirebaseToPostgresSyncService {
      */
     private String normalizeString(String str) {
         return StringNormalizer.normalize(str);
+    }
+
+    /**
+     * Cherche une photo existante par URL imgbb (dans URL ou description)
+     * @param imgbbUrl URL imgbb à chercher
+     * @param signalementId ID du signalement
+     * @return Photo existante ou empty
+     */
+    private Optional<Photo> findExistingPhotoByImgbbUrl(String imgbbUrl, Long signalementId) {
+        // D'abord chercher par URL directe (cas ancien)
+        Optional<Photo> photoByUrl = photoRepository.findByUrl(imgbbUrl);
+        if (photoByUrl.isPresent() && photoByUrl.get().getSignalement().getId().equals(signalementId)) {
+            return photoByUrl;
+        }
+
+        // Ensuite chercher dans les descriptions (cas nouveau : stocke imgbb en description)
+        List<Photo> allPhotos = photoRepository.findBySignalementId(signalementId);
+        for (Photo photo : allPhotos) {
+            if (photo.getDescription() != null && photo.getDescription().contains(imgbbUrl)) {
+                return Optional.of(photo);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Télécharge une image depuis imgbb et la sauvegarde localement
+     * @param firebasePhoto DTO de la photo Firebase
+     * @param signalement Signalement associé
+     * @return Photo créée ou null en cas d'erreur
+     */
+    private Photo downloadAndSavePhoto(FirebasePhotoDTO firebasePhoto, Signalement signalement) {
+        String imgbbUrl = firebasePhoto.getImgbbUrl();
+        
+        if (imgbbUrl == null || imgbbUrl.isEmpty()) {
+            logger.warn("URL imgbb vide pour la photo du signalement {}", signalement.getId());
+            return null;
+        }
+
+        try {
+            // Créer le répertoire si nécessaire
+            Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+            Files.createDirectories(uploadPath);
+
+            logger.info("⬇️  Téléchargement de l'image depuis imgbb: {}", imgbbUrl);
+
+            // Télécharger l'image
+            URL url = new URL(imgbbUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(10000);
+            
+            int responseCode = connection.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                logger.warn("⚠️  Erreur HTTP {} lors du téléchargement de: {}", responseCode, imgbbUrl);
+                return null;
+            }
+
+            // Déterminer l'extension du fichier
+            String contentType = connection.getContentType();
+            String fileExtension = getExtensionFromContentType(contentType);
+            if (fileExtension == null) {
+                fileExtension = getExtensionFromUrl(imgbbUrl);
+            }
+
+            // Générer un nom de fichier unique
+            String fileName = UUID.randomUUID().toString() + fileExtension;
+            Path targetPath = uploadPath.resolve(fileName);
+
+            // Copier le contenu vers le fichier local
+            long fileSize;
+            try (InputStream inputStream = connection.getInputStream()) {
+                fileSize = Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            // Créer l'URL locale
+            String localUrl = "http://localhost:" + serverPort + "/uploads/photos/" + fileName;
+
+            // Créer l'entité Photo
+            Photo photo = new Photo();
+            photo.setUrl(localUrl);  // URL locale au lieu de imgbb
+            photo.setFileName(fileName);
+            photo.setFileSize(fileSize);
+            photo.setMimeType(contentType);
+            photo.setSignalement(signalement);
+            photo.setCreatedAt(LocalDateTime.now());
+            photo.setUploadedAt(firebasePhoto.getUploadedAt());
+            photo.setDescription("Téléchargée depuis imgbb: " + imgbbUrl);
+
+            logger.info("✅ Image téléchargée et sauvegardée: {} ({} bytes)", fileName, fileSize);
+            return photo;
+
+        } catch (IOException e) {
+            logger.error("❌ Erreur lors du téléchargement de l'image depuis imgbb: {}", e.getMessage());
+            return null;
+        } catch (Exception e) {
+            logger.error("❌ Erreur inattendue lors du traitement de la photo: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Extrait l'extension depuis le Content-Type
+     */
+    private String getExtensionFromContentType(String contentType) {
+        if (contentType == null) return ".jpg";
+        
+        if (contentType.contains("jpeg") || contentType.contains("jpg")) return ".jpg";
+        if (contentType.contains("png")) return ".png";
+        if (contentType.contains("gif")) return ".gif";
+        if (contentType.contains("webp")) return ".webp";
+        
+        return ".jpg"; // Par défaut
+    }
+
+    /**
+     * Extrait l'extension depuis l'URL
+     */
+    private String getExtensionFromUrl(String url) {
+        if (url == null) return ".jpg";
+        
+        // Extraire l'extension de l'URL
+        int lastDot = url.lastIndexOf('.');
+        int lastSlash = url.lastIndexOf('/');
+        int queryStart = url.indexOf('?');
+        
+        if (lastDot > lastSlash && lastDot > 0) {
+            int endIndex = queryStart > 0 ? queryStart : url.length();
+            String ext = url.substring(lastDot, Math.min(lastDot + 5, endIndex));
+            if (ext.matches("\\.[a-zA-Z]{3,4}")) {
+                return ext.toLowerCase();
+            }
+        }
+        
+        return ".jpg"; // Par défaut
     }
 }

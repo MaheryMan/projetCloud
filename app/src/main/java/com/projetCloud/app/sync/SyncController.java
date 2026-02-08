@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
@@ -22,11 +24,16 @@ import java.util.Map;
 @RequestMapping("/api/sync")
 public class SyncController {
 
+    private static final Logger logger = LoggerFactory.getLogger(SyncController.class);
+
     @Autowired
     private SyncService syncService;
 
     @Autowired
     private SyncMetadataService syncMetadataService;
+
+    @Autowired
+    private ImageSyncService imageSyncService;
 
     /**
      * Endpoint pour synchroniser les utilisateurs locaux vers Firebase
@@ -310,5 +317,45 @@ public class SyncController {
         public void setNom(String nom) { this.nom = nom; }
         public String getPrenom() { return prenom; }
         public void setPrenom(String prenom) { this.prenom = prenom; }
+    }
+
+    /**
+     * Endpoint pour synchroniser les images depuis imgbb vers le stockage local
+     * Télécharge les images imgbb qui ne sont pas encore en local
+     * @return ResponseEntity avec le résultat de la synchronisation
+     */
+    @PostMapping("/sync-images-from-imgbb")
+    @Operation(summary = "Synchroniser les images depuis imgbb", 
+               description = "Télécharge les images depuis imgbb vers le stockage local et met à jour la base de données")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Synchronisation réussie",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "400", description = "Erreur lors de la synchronisation")
+    })
+    public ResponseEntity<?> syncImagesFromImgbb() {
+        try {
+            ImageSyncService.ImageSyncResult result = imageSyncService.syncImagesFromImgbb();
+            
+            if (result.getError() != null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "message", result.getMessage(),
+                    "error", result.getError()
+                ));
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "message", result.getMessage(),
+                "totalFound", result.getTotalFound(),
+                "downloaded", result.getDownloaded(),
+                "skipped", result.getSkipped(),
+                "failed", result.getFailed(),
+                "errors", result.getErrors()
+            ));
+        } catch (Exception e) {
+            logger.error("Erreur lors de la synchronisation des images", e);
+            return ResponseEntity.badRequest().body(Map.of(
+                "message", "Erreur lors de la synchronisation: " + e.getMessage()
+            ));
+        }
     }
 }

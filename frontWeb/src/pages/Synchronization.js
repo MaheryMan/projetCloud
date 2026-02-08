@@ -235,6 +235,48 @@ function Synchronization() {
     }
   };
 
+  const handleSyncImagesFromImgbb = async () => {
+    if (!syncStatus.isOnline) {
+      alert('❌ Pas de connexion Internet. Synchronisation impossible.');
+      return;
+    }
+
+    setSyncing(true);
+    addLog('📸 Démarrage de la synchronisation des images depuis imgbb...', 'info');
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch('http://localhost:8080/api/sync/sync-images-from-imgbb', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur synchronisation images');
+      }
+      
+      const data = await response.json();
+      
+      addLog(`✅ ${data.message}`, 'success');
+      addLog(`📊 Trouvées: ${data.totalFound}, Téléchargées: ${data.downloaded}, Ignorées: ${data.skipped}, Échouées: ${data.failed}`, 'info');
+      
+      if (data.errors && data.errors.length > 0) {
+        data.errors.forEach(error => {
+          addLog(`⚠️ ${error}`, 'error');
+        });
+      }
+      
+      await fetchSyncStatus();
+    } catch (error) {
+      console.error('Erreur:', error);
+      addLog(`❌ Erreur: ${error.message}`, 'error');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const addLog = (message, type = 'info') => {
     const timestamp = new Date().toLocaleTimeString('fr-FR');
     setSyncLog(prev => [...prev, { message, type, timestamp }]);
@@ -359,6 +401,19 @@ function Synchronization() {
             {syncing ? <><FaHourglassHalf /> Synchronisation...</> : <><FaUpload /> Synchroniser déblocage</>}
           </button>
         </div>
+
+        <div className="action-card">
+          <div className="action-icon">📸</div>
+          <h3>Télécharger images imgbb (manuel)</h3>
+          <p>Force le téléchargement de toutes les images imgbb vers local</p>
+          <button 
+            className="action-btn warning"
+            onClick={handleSyncImagesFromImgbb}
+            disabled={syncing || !syncStatus.isOnline}
+          >
+            {syncing ? '⏳ Téléchargement...' : '📸 Télécharger toutes images'}
+          </button>
+        </div>
       </div>
 
       {/* Terminal fixe à droite */}
@@ -418,6 +473,7 @@ function Synchronization() {
           <li><strong>Envoyer</strong> : Exporte les données locales (signalements et utilisateurs) vers Firebase pour l'affichage mobile</li>
           <li><strong>Synchronisation complète</strong> : Effectue les deux opérations dans l'ordre</li>
           <li><strong>Synchroniser l'état de blocage</strong> : Importe l'état de blocage des comptes depuis Firebase (qui est la source de vérité) vers PostgreSQL. Les données incluent: état de blocage, nombre de tentatives échouées et date de la dernière tentative</li>
+          <li><strong>📸 Images automatiques</strong> : Les images des signalements sont automatiquement téléchargées depuis imgbb vers le stockage local lors de la synchronisation des signalements</li>
           <li>Les données sont automatiquement sauvegardées dans PostgreSQL local</li>
         </ul>
       </div>
