@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaCamera, FaSync, FaUpload, FaDownload, FaTerminal, FaTimes } from 'react-icons/fa';
 import './SignalementManagement.css';
@@ -22,9 +22,15 @@ function SignalementManagement() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [typesSignalement, setTypesSignalement] = useState([]);
   const [syncLoading, setSyncLoading] = useState(false);
-  const [syncMessage, setSyncMessage] = useState(null);
   const [syncLog, setSyncLog] = useState([]);
+  const terminalBodyRef = useRef(null);
 
+  // Auto-scroll vers le bas du terminal
+  useEffect(() => {
+    if (terminalBodyRef.current) {
+      terminalBodyRef.current.scrollTop = terminalBodyRef.current.scrollHeight;
+    }
+  }, [syncLog, syncLoading]);
 
   useEffect(() => {
     fetchEntreprises();
@@ -391,7 +397,6 @@ const fetchEntreprises = async () => {
 
     try {
       setSyncLoading(true);
-      setSyncMessage(null);
       addSessionSeparator('FIREBASE → POSTGRESQL');
       addLog('Démarrage de la synchronisation...', 'info');
       
@@ -414,25 +419,13 @@ const fetchEntreprises = async () => {
         badge: `${data.successCount} signalements`,
         icon: '✅' 
       });
-      setSyncMessage({
-        type: 'success',
-        text: `Synchronisation réussie! ${data.successCount} signalement(s) synchronisé(s).`,
-        details: data.message
-      });
 
       // Recharger la liste des signalements
       await fetchSignalements();
       addLog('Liste des signalements rechargée', 'success');
-
-      // Masquer le message après 5 secondes
-      setTimeout(() => setSyncMessage(null), 5000);
     } catch (error) {
       console.error('Erreur:', error);
       addLog(`Erreur: ${error.message}`, 'error', { icon: '❌' });
-      setSyncMessage({
-        type: 'error',
-        text: 'Erreur lors de la synchronisation'
-      });
     } finally {
       setSyncLoading(false);
     }
@@ -447,7 +440,6 @@ const fetchEntreprises = async () => {
       setSyncLoading(true);
       addSessionSeparator('POSTGRESQL → FIREBASE');
       addLog('Démarrage de la synchronisation...', 'info');
-      setSyncMessage(null);
       const token = localStorage.getItem('token');
       
       const response = await fetch('http://localhost:8080/api/sync/postgres-to-firebase', {
@@ -467,25 +459,13 @@ const fetchEntreprises = async () => {
         badge: `${data.successCount} signalements`,
         icon: '✅' 
       });
-      setSyncMessage({
-        type: 'success',
-        text: `Synchronisation réussie! ${data.successCount} signalement(s) synchronisé(s).`,
-        details: data.message
-      });
 
       // Recharger la liste des signalements
       await fetchSignalements();
       addLog('Liste des signalements rechargée', 'success');
-
-      // Masquer le message après 5 secondes
-      setTimeout(() => setSyncMessage(null), 5000);
     } catch (error) {
       console.error('Erreur:', error);
       addLog(`Erreur: ${error.message}`, 'error', { icon: '❌' });
-      setSyncMessage({
-        type: 'error',
-        text: 'Erreur lors de la synchronisation'
-      });
     } finally {
       setSyncLoading(false);
     }
@@ -538,7 +518,7 @@ const fetchEntreprises = async () => {
                 <FaTimes />
               </button>
             </div>
-            <div className="sync-terminal-body">
+            <div className="sync-terminal-body" ref={terminalBodyRef}>
               {syncLog.length === 0 ? (
                 <div className="sync-terminal-empty">En attente...</div>
               ) : (
@@ -576,13 +556,6 @@ const fetchEntreprises = async () => {
             </div>
           </div>
         </div>
-
-        {syncMessage && (
-          <div className={`sync-message ${syncMessage.type}`}>
-            {syncMessage.text}
-            {syncMessage.details && <div className="sync-details">{syncMessage.details}</div>}
-          </div>
-        )}
       </div>
 
       <div className="filters-section">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaTimes, FaCheckCircle, FaLock, FaHourglassHalf, FaRocket, FaUpload, FaDownload, FaGlobe, FaWifi, FaSync, FaBookmark, FaEdit, FaTerminal, FaChevronRight, FaChevronLeft } from 'react-icons/fa';
 import './Synchronization.css';
 import './sync-terminal.css';
@@ -14,6 +14,14 @@ function Synchronization() {
   const [syncLog, setSyncLog] = useState([]);
   const [terminalOpen, setTerminalOpen] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('checking');
+  const terminalBodyRef = useRef(null);
+
+  // Auto-scroll vers le bas du terminal
+  useEffect(() => {
+    if (terminalBodyRef.current) {
+      terminalBodyRef.current.scrollTop = terminalBodyRef.current.scrollHeight;
+    }
+  }, [syncLog, syncing]);
 
   // Utilitaire générique pour appeler une API sync
   const callSyncApi = async (endpoint, label) => {
@@ -375,7 +383,7 @@ function Synchronization() {
           </div>
         </div>
         
-        <div className="terminal-body">
+        <div className="terminal-body" ref={terminalBodyRef}>
           {syncLog.length === 0 ? (
             <div className="terminal-prompt">
               <span className="prompt-symbol">$</span> En attente de synchronisation...

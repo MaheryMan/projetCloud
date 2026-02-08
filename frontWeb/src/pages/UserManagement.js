@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { fetchWithAuth } from '../services/authService';
 import { FaCheckCircle, FaTimes, FaPlus, FaLock, FaUnlock, FaKey, FaUsers, FaMobileAlt, FaExclamationTriangle, FaCalendar, FaBolt, FaUpload, FaDownload, FaSync, FaClipboardList, FaTerminal } from 'react-icons/fa';
 import './UserManagement.css';
@@ -32,6 +32,14 @@ function UserManagement() {
     password: ''
   });
   const [syncLog, setSyncLog] = useState([]);
+  const terminalBodyRef = useRef(null);
+
+  // Auto-scroll vers le bas du terminal
+  useEffect(() => {
+    if (terminalBodyRef.current) {
+      terminalBodyRef.current.scrollTop = terminalBodyRef.current.scrollHeight;
+    }
+  }, [syncLog, loading]);
 
   useEffect(() => {
     fetchUsers();
@@ -431,11 +439,9 @@ function UserManagement() {
         badge: `${data.count} utilisateurs`,
         icon: '✅' 
       });
-      alert(`Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s) vers Firebase`);
     } catch (error) {
       console.error('Erreur:', error);
       addLog(`Erreur: ${error.message}`, 'error', { icon: '❌' });
-      alert(`Erreur lors de la synchronisation vers Firebase: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -470,13 +476,11 @@ function UserManagement() {
         badge: `${data.count} utilisateurs`,
         icon: '✅' 
       });
-      alert(`Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s) depuis Firebase`);
       await fetchUsers(); // Rafraîchir la liste
       addLog('Liste des utilisateurs rechargée', 'success');
     } catch (error) {
       console.error('Erreur:', error);
       addLog(`Erreur: ${error.message}`, 'error', { icon: '❌' });
-      alert(`Erreur lors de la synchronisation depuis Firebase: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -505,11 +509,14 @@ function UserManagement() {
         throw new Error(data.message || `Erreur HTTP ${res.status}`);
       }
 
-      alert(`Synchronisation réussie!\n${data.count} utilisateur(s) mis à jour`);
+      addLog('Synchronisation réussie!', 'success', { 
+        badge: `${data.count} utilisateurs`,
+        icon: '✅' 
+      });
       await fetchUsers(); // Rafraîchir la liste
     } catch (error) {
       console.error('Erreur:', error);
-      alert(`Erreur lors de la synchronisation de l'état de blocage: ${error.message}`);
+      addLog(`Erreur: ${error.message}`, 'error', { icon: '❌' });
     } finally {
       setLoading(false);
     }
@@ -537,10 +544,13 @@ function UserManagement() {
         throw new Error(data.message || `Erreur HTTP ${res.status}`);
       }
 
-      alert(`Synchronisation réussie!\n${data.count} utilisateur(s) synchronisé(s)`);
+      addLog('Synchronisation réussie!', 'success', { 
+        badge: `${data.count} utilisateurs`,
+        icon: '✅' 
+      });
     } catch (error) {
       console.error('Erreur:', error);
-      alert(`Erreur lors de la synchronisation des déblocages: ${error.message}`);
+      addLog(`Erreur: ${error.message}`, 'error', { icon: '❌' });
     } finally {
       setLoading(false);
     }
@@ -636,7 +646,7 @@ function UserManagement() {
                 <FaTimes />
               </button>
             </div>
-            <div className="sync-terminal-body">
+            <div className="sync-terminal-body" ref={terminalBodyRef}>
               {syncLog.length === 0 ? (
                 <div className="sync-terminal-empty">En attente...</div>
               ) : (
