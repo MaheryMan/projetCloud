@@ -53,9 +53,13 @@ export function useReportForm(options: UseReportFormOptions) {
 
   /**
    * Retourne les types de signalement depuis le store Firebase
+   * Exclut les types non désirés comme "Effondrement"
    */
   const availableTypes = computed(() => {
     const types = metadataStore.types
+    
+    // Types à exclure
+    const excludedTypes = ['Effondrement']
     
     // Mapping entre les icônes du backend et les icônes Ionicons
     const iconMapping: Record<string, string> = {
@@ -78,7 +82,9 @@ export function useReportForm(options: UseReportFormOptions) {
       ]
     }
     
-    const mapped = types.map((type) => {
+    const filtered = types.filter(type => !excludedTypes.includes(type.libelle))
+    
+    const mapped = filtered.map((type) => {
       // Utiliser le mapping pour l'icône, sinon utiliser l'icône du backend ou une icône par défaut
       const iconeBackend = (type.icone || 'alert').toLowerCase()
       const ioniconsIcon = iconMapping[iconeBackend] || 'help-outline'
