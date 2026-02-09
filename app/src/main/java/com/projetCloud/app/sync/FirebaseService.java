@@ -56,6 +56,8 @@ public class FirebaseService {
      */
     public List<FirebasePhotoDTO> getPhotosForReport(String reportId) throws ExecutionException, InterruptedException {
         try {
+            System.out.println("[FB SERVICE] 🔍 Recherche photos pour reportId: " + reportId);
+            
             QuerySnapshot photoSnapshots = firestore
                     .collection(PHOTOS_COLLECTION)
                     .whereEqualTo("reportId", reportId)
@@ -64,15 +66,22 @@ public class FirebaseService {
 
             List<FirebasePhotoDTO> photos = new ArrayList<>();
 
+            System.out.println("[FB SERVICE] 📊 Photos trouvées (brutes): " + photoSnapshots.getDocuments().size());
+            
             for (DocumentSnapshot doc : photoSnapshots.getDocuments()) {
                 FirebasePhotoDTO photo = convertDocumentToPhoto(doc);
                 if (photo != null) {
                     photos.add(photo);
+                    System.out.println("[FB SERVICE] ✅ Photo ajoutée: ID=" + photo.getId() + 
+                        " reportId=" + photo.getReportId() + 
+                        " url=" + photo.getImgbbUrl().substring(0, Math.min(30, photo.getImgbbUrl().length())) + "...");
                 }
             }
-
+            
+            System.out.println("[FB SERVICE] 📊 Photos converties (finales): " + photos.size());
             return photos;
         } catch (ExecutionException | InterruptedException e) {
+            System.err.println("[FB SERVICE] ❌ Erreur lecture photos: " + e.getMessage());
             throw new RuntimeException("Erreur lecture Firebase photos: " + e.getMessage(), e);
         }
     }
@@ -124,6 +133,11 @@ public class FirebaseService {
      */
     private FirebasePhotoDTO convertDocumentToPhoto(DocumentSnapshot doc) {
         try {
+            System.out.println("[FB SERVICE] 📄 Conversion document photo brut: " + doc.getId());
+            System.out.println("[FB SERVICE]   Données: reportId=" + doc.getString("reportId") + 
+                " uid=" + doc.getString("uid") + 
+                " imgbbUrl=" + (doc.getString("imgbbUrl") != null ? doc.getString("imgbbUrl").substring(0, Math.min(30, doc.getString("imgbbUrl").length())) + "..." : "NULL"));
+            
             FirebasePhotoDTO photo = new FirebasePhotoDTO();
             photo.setId(doc.getId());
             photo.setReportId(doc.getString("reportId"));
@@ -143,7 +157,8 @@ public class FirebaseService {
 
             return photo;
         } catch (Exception e) {
-            System.err.println("Erreur conversion photo Firebase: " + e.getMessage());
+            System.err.println("[FB SERVICE] ❌ Erreur conversion photo Firebase: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }

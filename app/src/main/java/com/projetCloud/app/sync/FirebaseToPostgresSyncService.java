@@ -120,63 +120,64 @@ public class FirebaseToPostgresSyncService {
 
     /**
      * Synchronise les photos pour un signalement dans PostgreSQL
-     * UPSERT: UPDATE si existe (par URL), INSERT sinon
-     * Supprime les photos non présentes dans Firebase
+     * STRATÉGIE: Supprimer TOUS les photos existantes et recharger depuis Firebase
+     * Cela évite les incohérences URLs (local vs imgbb)
      */
     public void syncPhotosForReport(String firebaseReportId, Signalement postgresSignalement,
                                      List<FirebasePhotoDTO> firebasePhotos) {
         if (postgresSignalement == null) {
+            System.out.println("[SYNC SERVICE] ⚠️ Signalement PostgreSQL NULL pour report Firebase: " + firebaseReportId);
             return;
         }
 
-        // 1. Récupérer les photos existantes pour ce signalement
+        System.out.println("[SYNC SERVICE] 🔄 Sync photos pour signalement PostgreSQL ID=" + postgresSignalement.getId() + 
+            " (Firebase report ID=" + firebaseReportId + ")");
+        System.out.println("[SYNC SERVICE] 📊 Photos Firebase à synchroniser: " + (firebasePhotos != null ? firebasePhotos.size() : "NULL"));
+
+        // 1. SUPPRIMER TOUTES les photos existantes pour ce signalement
+        // (Évite les incohérences URLs: URLs locales vs URLs imgbb)
         List<Photo> existingPhotos = photoRepository.findBySignalementId(postgresSignalement.getId());
+        if (!existingPhotos.isEmpty()) {
+            System.out.println("[SYNC SERVICE] 🗑️ SUPPRESSION de TOUTES les photos existantes: " + existingPhotos.size() + 
+                " (pour éviter incohérences URL)");
+            photoRepository.deleteAll(existingPhotos);
+            System.out.println("[SYNC SERVICE] ✅ Toutes les photos supprimées");
+        }
 
+        // 2. Si aucune photo Firebase: fin
         if (firebasePhotos == null || firebasePhotos.isEmpty()) {
-            // Si aucune photo Firebase: supprimer toutes les photos existantes
-            if (!existingPhotos.isEmpty()) {
-                photoRepository.deleteAll(existingPhotos);
-            }
+            System.out.println("[SYNC SERVICE] 📊 Aucune photo Firebase à synchroniser pour ce signalement");
             return;
         }
 
-        // 2. Traiter les photos Firebase - Télécharger depuis imgbb et sauvegarder localement
+        // 3. Télécharger et créer toutes les photos Firebase
+        int photosDownloaded = 0;
+        int photosFailed = 0;
+        
         for (FirebasePhotoDTO firebasePhoto : firebasePhotos) {
             try {
                 String imgbbUrl = firebasePhoto.getImgbbUrl();
+                System.out.println("[SYNC SERVICE] ⬇️ Téléchargement photo: " + imgbbUrl.substring(0, Math.min(30, imgbbUrl.length())) + "...");
                 
-                // Chercher si la photo existe déjà (par URL imgbb OU par description contenant l'URL)
-                Optional<Photo> existingPhoto = findExistingPhotoByImgbbUrl(imgbbUrl, postgresSignalement.getId());
-
-                Photo photo;
-                if (existingPhoto.isPresent()) {
-                    // La photo existe déjà pour ce signalement - juste mettre à jour
-                    photo = existingPhoto.get();
-                    photo.setUploadedAt(firebasePhoto.getUploadedAt());
+                // Télécharger l'image depuis imgbb et créer une nouvelle photo
+                Photo photo = downloadAndSavePhoto(firebasePhoto, postgresSignalement);
+                if (photo != null) {
                     photoRepository.save(photo);
-                    logger.debug("Photo existante mise à jour pour signalement {}", postgresSignalement.getId());
+                    photosDownloaded++;
+                    System.out.println("[SYNC SERVICE] ✅ Nouvelle photo téléchargée: " + photo.getFileName());
                 } else {
-                    // Télécharger l'image depuis imgbb et créer une nouvelle photo
-                    photo = downloadAndSavePhoto(firebasePhoto, postgresSignalement);
-                    if (photo != null) {
-                        photoRepository.save(photo);
-                        logger.info("✅ Nouvelle photo téléchargée pour signalement {}", postgresSignalement.getId());
-                    }
+                    photosFailed++;
+                    System.out.println("[SYNC SERVICE] ⚠️ Erreur téléchargement photo (retourné null)");
                 }
             } catch (Exception e) {
-                logger.error("Erreur sauvegarde photo pour signalement {}: {}", postgresSignalement.getId(), e.getMessage());
+                photosFailed++;
+                System.err.println("[SYNC SERVICE] ❌ Erreur sauvegarde photo pour signalement " + postgresSignalement.getId() + ": " + e.getMessage());
+                e.printStackTrace();
             }
         }
 
-        // 3. Supprimer les photos qui n'existent plus dans Firebase
-        // (photos orphelines du signalement)
-        for (Photo existingPhoto : existingPhotos) {
-            boolean foundInFirebase = firebasePhotos.stream()
-                    .anyMatch(fp -> fp.getImgbbUrl().equals(existingPhoto.getUrl()));
-            if (!foundInFirebase) {
-                photoRepository.delete(existingPhoto);
-            }
-        }
+        System.out.println("[SYNC SERVICE] 📊 Résumé sync photos: downloaded=" + photosDownloaded + " failed=" + photosFailed + 
+            " total=" + firebasePhotos.size());
     }
 
     /**
