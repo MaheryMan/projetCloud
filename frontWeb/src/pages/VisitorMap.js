@@ -252,7 +252,7 @@ function VisitorMap() {
     const enCours = filteredSignalements.filter(s => s.idStatus === 5).length;
     const surfaceTotal = filteredSignalements.reduce((sum, s) => sum + (s.surfaceM2 || 0), 0);
     const budgetTotal = filteredSignalements.reduce((sum, s) => sum + (s.budget || 0), 0);
-    const avancement = total > 0 ? Math.round((termines / total) * 100) : 0;
+    const avancement = total > 0 ? Math.round((((enCours * 0.5) + termines) / total) * 100) : 0;
 
     setDisplayStats({
       total,
