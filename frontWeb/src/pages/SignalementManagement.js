@@ -410,11 +410,23 @@ const fetchEntreprises = async () => {
         }
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Erreur lors de la synchronisation');
+        // Afficher le message d'erreur du serveur
+        const errorMessage = data.message || 'Erreur lors de la synchronisation';
+        addLog(errorMessage, 'error', { icon: '❌' });
+        // Afficher uniquement les erreurs supplémentaires qui ne sont pas identiques au message principal
+        if (data.errors && data.errors.length > 0) {
+          data.errors.forEach(err => {
+            if (err !== errorMessage) {
+              addLog(err, 'error');
+            }
+          });
+        }
+        return;
       }
 
-      const data = await response.json();
       addLog('Synchronisation réussie!', 'success', { 
         badge: `${data.successCount} signalements`,
         icon: '✅' 
@@ -450,14 +462,26 @@ const fetchEntreprises = async () => {
         }
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Erreur lors de la synchronisation');
+        // Afficher le message d'erreur du serveur
+        const errorMessage = data.message || 'Erreur lors de la synchronisation';
+        addLog(errorMessage, 'error', { icon: '❌' });
+        // Afficher uniquement les erreurs supplémentaires qui ne sont pas identiques au message principal
+        if (data.errors && data.errors.length > 0) {
+          data.errors.forEach(err => {
+            if (err !== errorMessage) {
+              addLog(err, 'error');
+            }
+          });
+        }
+        return;
       }
 
-      const data = await response.json();
       addLog('Synchronisation réussie!', 'success', { 
         badge: `${data.successCount} signalements`,
-        icon: '✅' 
+        icon: '✅'
       });
 
       // Recharger la liste des signalements

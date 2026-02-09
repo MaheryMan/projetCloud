@@ -607,6 +607,86 @@ body {
   letter-spacing: 0.5px;
 }
 
+/* Progress Bar Styles */
+.popup-progress-section {
+  margin: var(--spacing-md) 0;
+  padding: var(--spacing-md);
+  background: var(--color-bg-light);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.popup-progress-section p {
+  margin: 0 0 var(--spacing-sm) 0 !important;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.popup-progress-bar {
+  width: 100%;
+  height: 28px;
+  background: white;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--color-border);
+}
+
+.popup-progress-fill {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width var(--transition-slow) ease-in-out;
+  position: relative;
+  font-weight: 800;
+  font-size: 12px;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.popup-progress-text {
+  position: relative;
+  z-index: 1;
+}
+
+.popup-progress-nouveau {
+  background: linear-gradient(90deg, var(--status-nouveau) 0%, #dc2626 100%);
+  width: 0% !important;
+}
+
+.popup-progress-en_cours {
+  background: linear-gradient(90deg, var(--status-en-cours) 0%, #d97706 100%);
+  animation: progressPulse 2s ease-in-out infinite;
+}
+
+.popup-progress-termine {
+  background: linear-gradient(90deg, var(--status-termine) 0%, #059669 100%);
+  animation: progressComplete 0.6s ease-out;
+}
+
+@keyframes progressPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes progressComplete {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
 /* Status Badges */
 .status-badge {
   display: inline-flex;
