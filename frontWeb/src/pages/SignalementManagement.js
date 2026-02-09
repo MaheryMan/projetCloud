@@ -185,11 +185,13 @@ const fetchEntreprises = async () => {
 
   const handleEdit = (signal) => {
     setEditingId(signal.id);
+    // S'assurer que idStatus est toujours un nombre
+    const statusId = Number(signal.idStatus ?? signal.status ?? 4);
     setEditForm({
       ...signal,
       surfaceM2: signal.surfaceM2 ?? signal.surface ?? '',
       idEntreprise: signal.idEntreprise ?? signal.entrepriseId ?? '',
-      idStatus: signal.idStatus ?? signal.status ?? '',
+      idStatus: statusId,
     });
     setShowEditModal(true);
   };
@@ -732,13 +734,14 @@ const fetchEntreprises = async () => {
                   <label htmlFor="statut">Statut *</label>
                   <select
                     id="statut"
-                    value={editForm.idStatus || ''}
+                    value={String(editForm.idStatus || '4')}
                     onChange={(e) => setEditForm({ ...editForm, idStatus: parseInt(e.target.value) })}
                     style={{ color: '#2c3e50', backgroundColor: 'white' }}
                   >
-                    <option value={4}>Nouveau</option>
-                    <option value={5}>En cours</option>
-                    <option value={6}>Terminé</option>
+                    <option value="8">Créé</option>
+                    <option value="4">Nouveau</option>
+                    <option value="5">En cours</option>
+                    <option value="6">Terminé</option>
                   </select>
                 </div>
 
