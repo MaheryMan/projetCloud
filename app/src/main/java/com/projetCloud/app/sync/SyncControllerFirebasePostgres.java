@@ -4,6 +4,7 @@ import com.projetCloud.app.signalements.Signalement;
 import com.projetCloud.app.sync.dto.FirebasePhotoDTO;
 import com.projetCloud.app.sync.dto.FirebaseReportDTO;
 import com.projetCloud.app.sync.dto.SyncResponseDTO;
+import com.projetCloud.app.utilisateurs.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,9 @@ public class SyncControllerFirebasePostgres {
     @Autowired
     private FirebaseToPostgresSyncService firebaseToPostgresSyncService;
 
+    @Autowired
+    private UtilisateurRepository utilisateurRepository;
+
     /**
      * Synchronise tous les reports de Firebase vers PostgreSQL
      * POST /api/sync/firebase-to-postgres
@@ -37,6 +41,30 @@ public class SyncControllerFirebasePostgres {
         int errorCount = 0;
 
         try {
+            // Vérifier s'il y a des utilisateurs (autres que les managers) dans la base avant de synchroniser
+            long totalUserCount = utilisateurRepository.count();
+            long nonManagerUserCount = utilisateurRepository.countNonManagerUsers();
+            
+            if (nonManagerUserCount == 0) {
+                String errorMessage = "ERREUR: Aucun utilisateur (autre que les managers) trouvé dans la base de données. Veuillez d'abord synchroniser les utilisateurs avant de synchroniser les signalements.";
+                System.err.println("[SYNC][FB→PG] " + errorMessage);
+                System.err.println("[SYNC][FB→PG] Total utilisateurs: " + totalUserCount + ", Utilisateurs non-managers: " + nonManagerUserCount);
+                
+                List<String> errorList = new ArrayList<>();
+                errorList.add(errorMessage);
+                SyncResponseDTO response = new SyncResponseDTO(
+                    "error",
+                    0,
+                    0,
+                    1,
+                    errorList,
+                    errorMessage
+                );
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+            
+            System.out.println("[SYNC][FB→PG] " + nonManagerUserCount + " utilisateur(s) non-manager(s) trouvé(s) dans la base");
+            
             // 1. Récupérer tous les reports de Firebase
             List<FirebaseReportDTO> firebaseReports = firebaseService.getAllReportsFromFirebase();
             int totalProcessed = firebaseReports.size();

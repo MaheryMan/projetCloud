@@ -18,31 +18,11 @@ function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Charger l'utilisateur depuis le localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser && storedUser !== 'undefined') {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error('Error parsing stored user:', e);
-        localStorage.removeItem('user');
-      }
-    }
-
-    // Démarrer le monitoring de session si utilisateur connecté
-    let monitoringId = null;
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Vérifier toutes les 5 minutes si la session est toujours valide
-      monitoringId = startSessionMonitoring(5);
-    }
-
-    // Nettoyer le monitoring au démontage du composant
-    return () => {
-      if (monitoringId) {
-        stopSessionMonitoring(monitoringId);
-      }
-    };
+    // Ne pas charger automatiquement l'utilisateur au démarrage de l'application
+    // L'utilisateur arrive toujours en mode visiteur sur la carte
+    // Il pourra se connecter manuellement via le bouton "Connexion Manager" si nécessaire
+    
+    // Note: Le monitoring de session sera démarré après une connexion réussie
   }, []);
 
   const handleLogin = (userData) => {

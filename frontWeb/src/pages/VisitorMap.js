@@ -204,15 +204,9 @@ function VisitorMap() {
   }, []);
 
   useEffect(() => {
-    // Charger l'utilisateur connecté
-    const storedUser = localStorage.getItem('user');
-    if (storedUser && storedUser !== 'undefined') {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error('Error parsing user:', e);
-      }
-    }
+    // Ne pas charger automatiquement l'utilisateur depuis localStorage
+    // L'utilisateur arrive toujours déconnecté sur la carte publique
+    // Il peut se connecter via le bouton "Connexion Manager" si nécessaire
     
     fetchSignalements();
     fetchTypesSignalement();
@@ -364,21 +358,12 @@ function VisitorMap() {
     <div className="visitor-map-container">
       {/* Header avec boutons d'authentification */}
       <div className="map-header-actions">
-        {localStorage.getItem('token') ? (
-          <button 
-            className="logout-btn"
-            onClick={handleLogout}
-          >
-            Déconnexion
-          </button>
-        ) : (
-          <button 
-            className="login-btn"
-            onClick={() => navigate('/login')}
-          >
-            Connexion Manager
-          </button>
-        )}
+        <button 
+          className="login-btn"
+          onClick={() => navigate('/login')}
+        >
+          Connexion Manager
+        </button>
       </div>
 
       {/* Barre de filtres */}
@@ -594,6 +579,28 @@ function VisitorMap() {
                         <div className="popup-info">
                           <p><strong>Date:</strong> {formatDate(signal.lastHistoriqueDate || signal.createdAt)}</p>
                           <p><strong>Statut:</strong> <span className={getStatusClass(statusKey)}>{getStatusLabel(statusKey)}</span></p>
+                          
+                          {/* Progress bar for work status */}
+                          <div className="popup-progress-section">
+                            <p><strong>Progression des travaux:</strong></p>
+                            <div className="popup-progress-bar">
+                              <div 
+                                className={`popup-progress-fill popup-progress-${statusKey}`}
+                                style={{ 
+                                  width: statusKey === 'nouveau' ? '0%' : 
+                                         statusKey === 'en_cours' ? '50%' : 
+                                         statusKey === 'termine' ? '100%' : '0%' 
+                                }}
+                              >
+                                <span className="popup-progress-text">
+                                  {statusKey === 'nouveau' ? '0%' : 
+                                   statusKey === 'en_cours' ? '50%' : 
+                                   statusKey === 'termine' ? '100%' : '0%'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
                           <p><strong>Surface:</strong> {signal.surfaceM2} m²</p>
                           <p><strong>Budget:</strong> {formatCurrency(signal.budget)}</p>
                           <p><strong>Entreprise:</strong> {getEntrepriseName(signal.idEntreprise)}</p>

@@ -20,4 +20,9 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
 
     @Query("SELECT r.libelle FROM Utilisateur u JOIN u.roles r WHERE u.id = ?1")
     List<String> findRoleLibellesByUtilisateurId(Long utilisateurId);
+    
+    // Compte les utilisateurs qui ne sont PAS managers
+    @Query("SELECT COUNT(DISTINCT u) FROM Utilisateur u WHERE u.id NOT IN " +
+           "(SELECT ur.id FROM Utilisateur ur JOIN ur.roles r WHERE r.libelle = 'Manager')")
+    long countNonManagerUsers();
 }
