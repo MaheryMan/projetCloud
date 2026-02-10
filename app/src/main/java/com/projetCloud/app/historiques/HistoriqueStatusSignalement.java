@@ -40,6 +40,14 @@ public class HistoriqueStatusSignalement {
         this.createdAt = LocalDateTime.now();
     }
 
+    public HistoriqueStatusSignalement(Long idSignalement, Long idStatus, Long idUtilisateur, String commentaire, LocalDateTime dateModification) {
+        this.idSignalement = idSignalement;
+        this.idStatus = idStatus;
+        this.idUtilisateur = idUtilisateur;
+        this.commentaire = commentaire;
+        this.createdAt = dateModification != null ? dateModification : LocalDateTime.now();
+    }
+
     // Getters et Setters
     public Long getId() {
         return id;
