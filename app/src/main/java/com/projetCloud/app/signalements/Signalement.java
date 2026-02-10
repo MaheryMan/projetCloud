@@ -41,6 +41,9 @@ public class Signalement {
     @Column(name = "id_status", nullable = false)
     private Long idStatus;
 
+    @Column(name = "niveau")
+    private Integer niveau;
+
     @ManyToOne
     @JoinColumn(name = "id_type_signalement", nullable = false)
     private TypeSignalement typeSignalement;
@@ -157,6 +160,14 @@ public class Signalement {
 
     public void setIdStatus(Long idStatus) {
         this.idStatus = idStatus;
+    }
+
+    public Integer getNiveau() {
+        return niveau;
+    }
+
+    public void setNiveau(Integer niveau) {
+        this.niveau = niveau;
     }
 
     public TypeSignalement getTypeSignalement() {
