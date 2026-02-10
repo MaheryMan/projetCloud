@@ -11,6 +11,7 @@ import SignalementDetails from './pages/SignalementDetails';
 import UserManagement from './pages/UserManagement';
 import Statistics from './pages/Statistics';
 import Settings from './pages/Settings';
+import PrixForfaitaire from './pages/PrixForfaitaire';
 import { startSessionMonitoring, stopSessionMonitoring } from './services/authService';
 import './App.css';
 
@@ -162,6 +163,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/prix-forfaitaire" 
+              element={
+                <ProtectedRoute>
+                  <PrixForfaitaire />
                 </ProtectedRoute>
               } 
             />
