@@ -227,6 +227,8 @@ const fetchEntreprises = async () => {
         idStatus: editForm.idStatus,
         idEntreprise: editForm.idEntreprise,
         idUtilisateur: editForm.idUtilisateur,
+        dateModificationStatus: editForm.dateModificationStatus || null,
+        commentaireStatus: editForm.commentaireStatus || null,
       };
       const response = await fetch(`http://localhost:8080/api/signalements/${id}`, {
         method: 'PUT',
@@ -281,7 +283,9 @@ const fetchEntreprises = async () => {
       const token = localStorage.getItem('token');
       const payload = {
         ...signal,
-        idStatus: newStatus
+        idStatus: newStatus,
+        dateModificationStatus: signal.dateModificationStatus || null,
+        commentaireStatus: signal.commentaireStatus || null
       };
       const response = await fetch(`http://localhost:8080/api/signalements/${signal.id}`, {
         method: 'PUT',
@@ -740,6 +744,34 @@ const fetchEntreprises = async () => {
                     <option value={5}>En cours</option>
                     <option value={6}>Terminé</option>
                   </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="dateModificationStatus">Date de modification du statut</label>
+                  <input
+                    type="datetime-local"
+                    id="dateModificationStatus"
+                    value={editForm.dateModificationStatus || ''}
+                    onChange={(e) => setEditForm({ ...editForm, dateModificationStatus: e.target.value ? e.target.value + ':00' : '' })}
+                    placeholder="Date et heure de modification"
+                  />
+                  <small style={{ color: '#7f8c8d', fontSize: '0.85em', marginTop: '4px', display: 'block' }}>
+                    Laissez vide pour utiliser la date actuelle
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="commentaireStatus">Commentaire du changement de statut</label>
+                  <textarea
+                    id="commentaireStatus"
+                    value={editForm.commentaireStatus || ''}
+                    onChange={(e) => setEditForm({ ...editForm, commentaireStatus: e.target.value })}
+                    placeholder="Ex: Validation par le manager, Travaux débutés, etc."
+                    rows="2"
+                  />
+                  <small style={{ color: '#7f8c8d', fontSize: '0.85em', marginTop: '4px', display: 'block' }}>
+                    Ce commentaire apparaitra dans l'historique : "Mise à jour status: [votre commentaire]"
+                  </small>
                 </div>
 
                 <div className="form-group">

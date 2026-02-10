@@ -27,6 +27,20 @@ public class HistoriqueStatusSignalementService {
     }
 
     /**
+     * Crée un nouvel historique avec une date personnalisée
+     */
+    public HistoriqueStatusSignalement createHistorique(Long idSignalement, Long idStatus, Long idUtilisateur, String commentaire, LocalDateTime dateModification) {
+        HistoriqueStatusSignalement historique = new HistoriqueStatusSignalement(
+            idSignalement, 
+            idStatus, 
+            idUtilisateur, 
+            commentaire,
+            dateModification
+        );
+        return historiqueRepository.save(historique);
+    }
+
+    /**
      * Récupère tous les historiques
      */
     public List<HistoriqueStatusSignalement> getAllHistoriques() {
