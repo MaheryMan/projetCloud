@@ -586,6 +586,3 @@ JOIN status st ON u.id_status = st.id
 LEFT JOIN user_roles ur ON u.id = ur.id_utilisateur
 LEFT JOIN roles r ON ur.id_role = r.id
 GROUP BY u.id, s.libelle, st.libelle;
-
-ALTER TABLE signalements ADD COLUMN niveau INTEGER DEFAULT NULL;
-ALTER TABLE signalements ADD CONSTRAINT niveau CHECK (niveau BETWEEN 1 AND 10);

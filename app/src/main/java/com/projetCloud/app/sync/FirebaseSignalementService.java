@@ -126,6 +126,17 @@ public class FirebaseSignalementService {
             signalement.setSurfaceM2(new BigDecimal(firebaseData.get("surfaceM2").toString()));
         }
         
+        // Gestion du niveau (peut être null)
+        if (firebaseData.get("niveau") != null) {
+            Object niveauObj = firebaseData.get("niveau");
+            if (niveauObj instanceof Number) {
+                signalement.setNiveau(((Number) niveauObj).intValue());
+                logger.info("Niveau reçu depuis Firebase: {}", niveauObj);
+            }
+        } else {
+            logger.info("Pas de niveau dans Firebase, sera null en Postgres");
+        }
+        
         // Gestion de la photo
         if (firebaseData.get("photo") != null) {
             String photoUrl = (String) firebaseData.get("photo");
@@ -269,6 +280,11 @@ public class FirebaseSignalementService {
         if (signalement.getBudget() != null) {
             updates.put("budgetEstimated", signalement.getBudget().doubleValue());
         }
+        
+        // Gestion du niveau (TOUJOURS envoyer le champ pour le créer dans Firestore)
+        updates.put("niveau", signalement.getNiveau()); // Peut être null, c'est OK
+        logger.info("Niveau envoyé vers Firebase: {}", signalement.getNiveau());
+        
         if (signalement.getIdEntreprise() != null) {
             String companyName = entrepriseRepository.findById(signalement.getIdEntreprise())
                     .map(e -> e.getNom())

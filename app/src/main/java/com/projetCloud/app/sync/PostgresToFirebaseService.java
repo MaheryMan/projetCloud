@@ -139,6 +139,8 @@ public class PostgresToFirebaseService {
         // Champs optionnels - tous inclus même s'ils sont null
         doc.put("surfaceM2", signalement.getSurfaceM2() != null ? signalement.getSurfaceM2().doubleValue() : null);
         doc.put("budgetEstimated", signalement.getBudget() != null ? signalement.getBudget().doubleValue() : null);
+        doc.put("niveau", signalement.getNiveau()); // Champ niveau (peut être null)
+        System.out.println("[Sync] Niveau envoyé vers Firebase: " + signalement.getNiveau());
 
         // Status et type (libellés)
         if (signalement.getIdStatus() != null && signalement.getIdStatus() > 0) {
