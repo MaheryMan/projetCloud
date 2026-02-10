@@ -110,6 +110,21 @@ public class FirebaseService {
             if (surface != null) report.setSurfaceM2(BigDecimal.valueOf(surface));
             if (budget != null) report.setBudgetEstimated(BigDecimal.valueOf(budget));
 
+            // Récupérer le niveau (peut être Long ou Integer selon Firestore)
+            Object niveauObj = doc.get("niveau");
+            if (niveauObj != null) {
+                if (niveauObj instanceof Long) {
+                    report.setNiveau(((Long) niveauObj).intValue());
+                } else if (niveauObj instanceof Integer) {
+                    report.setNiveau((Integer) niveauObj);
+                } else if (niveauObj instanceof Double) {
+                    report.setNiveau(((Double) niveauObj).intValue());
+                }
+                System.out.println("[FB SERVICE] Niveau récupéré depuis Firebase: " + report.getNiveau());
+            } else {
+                System.out.println("[FB SERVICE] Niveau absent dans Firebase pour report: " + doc.getId());
+            }
+
             // Convertir Timestamp Firestore en LocalDateTime
             Timestamp timestamp = doc.getTimestamp("createdAt");
             if (timestamp != null) {

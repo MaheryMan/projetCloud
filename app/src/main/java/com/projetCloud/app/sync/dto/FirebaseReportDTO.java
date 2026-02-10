@@ -18,6 +18,7 @@ public class FirebaseReportDTO {
     private BigDecimal surfaceM2;
     private BigDecimal budgetEstimated;
     private String companyName;
+    private Integer niveau;
     private LocalDateTime createdAt;
 
     // Constructeurs
@@ -26,7 +27,7 @@ public class FirebaseReportDTO {
     public FirebaseReportDTO(String id, String uid, String description, String type,
                             BigDecimal lat, BigDecimal lng, String status,
                             BigDecimal surfaceM2, BigDecimal budgetEstimated,
-                            String companyName, LocalDateTime createdAt) {
+                            String companyName, Integer niveau, LocalDateTime createdAt) {
         this.id = id;
         this.uid = uid;
         this.description = description;
@@ -37,6 +38,7 @@ public class FirebaseReportDTO {
         this.surfaceM2 = surfaceM2;
         this.budgetEstimated = budgetEstimated;
         this.companyName = companyName;
+        this.niveau = niveau;
         this.createdAt = createdAt;
     }
 
@@ -70,6 +72,9 @@ public class FirebaseReportDTO {
 
     public String getCompanyName() { return companyName; }
     public void setCompanyName(String companyName) { this.companyName = companyName; }
+
+    public Integer getNiveau() { return niveau; }
+    public void setNiveau(Integer niveau) { this.niveau = niveau; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

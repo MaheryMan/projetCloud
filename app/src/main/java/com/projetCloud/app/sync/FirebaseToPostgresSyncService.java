@@ -103,6 +103,7 @@ public class FirebaseToPostgresSyncService {
             signalement.setIdStatus(status.getId());
             signalement.setTypeSignalement(typeSignalement);
             signalement.setIdEntreprise(entrepriseId);
+            signalement.setNiveau(firebaseReport.getNiveau());
             // Ne pas mettre à jour createdAt pour les updates
         } else {
             // INSERT: Créer un nouveau signalement
@@ -116,6 +117,7 @@ public class FirebaseToPostgresSyncService {
             signalement.setIdStatus(status.getId());
             signalement.setTypeSignalement(typeSignalement);
             signalement.setIdEntreprise(entrepriseId);
+            signalement.setNiveau(firebaseReport.getNiveau());
             signalement.setCreatedAt(firebaseReport.getCreatedAt());
         }
 
