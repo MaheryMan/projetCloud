@@ -348,28 +348,6 @@ CREATE TRIGGER update_entreprises_updated_at
     BEFORE UPDATE ON entreprises 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Fonction: Loguer les changements de statut automatiquement
-CREATE OR REPLACE FUNCTION log_status_change()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF OLD.id_status IS DISTINCT FROM NEW.id_status THEN
-        INSERT INTO historiques_status_signalement 
-        (id_signalement, id_status, id_utilisateur, commentaire)
-        VALUES (
-            NEW.id, 
-            NEW.id_status, 
-            NEW.id_utilisateur,  -- Supposons que le manager qui modifie est dans le contexte
-            'Changement automatique via trigger'
-        );
-    END IF;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER log_signalement_status_change
-    AFTER UPDATE OF id_status ON signalements
-    FOR EACH ROW EXECUTE FUNCTION log_status_change();
-
 -- =========================
 -- INDEX SUPPLÉMENTAIRES
 -- =========================
