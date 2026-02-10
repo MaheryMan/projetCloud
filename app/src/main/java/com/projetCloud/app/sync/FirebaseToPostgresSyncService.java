@@ -6,6 +6,8 @@ import com.projetCloud.app.signalements.Signalement;
 import com.projetCloud.app.signalements.SignalementService;
 import com.projetCloud.app.status.Status;
 import com.projetCloud.app.status.StatusRepository;
+import com.projetCloud.app.entreprises.Entreprise;
+import com.projetCloud.app.entreprises.EntrepriseRepository;
 import com.projetCloud.app.sync.dto.FirebasePhotoDTO;
 import com.projetCloud.app.sync.dto.FirebaseReportDTO;
 import com.projetCloud.app.typesSignalement.TypeSignalement;
@@ -58,6 +60,9 @@ public class FirebaseToPostgresSyncService {
     @Autowired
     private PhotoRepository photoRepository;
 
+    @Autowired
+    private EntrepriseRepository entrepriseRepository;
+
     @Value("${file.upload-dir:uploads/photos}")
     private String uploadDir;
 
@@ -79,6 +84,9 @@ public class FirebaseToPostgresSyncService {
         // 3. Mapper le type (normaliser la comparaison)
         TypeSignalement typeSignalement = mapFirebaseType(firebaseReport.getType());
 
+        // 3.5. Mapper l'entreprise depuis companyName
+        Long entrepriseId = mapCompanyNameToEntrepriseId(firebaseReport.getCompanyName());
+
         // 4. Vérifier si le signalement existe déjà par firebase_id
         Optional<Signalement> existingSignalement = signalementRepository.findByFirebaseId(firebaseReport.getId());
 
@@ -94,6 +102,7 @@ public class FirebaseToPostgresSyncService {
             signalement.setUtilisateur(utilisateur);
             signalement.setIdStatus(status.getId());
             signalement.setTypeSignalement(typeSignalement);
+            signalement.setIdEntreprise(entrepriseId);
             // Ne pas mettre à jour createdAt pour les updates
         } else {
             // INSERT: Créer un nouveau signalement
@@ -106,6 +115,7 @@ public class FirebaseToPostgresSyncService {
             signalement.setUtilisateur(utilisateur);
             signalement.setIdStatus(status.getId());
             signalement.setTypeSignalement(typeSignalement);
+            signalement.setIdEntreprise(entrepriseId);
             signalement.setCreatedAt(firebaseReport.getCreatedAt());
         }
 
@@ -385,5 +395,35 @@ public class FirebaseToPostgresSyncService {
         }
         
         return ".jpg"; // Par défaut
+    }
+
+    /**
+     * Mapper le companyName de Firebase vers l'id_entreprise de PostgreSQL
+     * @param companyName Nom de l'entreprise depuis Firebase
+     * @return ID de l'entreprise dans PostgreSQL, ou null si non trouvée
+     */
+    private Long mapCompanyNameToEntrepriseId(String companyName) {
+        if (companyName == null || companyName.trim().isEmpty()) {
+            logger.info("[ENTREPRISE MAPPING] ℹ️ Pas de companyName fourni par Firebase");
+            return null;
+        }
+
+        String cleanedName = companyName.trim();
+        logger.info("[ENTREPRISE MAPPING] 🔍 Recherche entreprise avec nom: '{}'", cleanedName);
+
+        Optional<Entreprise> entreprise = entrepriseRepository.findByNomIgnoreCase(cleanedName);
+        
+        if (entreprise.isPresent()) {
+            logger.info("[ENTREPRISE MAPPING] ✅ Entreprise trouvée: '{}' (ID: {})", 
+                cleanedName, entreprise.get().getId());
+            return entreprise.get().getId();
+        } else {
+            logger.warn("[ENTREPRISE MAPPING] ⚠️ Entreprise '{}' introuvable dans PostgreSQL", cleanedName);
+            // Lister toutes les entreprises disponibles pour debug
+            List<Entreprise> allEntreprises = entrepriseRepository.findAll();
+            logger.warn("[ENTREPRISE MAPPING] 📋 Entreprises disponibles dans PostgreSQL:");
+            allEntreprises.forEach(e -> logger.warn("[ENTREPRISE MAPPING]   - '{}' (ID: {})", e.getNom(), e.getId()));
+            return null;
+        }
     }
 }

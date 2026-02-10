@@ -187,20 +187,26 @@ public class FirebaseSignalementService {
         String companyName = (String) firebaseData.get("companyName");
         logger.info("[ENTREPRISE MAPPING] companyName reçu du Firebase: '{}'", companyName);
         
-        if (companyName != null && !companyName.isEmpty()) {
-            logger.info("[ENTREPRISE MAPPING] 🔍 Recherche entreprise avec nom: '{}'", companyName);
+        if (companyName != null && !companyName.trim().isEmpty()) {
+            // Nettoyer le nom avant la recherche
+            String cleanedName = companyName.trim();
+            logger.info("[ENTREPRISE MAPPING] 🔍 Recherche entreprise avec nom nettoyé: '{}'", cleanedName);
             
-            Entreprise entreprise = entrepriseRepository.findByNomIgnoreCase(companyName)
+            Entreprise entreprise = entrepriseRepository.findByNomIgnoreCase(cleanedName)
                     .orElseGet(() -> {
-                        logger.warn("[ENTREPRISE MAPPING] ⚠️ Entreprise '{}' introuvable dans Postgres, signalement non attribué", companyName);
+                        logger.warn("[ENTREPRISE MAPPING] ⚠️ Entreprise '{}' introuvable dans Postgres", cleanedName);
+                        // Lister toutes les entreprises pour debug
+                        List<Entreprise> allEntreprises = entrepriseRepository.findAll();
+                        logger.warn("[ENTREPRISE MAPPING] 📋 Entreprises disponibles:");
+                        allEntreprises.forEach(e -> logger.warn("[ENTREPRISE MAPPING]   - '{}' (ID: {})", e.getNom(), e.getId()));
                         return null;
                     });
             
             if (entreprise != null) {
                 signalement.setIdEntreprise(entreprise.getId());
-                logger.info("[ENTREPRISE MAPPING] ✅ Entreprise trouvée et associée: '{}' (ID: {})", companyName, entreprise.getId());
+                logger.info("[ENTREPRISE MAPPING] ✅ Entreprise trouvée et associée: '{}' (ID: {})", cleanedName, entreprise.getId());
             } else {
-                logger.info("[ENTREPRISE MAPPING] ❌ Signalement créé sans entreprise (companyName: '{}')", companyName);
+                logger.info("[ENTREPRISE MAPPING] ❌ Signalement créé sans entreprise (companyName: '{}')", cleanedName);
             }
         } else {
             logger.info("[ENTREPRISE MAPPING] ℹ️ Pas de companyName fourni par Firebase");
