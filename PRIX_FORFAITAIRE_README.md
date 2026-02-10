@@ -4,13 +4,12 @@
 
 Le système de prix forfaitaire permet de calculer automatiquement le budget des signalements en fonction de :
 - La **surface en m²**
-- Le **niveau d'urgence** du type de signalement
+- Le **niveau** du signalement (saisi manuellement)
 - Un **prix par mètre carré** configurable
-- Un **multiplicateur de niveau** configurable
 
 ### Formule de calcul
 ```
-Budget = Surface × Prix_par_m² × (Multiplicateur_niveau ^ Niveau_urgence)
+Budget = Prix_par_m² × Niveau × Surface
 ```
 
 ## 🗄️ Structure de la base de données
@@ -21,9 +20,14 @@ Budget = Surface × Prix_par_m² × (Multiplicateur_niveau ^ Niveau_urgence)
 |---------|------|-------------|
 | `id` | BIGSERIAL | Identifiant unique |
 | `prix_par_metre_carre` | NUMERIC(15,2) | Prix de base par m² |
-| `multiplicateur_niveau` | NUMERIC(5,2) | Multiplicateur appliqué selon le niveau |
 | `created_at` | TIMESTAMP | Date de création |
 | `deleted_at` | TIMESTAMP | Date de désactivation (soft delete) |
+
+### Table `signalements` (colonne ajoutée)
+
+| Colonne | Type | Description |
+|---------|------|-------------|
+| `niveau` | INTEGER | Niveau du signalement (1, 2, 3, etc.) |
 
 ## 🚀 Installation
 
@@ -39,9 +43,8 @@ Ou exécuter manuellement le contenu du fichier dans votre outil de gestion de b
 
 Le script SQL insère automatiquement un prix par défaut :
 - Prix par m² : 100 Ar
-- Multiplicateur : 1.5
 
-Vous pouvez modifier ces valeurs via l'API ou le formulaire web.
+Vous pouvez modifier cette valeur via l'API ou le formulaire web.
 
 ## 🔌 API Endpoints
 
@@ -54,7 +57,6 @@ Récupère tous les prix forfaitaires (actifs et désactivés)
   {
     "id": 1,
     "prixParMetreCarre": 100.00,
-    "multiplicateurNiveau": 1.50,
     "createdAt": "2026-02-10T10:00:00",
     "deletedAt": null
   }
@@ -69,7 +71,6 @@ Récupère le prix forfaitaire actuellement actif
 {
   "id": 1,
   "prixParMetreCarre": 100.00,
-  "multiplicateurNiveau": 1.50,
   "createdAt": "2026-02-10T10:00:00",
   "deletedAt": null
 }
@@ -81,8 +82,7 @@ Crée un nouveau prix forfaitaire (désactive automatiquement les anciens)
 **Requête :**
 ```json
 {
-  "prixParMetreCarre": 150.00,
-  "multiplicateurNiveau": 2.00
+  "prixParMetreCarre": 150.00
 }
 ```
 
@@ -91,7 +91,6 @@ Crée un nouveau prix forfaitaire (désactive automatiquement les anciens)
 {
   "id": 2,
   "prixParMetreCarre": 150.00,
-  "multiplicateurNiveau": 2.00,
   "createdAt": "2026-02-10T11:00:00",
   "deletedAt": null
 }
@@ -103,8 +102,7 @@ Met à jour le prix forfaitaire actif (crée un nouveau prix et désactive l'anc
 **Requête :**
 ```json
 {
-  "prixParMetreCarre": 120.00,
-  "multiplicateurNiveau": 1.75
+  "prixParMetreCarre": 120.00
 }
 ```
 
@@ -146,7 +144,6 @@ import PrixForfaitaire from './pages/PrixForfaitaire';
 ### Fonctionnalités du formulaire
 - ✅ Affichage du prix actif
 - ✅ Modification du prix par m²
-- ✅ Modification du multiplicateur de niveau
 - ✅ Calcul en temps réel d'exemples pour différents niveaux
 - ✅ Validation des données
 - ✅ Messages de succès/erreur
@@ -159,15 +156,21 @@ Avec un prix de **100 Ar/m²** et un multiplicateur de **1.5** :
 |---------|--------|--------|--------|
 | 50 m² | 1 | 50 × 100 × 1.5¹ | 7,500 Ar |
 | 50 m² | 2 | 50 × 100 × 1.5² | 11,250 Ar |
-| 50 m² | 3 | 50 × 100 × 1.5³ | 16,875 Ar |
-| 100 m² | 1 | 100 × 100 × 1.5¹ | 15,000 Ar |
-| 100 m² | 2 | 100 × 100 × 1.5² | 22,500 Ar |
+| 50 m² | 3 | 50 × 100 × 1.5³ :
+
+| Surface | Niveau | Calcul | Budget |
+|---------|--------|--------|--------|
+| 50 m² | 1 | 100 × 1 × 50 | 5,000 Ar |
+| 50 m² | 2 | 100 × 2 × 50 | 10,000 Ar |
+| 50 m² | 3 | 100 × 3 × 50 | 15,000 Ar |
+| 100 m² | 1 | 100 × 1 × 100 | 10,000 Ar |
+| 100 m² | 2 | 100 × 2 × 100 | 20,000 Ar |
 
 ## 🔄 Calcul automatique
 
 Le budget est calculé automatiquement lors de :
-- **Création d'un signalement** : Si la surface et le type (avec niveau) sont fournis
-- **Mise à jour d'un signalement** : Si la surface ou le type change
+- **Création d'un signalement** : Si la surface et le niveau sont fournis
+- **Mise à jour d'un signalement** : Si la surface ou le niveau change
 
 ### Dans le code Java
 
@@ -175,19 +178,11 @@ La logique se trouve dans `SignalementService.save()` :
 
 ```java
 public Signalement save(Signalement signalement) {
-    if (signalement.getSurfaceM2() != null && 
-        signalement.getTypeSignalement() != null && 
-        signalement.getTypeSignalement().getNiveauUrgence() != null) {
+    if (signalement.getSurfaceM2() != null && signalement.getNiveau() != null) {
         
         BigDecimal budgetCalcule = prixForfaitaireService.calculerBudget(
             signalement.getSurfaceM2(), 
-            signalement.getTypeSignalement().getNiveauUrgence()
-        );
-        signalement.setBudget(budgetCalcule);
-    }
-    
-    return signalementRepository.save(signalement);
-}
+            signalement.getNiveau
 ```
 
 ## ⚠️ Gestion des erreurs
@@ -236,7 +231,7 @@ Les anciens prix sont conservés dans la base de données avec leur `deleted_at`
 4. **Niveau d'urgence** : Provient du `TypeSignalement` associé au signalement
 
 ## 🧪 Tests
-
+** : Chaque signalement possède son propre niveau (1, 2, 3, etc.)
 Pour tester le système :
 
 1. **Créer un prix forfaitaire :**
@@ -244,6 +239,7 @@ Pour tester le système :
 curl -X POST http://localhost:8080/api/prix-forfaitaire \
   -H "Content-Type: application/json" \
   -d '{"prixParMetreCarre": 100, "multiplicateurNiveau": 1.5}'
+```}'
 ```
 
 2. **Calculer un budget :**
@@ -253,8 +249,7 @@ curl -X POST http://localhost:8080/api/prix-forfaitaire/calculer-budget \
   -d '{"surface": 50, "niveauUrgence": 2}'
 ```
 
-3. **Créer un signalement** (le budget sera calculé automatiquement)
-
+3. **Créer un signalement avec niveau
 ## 🤝 Support
 
 Pour toute question ou problème :

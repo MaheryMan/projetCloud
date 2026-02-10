@@ -15,9 +15,6 @@ public class PrixForfaitaire {
     @Column(name = "prix_par_metre_carre", precision = 15, scale = 2, nullable = false)
     private BigDecimal prixParMetreCarre;
 
-    @Column(name = "multiplicateur_niveau", precision = 5, scale = 2, nullable = false)
-    private BigDecimal multiplicateurNiveau;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -27,9 +24,8 @@ public class PrixForfaitaire {
     // Constructeurs
     public PrixForfaitaire() {}
 
-    public PrixForfaitaire(BigDecimal prixParMetreCarre, BigDecimal multiplicateurNiveau) {
+    public PrixForfaitaire(BigDecimal prixParMetreCarre) {
         this.prixParMetreCarre = prixParMetreCarre;
-        this.multiplicateurNiveau = multiplicateurNiveau;
     }
 
     // Getters et Setters
@@ -47,14 +43,6 @@ public class PrixForfaitaire {
 
     public void setPrixParMetreCarre(BigDecimal prixParMetreCarre) {
         this.prixParMetreCarre = prixParMetreCarre;
-    }
-
-    public BigDecimal getMultiplicateurNiveau() {
-        return multiplicateurNiveau;
-    }
-
-    public void setMultiplicateurNiveau(BigDecimal multiplicateurNiveau) {
-        this.multiplicateurNiveau = multiplicateurNiveau;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -79,14 +67,14 @@ public class PrixForfaitaire {
     }
 
     // Méthode de calcul du budget
-    public BigDecimal calculerBudget(BigDecimal surface, Integer niveauUrgence) {
-        if (surface == null || niveauUrgence == null) {
+    public BigDecimal calculerBudget(BigDecimal surface, Integer niveau) {
+        if (surface == null || niveau == null) {
             return BigDecimal.ZERO;
         }
         
         // Budget = prix_par_m2 * niveau * surface_m2
-        BigDecimal niveau = BigDecimal.valueOf(niveauUrgence);
-        return prixParMetreCarre.multiply(niveau).multiply(surface);
+        BigDecimal niveauDecimal = BigDecimal.valueOf(niveau);
+        return prixParMetreCarre.multiply(niveauDecimal).multiply(surface);
     }
 
     // Méthodes de cycle de vie

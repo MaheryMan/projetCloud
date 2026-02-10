@@ -72,16 +72,9 @@ public class PrixForfaitaireController {
                 error.put("message", "Le prix par mètre carré doit être supérieur à 0");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
             }
-            
-            if (prixDTO.getMultiplicateurNiveau() == null || prixDTO.getMultiplicateurNiveau().compareTo(BigDecimal.ZERO) <= 0) {
-                Map<String, String> error = new HashMap<>();
-                error.put("message", "Le multiplicateur de niveau doit être supérieur à 0");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-            }
 
             PrixForfaitaire nouveauPrix = prixForfaitaireService.createNewPrix(
-                prixDTO.getPrixParMetreCarre(), 
-                prixDTO.getMultiplicateurNiveau()
+                prixDTO.getPrixParMetreCarre()
             );
             
             return ResponseEntity.status(HttpStatus.CREATED).body(nouveauPrix);
@@ -104,16 +97,9 @@ public class PrixForfaitaireController {
                 error.put("message", "Le prix par mètre carré doit être supérieur à 0");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
             }
-            
-            if (prixDTO.getMultiplicateurNiveau() == null || prixDTO.getMultiplicateurNiveau().compareTo(BigDecimal.ZERO) <= 0) {
-                Map<String, String> error = new HashMap<>();
-                error.put("message", "Le multiplicateur de niveau doit être supérieur à 0");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-            }
 
             PrixForfaitaire nouveauPrix = prixForfaitaireService.updatePrix(
-                prixDTO.getPrixParMetreCarre(), 
-                prixDTO.getMultiplicateurNiveau()
+                prixDTO.getPrixParMetreCarre()
             );
             
             return ResponseEntity.ok(nouveauPrix);
@@ -186,7 +172,6 @@ public class PrixForfaitaireController {
      */
     public static class PrixForfaitaireDTO {
         private BigDecimal prixParMetreCarre;
-        private BigDecimal multiplicateurNiveau;
 
         public BigDecimal getPrixParMetreCarre() {
             return prixParMetreCarre;
@@ -194,14 +179,6 @@ public class PrixForfaitaireController {
 
         public void setPrixParMetreCarre(BigDecimal prixParMetreCarre) {
             this.prixParMetreCarre = prixParMetreCarre;
-        }
-
-        public BigDecimal getMultiplicateurNiveau() {
-            return multiplicateurNiveau;
-        }
-
-        public void setMultiplicateurNiveau(BigDecimal multiplicateurNiveau) {
-            this.multiplicateurNiveau = multiplicateurNiveau;
         }
     }
 

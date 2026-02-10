@@ -37,13 +37,11 @@ public class SignalementService {
 
     public Signalement save(Signalement signalement) {
         // Calculer automatiquement le budget si surface et niveau sont présents
-        if (signalement.getSurfaceM2() != null && 
-            signalement.getTypeSignalement() != null && 
-            signalement.getTypeSignalement().getNiveauUrgence() != null) {
+        if (signalement.getSurfaceM2() != null && signalement.getNiveau() != null) {
             try {
                 BigDecimal budgetCalcule = prixForfaitaireService.calculerBudget(
                     signalement.getSurfaceM2(), 
-                    signalement.getTypeSignalement().getNiveauUrgence()
+                    signalement.getNiveau()
                 );
                 signalement.setBudget(budgetCalcule);
             } catch (IllegalStateException e) {

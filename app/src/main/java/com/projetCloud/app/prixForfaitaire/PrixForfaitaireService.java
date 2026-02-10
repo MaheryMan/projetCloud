@@ -38,7 +38,7 @@ public class PrixForfaitaireService {
     /**
      * Crée un nouveau prix forfaitaire et désactive les anciens
      */
-    public PrixForfaitaire createNewPrix(BigDecimal prixParMetreCarre, BigDecimal multiplicateurNiveau) {
+    public PrixForfaitaire createNewPrix(BigDecimal prixParMetreCarre) {
         // Désactiver tous les prix existants
         List<PrixForfaitaire> anciensPrix = prixForfaitaireRepository.findAll();
         for (PrixForfaitaire ancienPrix : anciensPrix) {
@@ -49,14 +49,14 @@ public class PrixForfaitaireService {
         }
 
         // Créer le nouveau prix
-        PrixForfaitaire nouveauPrix = new PrixForfaitaire(prixParMetreCarre, multiplicateurNiveau);
+        PrixForfaitaire nouveauPrix = new PrixForfaitaire(prixParMetreCarre);
         return prixForfaitaireRepository.save(nouveauPrix);
     }
 
     /**
      * Met à jour le prix forfaitaire actif
      */
-    public PrixForfaitaire updatePrix(BigDecimal prixParMetreCarre, BigDecimal multiplicateurNiveau) {
+    public PrixForfaitaire updatePrix(BigDecimal prixParMetreCarre) {
         Optional<PrixForfaitaire> activePrixOpt = findActivePrix();
         
         if (activePrixOpt.isPresent()) {
@@ -67,13 +67,13 @@ public class PrixForfaitaireService {
         }
 
         // Créer un nouveau prix
-        return createNewPrix(prixParMetreCarre, multiplicateurNiveau);
+        return createNewPrix(prixParMetreCarre);
     }
 
     /**
      * Calcule le budget pour un signalement
      */
-    public BigDecimal calculerBudget(BigDecimal surface, Integer niveauUrgence) {
+    public BigDecimal calculerBudget(BigDecimal surface, Integer niveau) {
         Optional<PrixForfaitaire> prixOpt = findActivePrix();
         
         if (prixOpt.isEmpty()) {
@@ -81,7 +81,7 @@ public class PrixForfaitaireService {
         }
 
         PrixForfaitaire prix = prixOpt.get();
-        return prix.calculerBudget(surface, niveauUrgence);
+        return prix.calculerBudget(surface, niveau);
     }
 
     /**

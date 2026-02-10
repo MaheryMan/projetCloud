@@ -9,8 +9,7 @@ const PrixForfaitaire = () => {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const [formData, setFormData] = useState({
-        prixParMetreCarre: '',
-        multiplicateurNiveau: ''
+        prixParMetreCarre: ''
     });
 
     // Charger le prix actif au montage du composant
@@ -27,14 +26,12 @@ const PrixForfaitaire = () => {
                 const data = await response.json();
                 setPrixActif(data);
                 setFormData({
-                    prixParMetreCarre: data.prixParMetreCarre,
-                    multiplicateurNiveau: data.multiplicateurNiveau
+                    prixParMetreCarre: data.prixParMetreCarre
                 });
             } else {
                 // Aucun prix actif trouvé, on initialise avec des valeurs par défaut
                 setFormData({
-                    prixParMetreCarre: '100.00',
-                    multiplicateurNiveau: '1.50'
+                    prixParMetreCarre: '100.00'
                 });
             }
         } catch (err) {
@@ -74,7 +71,6 @@ const PrixForfaitaire = () => {
                     prixParMetreCarre: parseFloat(formData.prixParMetreCarre),
                     multiplicateurNiveau: parseFloat(formData.multiplicateurNiveau)
                 })
-            });
 
             if (response.ok) {
                 const data = await response.json();
@@ -93,18 +89,17 @@ const PrixForfaitaire = () => {
 
     const calculerExemple = () => {
         if (!formData.prixParMetreCarre || !formData.multiplicateurNiveau) {
+            return null;) {
             return null;
         }
 
         const prix = parseFloat(formData.prixParMetreCarre);
-        const mult = parseFloat(formData.multiplicateurNiveau);
         const surface = 50; // Exemple avec 50m²
 
         return {
-            niveau1: (surface * prix * Math.pow(mult, 1)).toFixed(2),
-            niveau2: (surface * prix * Math.pow(mult, 2)).toFixed(2),
-            niveau3: (surface * prix * Math.pow(mult, 3)).toFixed(2)
-        };
+            niveau1: (prix * 1 * surface).toFixed(2),
+            niveau2: (prix * 2 * surface).toFixed(2),
+            niveau3: (prix * 3 * surface
     };
 
     const exemples = calculerExemple();
@@ -144,27 +139,7 @@ const PrixForfaitaire = () => {
 
                     <div className="form-group">
                         <label htmlFor="multiplicateurNiveau">
-                            Multiplicateur de Niveau
-                        </label>
-                        <input
-                            type="number"
-                            id="multiplicateurNiveau"
-                            name="multiplicateurNiveau"
-                            value={formData.multiplicateurNiveau}
-                            onChange={handleChange}
-                            step="0.01"
-                            min="0.01"
-                            required
-                            className="form-input"
-                        />
-                        <small className="form-hint">
-                            Multiplicateur appliqué selon le niveau d'urgence (ex: 1.5)
-                        </small>
-                    </div>
-
-                    <button type="submit" className="btn-submit">
-                        {prixActif ? 'Mettre à Jour le Prix' : 'Créer le Prix'}
-                    </button>
+                     /button>
                 </form>
 
                 {exemples && (
@@ -196,23 +171,28 @@ const PrixForfaitaire = () => {
                     </div>
                 )}
 
-                <div className="info-section">
-                    <h3>📋 Information</h3>
-                    <p>
-                        Le budget des signalements est calculé automatiquement selon la formule :
-                    </p>
-                    <code className="formule">
-                        Budget = Surface × Prix par m² × (Multiplicateur<sup>Niveau d'urgence</sup>)
-                    </code>
-                    <ul className="info-list">
-                        <li>Le prix est appliqué automatiquement lors de la création d'un signalement</li>
-                        <li>Le multiplicateur augmente le prix selon le niveau d'urgence</li>
-                        <li>Les anciens prix sont archivés et peuvent être consultés</li>
-                    </ul>
-                </div>
-            </div>
+                <div className="info{formData.prixParMetreCarre} × 1 × 50
+                                </div>
+                            </div>
+                            <div className="exemple-card">
+                                <div className="exemple-niveau">Niveau 2</div>
+                                <div className="exemple-prix">{exemples.niveau2} Ar</div>
+                                <div className="exemple-formule">
+                                    {formData.prixParMetreCarre} × 2 × 50
+                                </div>
+                            </div>
+                            <div className="exemple-card">
+                                <div className="exemple-niveau">Niveau 3</div>
+                                <div className="exemple-prix">{exemples.niveau3} Ar</div>
+                                <div className="exemple-formule">
+                                    {formData.prixParMetreCarre} × 3 × 50
         </div>
     );
 };
 
 export default PrixForfaitaire;
+Prix par m² × Niveau × Surface
+                    </code>
+                    <ul className="info-list">
+                        <li>Le prix est appliqué automatiquement lors de la création d'un signalement</li>
+                        <li>Le niveau est saisi pour chaque signalement

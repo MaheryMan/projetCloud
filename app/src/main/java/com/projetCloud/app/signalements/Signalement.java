@@ -35,6 +35,9 @@ public class Signalement {
     @Column(precision = 15, scale = 2)
     private BigDecimal budget;
 
+    @Column(name = "niveau")
+    private Integer niveau;
+
     @Column(name = "id_entreprise")
     private Long idEntreprise;
 
@@ -82,11 +85,12 @@ public class Signalement {
     // Constructeurs
     public Signalement() {}
 
-    public Signalement(BigDecimal latitude, BigDecimal longitude, BigDecimal surfaceM2, BigDecimal budget, String description, Long idEntreprise, Long idStatus, TypeSignalement typeSignalement, Utilisateur utilisateur) {
+    public Signalement(BigDecimal latitude, BigDecimal longitude, BigDecimal surfaceM2, BigDecimal budget, Integer niveau, String description, Long idEntreprise, Long idStatus, TypeSignalement typeSignalement, Utilisateur utilisateur) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.surfaceM2 = surfaceM2;
         this.budget = budget;
+        this.niveau = niveau;
         this.description = description;
         this.idEntreprise = idEntreprise;
         this.idStatus = idStatus;
@@ -141,6 +145,14 @@ public class Signalement {
 
     public void setBudget(BigDecimal budget) {
         this.budget = budget;
+    }
+
+    public Integer getNiveau() {
+        return niveau;
+    }
+
+    public void setNiveau(Integer niveau) {
+        this.niveau = niveau;
     }
 
     public Long getIdEntreprise() {
