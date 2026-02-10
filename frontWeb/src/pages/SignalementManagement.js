@@ -14,6 +14,7 @@ function SignalementManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [originalSignalement, setOriginalSignalement] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [entreprises, setEntreprises] = useState([]);
@@ -185,6 +186,7 @@ const fetchEntreprises = async () => {
 
   const handleEdit = (signal) => {
     setEditingId(signal.id);
+    setOriginalSignalement(signal);
     // S'assurer que idStatus est toujours un nombre
     const statusId = Number(signal.idStatus ?? signal.status ?? 4);
     setEditForm({
@@ -199,6 +201,7 @@ const fetchEntreprises = async () => {
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditForm({});
+    setOriginalSignalement(null);
     setPhotoFile(null);
     setPhotoPreview(null);
     setShowEditModal(false);
@@ -231,6 +234,7 @@ const fetchEntreprises = async () => {
         idUtilisateur: editForm.idUtilisateur,
         dateModificationStatus: editForm.dateModificationStatus || null,
         commentaireStatus: editForm.commentaireStatus || null,
+        niveau: editForm.niveau !== null && editForm.niveau !== undefined && editForm.niveau !== '' ? editForm.niveau : null,
       };
       const response = await fetch(`http://localhost:8080/api/signalements/${id}`, {
         method: 'PUT',
@@ -249,6 +253,7 @@ const fetchEntreprises = async () => {
       await fetchSignalements();
       setEditingId(null);
       setEditForm({});
+      setOriginalSignalement(null);
       setPhotoFile(null);
       setPhotoPreview(null);
       setShowEditModal(false);
@@ -799,6 +804,30 @@ const fetchEntreprises = async () => {
                   <small style={{ color: '#7f8c8d', fontSize: '0.85em', marginTop: '4px', display: 'block' }}>
                     Ce commentaire apparaitra dans l'historique : "Mise à jour status: [votre commentaire]"
                   </small>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="niveau">Niveau</label>
+                  <input
+                    type="number"
+                    id="niveau"
+                    value={editForm.niveau ?? ''}
+                    onChange={(e) => setEditForm({ ...editForm, niveau: e.target.value ? parseInt(e.target.value) : null })}
+                    placeholder="Niveau d'urgence (1-10)"
+                    disabled={originalSignalement?.niveau !== null && originalSignalement?.niveau !== undefined}
+                    min="1"
+                    max="10"
+                    style={{ 
+                      color: '#2c3e50', 
+                      backgroundColor: (originalSignalement?.niveau !== null && originalSignalement?.niveau !== undefined) ? '#e9ecef' : 'white',
+                      cursor: (originalSignalement?.niveau !== null && originalSignalement?.niveau !== undefined) ? 'not-allowed' : 'text'
+                    }}
+                  />
+                  {(originalSignalement?.niveau !== null && originalSignalement?.niveau !== undefined) && (
+                    <small style={{ color: '#e74c3c', fontSize: '0.85em', marginTop: '4px', display: 'block' }}>
+                      Le niveau ne peut pas être modifié une fois défini
+                    </small>
+                  )}
                 </div>
 
                 <div className="form-group">

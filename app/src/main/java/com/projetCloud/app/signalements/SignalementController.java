@@ -344,6 +344,9 @@ public class SignalementController {
                 }
                 signalement.setTypeSignalement(typeSignalement.get());
             }
+            if (request.getNiveau() != null) {
+                signalement.setNiveau(request.getNiveau());
+            }
             
             // Gestion de la photo
             if (request.getPhotoUrl() != null) {
@@ -614,6 +617,9 @@ public class SignalementController {
         @Schema(description = "Commentaire personnalisé pour le changement de statut", example = "Validation par le manager")
         private String commentaireStatus;
 
+        @Schema(description = "Niveau d'urgence ou de priorité", example = "3", format = "int32")
+        private Integer niveau;
+
         public BigDecimal getLatitude() {
             return latitude;
         }
@@ -716,6 +722,14 @@ public class SignalementController {
 
         public void setCommentaireStatus(String commentaireStatus) {
             this.commentaireStatus = commentaireStatus;
+        }
+
+        public Integer getNiveau() {
+            return niveau;
+        }
+
+        public void setNiveau(Integer niveau) {
+            this.niveau = niveau;
         }
     }
 }
