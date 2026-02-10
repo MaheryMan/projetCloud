@@ -125,14 +125,10 @@ function App() {
         {/* ⭐ CONTENU PRINCIPAL avec padding pour la sidebar */}
         <main className={`main-content ${!user || !(user.roles && user.roles.includes('Manager')) ? 'visitor-mode' : 'with-sidebar'}`}>
           <Routes>
-            {/* Route publique - Carte visiteur (redirection automatique pour les Managers) */}
+            {/* Route publique - Carte accessible pour tous */}
             <Route 
               path="/" 
-              element={
-                user && user.roles && user.roles.includes('Manager') 
-                  ? <Navigate to="/dashboard" replace /> 
-                  : <VisitorMap />
-              } 
+              element={<VisitorMap />} 
             />
             
             {/* Routes d'authentification - Avec wrapper pour centrage */}
