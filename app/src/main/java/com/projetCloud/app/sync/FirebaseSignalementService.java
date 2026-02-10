@@ -10,6 +10,7 @@ import com.projetCloud.app.utilisateurs.Utilisateur;
 import com.projetCloud.app.utilisateurs.UtilisateurRepository;
 import com.projetCloud.app.status.Status;
 import com.projetCloud.app.status.StatusRepository;
+import com.projetCloud.app.entreprises.Entreprise;
 import com.projetCloud.app.entreprises.EntrepriseRepository;
 import com.projetCloud.app.photos.Photo;
 import com.projetCloud.app.photos.PhotoService;
@@ -182,6 +183,29 @@ public class FirebaseSignalementService {
             signalement.setIdStatus(8L); // Créé par défaut si pas de status
         }
 
+        // Entreprise: mapper companyName de Firebase à idEntreprise en Postgres
+        String companyName = (String) firebaseData.get("companyName");
+        logger.info("[ENTREPRISE MAPPING] companyName reçu du Firebase: '{}'", companyName);
+        
+        if (companyName != null && !companyName.isEmpty()) {
+            logger.info("[ENTREPRISE MAPPING] 🔍 Recherche entreprise avec nom: '{}'", companyName);
+            
+            Entreprise entreprise = entrepriseRepository.findByNomIgnoreCase(companyName)
+                    .orElseGet(() -> {
+                        logger.warn("[ENTREPRISE MAPPING] ⚠️ Entreprise '{}' introuvable dans Postgres, signalement non attribué", companyName);
+                        return null;
+                    });
+            
+            if (entreprise != null) {
+                signalement.setIdEntreprise(entreprise.getId());
+                logger.info("[ENTREPRISE MAPPING] ✅ Entreprise trouvée et associée: '{}' (ID: {})", companyName, entreprise.getId());
+            } else {
+                logger.info("[ENTREPRISE MAPPING] ❌ Signalement créé sans entreprise (companyName: '{}')", companyName);
+            }
+        } else {
+            logger.info("[ENTREPRISE MAPPING] ℹ️ Pas de companyName fourni par Firebase");
+        }
+
         // Timestamps
         if (firebaseData.get("createdAt") != null) {
             Object createdAtObj = firebaseData.get("createdAt");
@@ -198,8 +222,8 @@ public class FirebaseSignalementService {
         signalement.setIsSyncedToFirebase(true);
 
         Signalement saved = signalementRepository.save(signalement);
-        logger.info("Signalement synchronisé avec succès: ID Postgres={}, ID Firebase={}", 
-                    saved.getId(), saved.getFirebaseId());
+        logger.info("Signalement synchronisé avec succès: ID Postgres={}, ID Firebase={}, idEntreprise={}", 
+                    saved.getId(), saved.getFirebaseId(), saved.getIdEntreprise());
 
         return saved;
     }
