@@ -11,18 +11,47 @@ import SignalementDetails from './pages/SignalementDetails';
 import UserManagement from './pages/UserManagement';
 import Statistics from './pages/Statistics';
 import Settings from './pages/Settings';
-import { startSessionMonitoring, stopSessionMonitoring } from './services/authService';
+import { startSessionMonitoring, stopSessionMonitoring, checkTokenValidity } from './services/authService';
 import './App.css';
 
 function App() {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Ne pas charger automatiquement l'utilisateur au démarrage de l'application
-    // L'utilisateur arrive toujours en mode visiteur sur la carte
-    // Il pourra se connecter manuellement via le bouton "Connexion Manager" si nécessaire
+    // Vérifier si l'utilisateur est déjà connecté au démarrage
+    const checkExistingSession = async () => {
+      const storedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      
+      if (storedUser && token) {
+        try {
+          // Vérifier si le token est toujours valide
+          const isValid = await checkTokenValidity();
+          
+          if (isValid) {
+            // Token valide, restaurer la session
+            const userData = JSON.parse(storedUser);
+            setUser(userData);
+            
+            // Démarrer le monitoring de session
+            startSessionMonitoring();
+          } else {
+            // Token invalide, nettoyer le localStorage
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+          }
+        } catch (error) {
+          console.error('Erreur lors de la vérification de la session:', error);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
+      }
+      
+      setLoading(false);
+    };
     
-    // Note: Le monitoring de session sera démarré après une connexion réussie
+    checkExistingSession();
   }, []);
 
   const handleLogin = (userData) => {
@@ -30,13 +59,43 @@ function App() {
     const userWithRoles = { ...userData.user, roles: userData.roles };
     setUser(userWithRoles);
     localStorage.setItem('user', JSON.stringify(userWithRoles));
+    
+    // Démarrer le monitoring de session après la connexion
+    startSessionMonitoring();
   };
 
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    stopSessionMonitoring();
   };
+
+  // Afficher un écran de chargement pendant la vérification de la session
+  if (loading) {
+    return (
+      <div className="App" style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        backgroundColor: '#f5f5f5'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="spinner" style={{
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #3498db',
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }}></div>
+          <p>Chargement...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Composant pour protéger les routes Manager
   const ProtectedRoute = ({ children }) => {
@@ -65,8 +124,15 @@ function App() {
         {/* ⭐ CONTENU PRINCIPAL avec padding pour la sidebar */}
         <main className={`main-content ${!user || !(user.roles && user.roles.includes('Manager')) ? 'visitor-mode' : 'with-sidebar'}`}>
           <Routes>
-            {/* Route publique - Carte visiteur */}
-            <Route path="/" element={<VisitorMap />} />
+            {/* Route publique - Carte visiteur (redirection automatique pour les Managers) */}
+            <Route 
+              path="/" 
+              element={
+                user && user.roles && user.roles.includes('Manager') 
+                  ? <Navigate to="/dashboard" replace /> 
+                  : <VisitorMap />
+              } 
+            />
             
             {/* Routes d'authentification - Avec wrapper pour centrage */}
             <Route 
