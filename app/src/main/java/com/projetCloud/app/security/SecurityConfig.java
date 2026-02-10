@@ -67,7 +67,13 @@ public class SecurityConfig {
                 // 6. Configurations: uniquement pour les Managers
                 .requestMatchers("/api/configurations/**").hasAuthority("Manager")
                 
-                // 7. Manager: accès total au reste de l'API (règle générique EN DERNIER)
+                // 7. Prix forfaitaire: lecture publique, modifications Manager uniquement
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/prix-forfaitaire/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/prix-forfaitaire/**").hasAuthority("Manager")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/prix-forfaitaire/**").hasAuthority("Manager")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/prix-forfaitaire/**").hasAuthority("Manager")
+                
+                // 8. Manager: accès total au reste de l'API (règle générique EN DERNIER)
                 .requestMatchers("/api/**").hasAuthority("Manager")
                 // Tous les autres endpoints nécessitent une authentification
                 .anyRequest().authenticated()
