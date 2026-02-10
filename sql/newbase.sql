@@ -199,6 +199,11 @@ CREATE TABLE types_signalement (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE niveau_urgence (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(20) NOT NULL UNIQUE
+);
+
 -- Types par défaut
 INSERT INTO types_signalement (libelle, description, icone, couleur, niveau_urgence) VALUES
 ('Trou', 'Dégradation de la chaussée avec creux', 'pothole', '#FF0000', 1),
@@ -227,6 +232,7 @@ CREATE TABLE signalements (
     id_entreprise BIGINT REFERENCES entreprises(id),
     id_utilisateur BIGINT NOT NULL REFERENCES utilisateurs(id), -- Celui qui a signalé
     id_status BIGINT NOT NULL REFERENCES status(id),            -- Statut courant
+    niveau INTEGER,                                             -- Niveau d'urgence ou de priorité
     
     -- Synchronisation Firebase
     is_synced_to_firebase BOOLEAN DEFAULT FALSE,
@@ -580,3 +586,6 @@ JOIN status st ON u.id_status = st.id
 LEFT JOIN user_roles ur ON u.id = ur.id_utilisateur
 LEFT JOIN roles r ON ur.id_role = r.id
 GROUP BY u.id, s.libelle, st.libelle;
+
+ALTER TABLE signalements ADD COLUMN niveau INTEGER DEFAULT NULL;
+ALTER TABLE signalements ADD CONSTRAINT niveau CHECK (niveau BETWEEN 1 AND 10);
