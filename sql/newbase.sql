@@ -602,3 +602,24 @@ JOIN status st ON u.id_status = st.id
 LEFT JOIN user_roles ur ON u.id = ur.id_utilisateur
 LEFT JOIN roles r ON ur.id_role = r.id
 GROUP BY u.id, s.libelle, st.libelle;
+
+
+CREATE TABLE IF NOT EXISTS prix_forfaitaire (
+    id BIGSERIAL PRIMARY KEY,
+    prix_par_metre_carre NUMERIC(15, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL
+);
+
+
+COMMENT ON TABLE prix_forfaitaire IS 'Table de gestion des prix forfaitaires pour le calcul automatique du budget';
+COMMENT ON COLUMN prix_forfaitaire.prix_par_metre_carre IS 'Prix de base par mètre carré';
+COMMENT ON COLUMN prix_forfaitaire.multiplicateur_niveau IS 'Multiplicateur appliqué selon le niveau d''urgence (multiplicateur ^ niveau)';
+COMMENT ON COLUMN prix_forfaitaire.created_at IS 'Date de création du prix';
+COMMENT ON COLUMN prix_forfaitaire.deleted_at IS 'Date de désactivation du prix (soft delete)';
+
+CREATE INDEX idx_prix_forfaitaire_deleted_at ON prix_forfaitaire(deleted_at);
+CREATE INDEX idx_prix_forfaitaire_created_at ON prix_forfaitaire(created_at DESC);
+
+INSERT INTO prix_forfaitaire (prix_par_metre_carre, multiplicateur_niveau, created_at, deleted_at)
+VALUES (100.00, 1.50, CURRENT_TIMESTAMP, NULL);
