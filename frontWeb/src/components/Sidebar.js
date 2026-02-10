@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaMap, FaChartBar, FaClipboardList, FaUsers, FaChartLine, FaSync, FaCog } from 'react-icons/fa';
+import { FaMap, FaChartBar, FaClipboardList, FaUsers, FaChartLine, FaSync, FaCog, FaDollarSign } from 'react-icons/fa';
 import './Sidebar.css';
 
 function Sidebar({ user, onLogout }) {
@@ -38,6 +38,7 @@ function Sidebar({ user, onLogout }) {
     { path: '/signalements', label: 'Signalements', icon: <FaClipboardList /> },
     { path: '/users', label: 'Utilisateurs', icon: <FaUsers /> },
     { path: '/statistics', label: 'Statistiques', icon: <FaChartLine /> },
+    { path: '/prix-forfaitaire', label: 'Prix Forfaitaire', icon: <FaDollarSign /> },
     { path: '/settings', label: 'Paramètres', icon: <FaCog /> }
   ];
 

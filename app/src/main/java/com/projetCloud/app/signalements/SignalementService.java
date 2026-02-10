@@ -1,9 +1,11 @@
 package com.projetCloud.app.signalements;
 
 import com.projetCloud.app.historiques.HistoriqueStatusSignalementService;
+import com.projetCloud.app.prixForfaitaire.PrixForfaitaireService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +18,9 @@ public class SignalementService {
 
     @Autowired
     private HistoriqueStatusSignalementService historiqueService;
+
+    @Autowired
+    private PrixForfaitaireService prixForfaitaireService;
 
     public List<Signalement> findAll() {
         List<Signalement> signalements = signalementRepository.findAll();
@@ -31,6 +36,20 @@ public class SignalementService {
     }
 
     public Signalement save(Signalement signalement) {
+        // Calculer automatiquement le budget si surface et niveau sont présents
+        if (signalement.getSurfaceM2() != null && signalement.getNiveau() != null) {
+            try {
+                BigDecimal budgetCalcule = prixForfaitaireService.calculerBudget(
+                    signalement.getSurfaceM2(), 
+                    signalement.getNiveau()
+                );
+                signalement.setBudget(budgetCalcule);
+            } catch (IllegalStateException e) {
+                // Si aucun prix forfaitaire n'est configuré, on garde le budget actuel
+                System.out.println("Attention: " + e.getMessage());
+            }
+        }
+        
         return signalementRepository.save(signalement);
     }
 
