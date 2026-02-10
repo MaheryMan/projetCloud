@@ -204,9 +204,15 @@ function VisitorMap() {
   }, []);
 
   useEffect(() => {
-    // Ne pas charger automatiquement l'utilisateur depuis localStorage
-    // L'utilisateur arrive toujours déconnecté sur la carte publique
-    // Il peut se connecter via le bouton "Connexion Manager" si nécessaire
+    // Vérifier si l'utilisateur est déjà connecté
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Erreur lors du parsing de l\'utilisateur:', error);
+      }
+    }
     
     fetchSignalements();
     fetchTypesSignalement();
@@ -357,14 +363,16 @@ function VisitorMap() {
   return (
     <div className="visitor-map-container">
       {/* Header avec boutons d'authentification */}
-      <div className="map-header-actions">
-        <button 
-          className="login-btn"
-          onClick={() => navigate('/login')}
-        >
-          Connexion Manager
-        </button>
-      </div>
+      {!user && (
+        <div className="map-header-actions">
+          <button 
+            className="login-btn"
+            onClick={() => navigate('/login')}
+          >
+            Connexion Manager
+          </button>
+        </div>
+      )}
 
       {/* Barre de filtres */}
       <div className="filter-container">

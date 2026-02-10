@@ -1,0 +1,232 @@
+// Base de données Projet Cloud - Signalements Routiers
+// Utilisez ce fichier sur https://dbdiagram.io/
+
+Table sources {
+  id bigserial [pk, increment]
+  libelle varchar(50) [not null]
+  provider_type varchar(20) [not null, note: 'firebase_email, google, local']
+  is_online boolean [default: true]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  
+  Note: 'Gestion des sources d\'authentification'
+}
+
+Table status {
+  id bigserial [pk, increment]
+  code varchar(50) [not null, unique]
+  libelle varchar(50) [not null]
+  status_id varchar(50) [not null]
+  is_synced_to_firebase boolean [default: false]
+  last_synced_at timestamp
+  
+  Note: 'Statuts pour utilisateurs et signalements'
+}
+
+Table entreprises {
+  id bigserial [pk, increment]
+  nom varchar(255) [not null]
+  contact_email varchar(255)
+  contact_telephone varchar(50)
+  adresse text
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp
+  is_synced_to_firebase boolean [default: false]
+  last_synced_at timestamp
+  
+  Note: 'Entreprises pouvant traiter les signalements'
+}
+
+Table roles {
+  id bigserial [pk, increment]
+  libelle varchar(50) [not null, unique]
+  niveau integer [not null, note: 'Ordre hiérarchique']
+  
+  Note: 'Rôles utilisateurs (Manager, Mobile_User, Visiteur)'
+}
+
+Table utilisateurs {
+  id bigserial [pk, increment]
+  email varchar(255) [not null, unique]
+  password text [note: 'NULL pour Firebase/Google']
+  firebase_uid varchar(128) [unique, note: 'ID Firebase si en ligne']
+  nom varchar(255) [not null]
+  prenom varchar(255) [not null]
+  num_tel varchar(255)
+  
+  // Sécurité
+  tentatives_connexion integer [default: 0]
+  is_blocked boolean [default: false]
+  last_failed_attempt timestamp
+  
+  // Références
+  id_source bigint [not null, ref: > sources.id]
+  id_status bigint [not null, ref: > status.id]
+  
+  // Synchronisation
+  is_synced_to_firebase boolean [default: false]
+  last_synced_at timestamp
+  firebase_created_at timestamp
+  
+  // Timestamps
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp
+  deleted_at timestamp
+  
+  // Synchronisation avancée
+  modified_offline boolean [default: false]
+  last_modified_at timestamp
+  temp_password text [note: 'Mot de passe temporaire pour sync offline']
+  
+  Note: 'Utilisateurs de l\'application'
+}
+
+Table user_roles {
+  id_utilisateur bigint [not null, ref: > utilisateurs.id]
+  id_role bigint [not null, ref: > roles.id]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  
+  indexes {
+    (id_utilisateur, id_role) [pk]
+  }
+  
+  Note: 'Liaison utilisateurs-rôles (many-to-many)'
+}
+
+Table sessions {
+  id uuid [pk, default: `gen_random_uuid()`]
+  token text [not null, unique]
+  id_utilisateur bigint [not null, ref: > utilisateurs.id]
+  device_info text
+  ip_address varchar(45)
+  
+  // Durée de vie
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  expires_at timestamp [not null]
+  last_activity timestamp [default: `CURRENT_TIMESTAMP`]
+  
+  // État
+  is_valid boolean [not null, default: true]
+  logout_at timestamp
+  
+  Note: 'Sessions utilisateurs'
+}
+
+Table deblocages {
+  id bigserial [pk, increment]
+  id_utilisateur bigint [not null, ref: > utilisateurs.id]
+  id_manager bigint [not null, ref: > utilisateurs.id]
+  motif text
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  
+  Note: 'Journal des déblocages d\'utilisateurs par les managers'
+}
+
+Table types_signalement {
+  id bigserial [pk, increment]
+  libelle varchar(100) [not null, unique]
+  description text
+  icone varchar(100) [note: 'Nom de l\'icône']
+  couleur varchar(20)
+  niveau_urgence integer [default: 2, note: '1=Urgent, 2=Normal, 3=Faible']
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  is_synced_to_firebase boolean [default: false]
+  last_synced_at timestamp
+  
+  Note: 'Types de signalements (Trou, Chantier, Autre)'
+}
+
+Table signalements {
+  id bigserial [pk, increment]
+  
+  // Position
+  latitude numeric(10,6) [not null]
+  longitude numeric(10,6) [not null]
+  
+  // Description
+  description text [not null]
+  
+  // Détails techniques
+  surface_m2 numeric(15,2)
+  budget numeric(15,2)
+  niveau integer [note: 'Niveau d\'urgence ou de priorité']
+  
+  // Références
+  id_type_signalement bigint [not null, ref: > types_signalement.id]
+  id_entreprise bigint [ref: > entreprises.id]
+  id_utilisateur bigint [not null, ref: > utilisateurs.id, note: 'Créateur du signalement']
+  id_status bigint [not null, ref: > status.id]
+  
+  // Synchronisation Firebase
+  is_synced_to_firebase boolean [default: false]
+  firebase_id varchar(128) [note: 'ID correspondant dans Firebase']
+  synced_at timestamp
+  synced_from_firebase_at timestamp
+  needs_firebase_sync boolean [default: false]
+  
+  // Timestamps
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp
+  
+  Note: 'Signalements de problèmes routiers'
+}
+
+Table photos {
+  id bigserial [pk, increment]
+  url varchar(1000) [not null]
+  description varchar(500)
+  file_name varchar(255)
+  file_size bigint
+  mime_type varchar(100)
+  uploaded_at timestamp
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+  id_signalement bigint [ref: > signalements.id, note: 'Plusieurs photos par signalement']
+  
+  Note: 'Photos associées aux signalements'
+}
+
+Table historiques_status_signalement {
+  id bigserial [pk, increment]
+  id_signalement bigint [not null, ref: > signalements.id]
+  id_status bigint [not null, ref: > status.id]
+  id_utilisateur bigint [not null, ref: > utilisateurs.id, note: 'Qui a changé le statut']
+  commentaire text
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  
+  Note: 'Historique des changements de statut des signalements'
+}
+
+Table configurations {
+  id bigserial [pk, increment]
+  cle varchar(100) [not null, unique]
+  valeur text [not null]
+  description text
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp
+  
+  Note: 'Paramètres de configuration de l\'application'
+}
+
+Table prix_forfaitaire {
+  id bigserial [pk, increment]
+  prix_par_metre_carre numeric(15,2) [not null, note: 'Prix de base par m²']
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  deleted_at timestamp [note: 'Soft delete']
+  
+  Note: 'Gestion des prix forfaitaires pour calcul automatique du budget. Formule: budget = prix_par_m2 × niveau × surface_m2'
+}
+
+// Relations supplémentaires pour clarification
+Ref: user_roles.id_utilisateur > utilisateurs.id [delete: cascade]
+Ref: user_roles.id_role > roles.id [delete: cascade]
+Ref: sessions.id_utilisateur > utilisateurs.id [delete: cascade]
+Ref: deblocages.id_utilisateur > utilisateurs.id [delete: cascade]
+Ref: deblocages.id_manager > utilisateurs.id [delete: cascade]
+Ref: signalements.id_type_signalement > types_signalement.id [delete: restrict]
+Ref: signalements.id_entreprise > entreprises.id [delete: set null]
+Ref: signalements.id_utilisateur > utilisateurs.id [delete: restrict]
+Ref: signalements.id_status > status.id [delete: restrict]
+Ref: photos.id_signalement > signalements.id [delete: cascade]
+Ref: historiques_status_signalement.id_signalement > signalements.id [delete: cascade]
+Ref: historiques_status_signalement.id_status > status.id [delete: restrict]
+Ref: historiques_status_signalement.id_utilisateur > utilisateurs.id [delete: restrict]
