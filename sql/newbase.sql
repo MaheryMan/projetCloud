@@ -199,6 +199,11 @@ CREATE TABLE types_signalement (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE niveau_urgence (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(20) NOT NULL UNIQUE
+);
+
 -- Types par défaut
 INSERT INTO types_signalement (libelle, description, icone, couleur, niveau_urgence) VALUES
 ('Trou', 'Dégradation de la chaussée avec creux', 'pothole', '#FF0000', 1),
@@ -227,6 +232,7 @@ CREATE TABLE signalements (
     id_entreprise BIGINT REFERENCES entreprises(id),
     id_utilisateur BIGINT NOT NULL REFERENCES utilisateurs(id), -- Celui qui a signalé
     id_status BIGINT NOT NULL REFERENCES status(id),            -- Statut courant
+    niveau INTEGER,                                             -- Niveau d'urgence ou de priorité
     
     -- Synchronisation Firebase
     is_synced_to_firebase BOOLEAN DEFAULT FALSE,
@@ -435,28 +441,6 @@ CREATE TRIGGER update_entreprises_updated_at
     BEFORE UPDATE ON entreprises 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Fonction: Loguer les changements de statut automatiquement
-CREATE OR REPLACE FUNCTION log_status_change()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF OLD.id_status IS DISTINCT FROM NEW.id_status THEN
-        INSERT INTO historiques_status_signalement 
-        (id_signalement, id_status, id_utilisateur, commentaire)
-        VALUES (
-            NEW.id, 
-            NEW.id_status, 
-            NEW.id_utilisateur,
-            'Changement automatique via trigger'
-        );
-    END IF;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER log_signalement_status_change
-    AFTER UPDATE OF id_status ON signalements
-    FOR EACH ROW EXECUTE FUNCTION log_status_change();
-
 -- Fonction: Créer un historique lors de la création d'un signalement
 CREATE OR REPLACE FUNCTION create_initial_historique()
 RETURNS TRIGGER AS $$
@@ -631,10 +615,7 @@ INSERT INTO prix_forfaitaire (prix_par_metre_carre, created_at, deleted_at)
 VALUES (100.00, CURRENT_TIMESTAMP, NULL);
 
 -- Ajouter la colonne niveau dans la table signalements si elle n'existe pas déjà
-ALTER TABLE signalements ADD COLUMN IF NOT EXISTS niveau INTEGER;
 
--- Commentaire sur la nouvelle colonne
-COMMENT ON COLUMN signalements.niveau IS 'Niveau du signalement (1, 2, 3, etc.)';
 
 -- Remarque: Le budget est maintenant calculé automatiquement selon la formule:
 -- budget = prix_par_m2 * niveau * surface_m2

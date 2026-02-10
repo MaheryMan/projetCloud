@@ -14,6 +14,7 @@ function SignalementManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [originalSignalement, setOriginalSignalement] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [entreprises, setEntreprises] = useState([]);
@@ -185,11 +186,14 @@ const fetchEntreprises = async () => {
 
   const handleEdit = (signal) => {
     setEditingId(signal.id);
+    setOriginalSignalement(signal);
+    // S'assurer que idStatus est toujours un nombre
+    const statusId = Number(signal.idStatus ?? signal.status ?? 4);
     setEditForm({
       ...signal,
       surfaceM2: signal.surfaceM2 ?? signal.surface ?? '',
       idEntreprise: signal.idEntreprise ?? signal.entrepriseId ?? '',
-      idStatus: signal.idStatus ?? signal.status ?? '',
+      idStatus: statusId,
     });
     setShowEditModal(true);
   };
@@ -197,6 +201,7 @@ const fetchEntreprises = async () => {
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditForm({});
+    setOriginalSignalement(null);
     setPhotoFile(null);
     setPhotoPreview(null);
     setShowEditModal(false);
@@ -227,6 +232,9 @@ const fetchEntreprises = async () => {
         idStatus: editForm.idStatus,
         idEntreprise: editForm.idEntreprise,
         idUtilisateur: editForm.idUtilisateur,
+        dateModificationStatus: editForm.dateModificationStatus || null,
+        commentaireStatus: editForm.commentaireStatus || null,
+        niveau: editForm.niveau !== null && editForm.niveau !== undefined && editForm.niveau !== '' ? editForm.niveau : null,
       };
       const response = await fetch(`http://localhost:8080/api/signalements/${id}`, {
         method: 'PUT',
@@ -245,6 +253,7 @@ const fetchEntreprises = async () => {
       await fetchSignalements();
       setEditingId(null);
       setEditForm({});
+      setOriginalSignalement(null);
       setPhotoFile(null);
       setPhotoPreview(null);
       setShowEditModal(false);
@@ -281,7 +290,9 @@ const fetchEntreprises = async () => {
       const token = localStorage.getItem('token');
       const payload = {
         ...signal,
-        idStatus: newStatus
+        idStatus: newStatus,
+        dateModificationStatus: signal.dateModificationStatus || null,
+        commentaireStatus: signal.commentaireStatus || null
       };
       const response = await fetch(`http://localhost:8080/api/signalements/${signal.id}`, {
         method: 'PUT',
@@ -410,11 +421,23 @@ const fetchEntreprises = async () => {
         }
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Erreur lors de la synchronisation');
+        // Afficher le message d'erreur du serveur
+        const errorMessage = data.message || 'Erreur lors de la synchronisation';
+        addLog(errorMessage, 'error', { icon: '❌' });
+        // Afficher uniquement les erreurs supplémentaires qui ne sont pas identiques au message principal
+        if (data.errors && data.errors.length > 0) {
+          data.errors.forEach(err => {
+            if (err !== errorMessage) {
+              addLog(err, 'error');
+            }
+          });
+        }
+        return;
       }
 
-      const data = await response.json();
       addLog('Synchronisation réussie!', 'success', { 
         badge: `${data.successCount} signalements`,
         icon: '✅' 
@@ -450,14 +473,26 @@ const fetchEntreprises = async () => {
         }
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Erreur lors de la synchronisation');
+        // Afficher le message d'erreur du serveur
+        const errorMessage = data.message || 'Erreur lors de la synchronisation';
+        addLog(errorMessage, 'error', { icon: '❌' });
+        // Afficher uniquement les erreurs supplémentaires qui ne sont pas identiques au message principal
+        if (data.errors && data.errors.length > 0) {
+          data.errors.forEach(err => {
+            if (err !== errorMessage) {
+              addLog(err, 'error');
+            }
+          });
+        }
+        return;
       }
 
-      const data = await response.json();
       addLog('Synchronisation réussie!', 'success', { 
         badge: `${data.successCount} signalements`,
-        icon: '✅' 
+        icon: '✅'
       });
 
       // Recharger la liste des signalements
@@ -732,14 +767,67 @@ const fetchEntreprises = async () => {
                   <label htmlFor="statut">Statut *</label>
                   <select
                     id="statut"
-                    value={editForm.idStatus || ''}
+                    value={String(editForm.idStatus || '4')}
                     onChange={(e) => setEditForm({ ...editForm, idStatus: parseInt(e.target.value) })}
                     style={{ color: '#2c3e50', backgroundColor: 'white' }}
                   >
-                    <option value={4}>Nouveau</option>
-                    <option value={5}>En cours</option>
-                    <option value={6}>Terminé</option>
+                    <option value="8">Créé</option>
+                    <option value="4">Nouveau</option>
+                    <option value="5">En cours</option>
+                    <option value="6">Terminé</option>
                   </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="dateModificationStatus">Date de modification du statut</label>
+                  <input
+                    type="datetime-local"
+                    id="dateModificationStatus"
+                    value={editForm.dateModificationStatus || ''}
+                    onChange={(e) => setEditForm({ ...editForm, dateModificationStatus: e.target.value ? e.target.value + ':00' : '' })}
+                    placeholder="Date et heure de modification"
+                  />
+                  <small style={{ color: '#7f8c8d', fontSize: '0.85em', marginTop: '4px', display: 'block' }}>
+                    Laissez vide pour utiliser la date actuelle
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="commentaireStatus">Commentaire du changement de statut</label>
+                  <textarea
+                    id="commentaireStatus"
+                    value={editForm.commentaireStatus || ''}
+                    onChange={(e) => setEditForm({ ...editForm, commentaireStatus: e.target.value })}
+                    placeholder="Ex: Validation par le manager, Travaux débutés, etc."
+                    rows="2"
+                  />
+                  <small style={{ color: '#7f8c8d', fontSize: '0.85em', marginTop: '4px', display: 'block' }}>
+                    Ce commentaire apparaitra dans l'historique : "Mise à jour status: [votre commentaire]"
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="niveau">Niveau</label>
+                  <input
+                    type="number"
+                    id="niveau"
+                    value={editForm.niveau ?? ''}
+                    onChange={(e) => setEditForm({ ...editForm, niveau: e.target.value ? parseInt(e.target.value) : null })}
+                    placeholder="Niveau d'urgence (1-10)"
+                    disabled={originalSignalement?.niveau !== null && originalSignalement?.niveau !== undefined}
+                    min="1"
+                    max="10"
+                    style={{ 
+                      color: '#2c3e50', 
+                      backgroundColor: (originalSignalement?.niveau !== null && originalSignalement?.niveau !== undefined) ? '#e9ecef' : 'white',
+                      cursor: (originalSignalement?.niveau !== null && originalSignalement?.niveau !== undefined) ? 'not-allowed' : 'text'
+                    }}
+                  />
+                  {(originalSignalement?.niveau !== null && originalSignalement?.niveau !== undefined) && (
+                    <small style={{ color: '#e74c3c', fontSize: '0.85em', marginTop: '4px', display: 'block' }}>
+                      Le niveau ne peut pas être modifié une fois défini
+                    </small>
+                  )}
                 </div>
 
                 <div className="form-group">

@@ -159,6 +159,14 @@ function SignalementDetails() {
                 <span>{signalement.typeSignalement?.libelle || 'Non spécifié'}</span>
               </div>
               <div className="info-item">
+                <label>Niveau</label>
+                <span className="niveau-badge">
+                  {signalement.niveau !== null && signalement.niveau !== undefined 
+                    ? `Niveau ${signalement.niveau}` 
+                    : 'Non défini'}
+                </span>
+              </div>
+              <div className="info-item">
                 <label>Surface</label>
                 <span>{signalement.surfaceM2} m²</span>
               </div>

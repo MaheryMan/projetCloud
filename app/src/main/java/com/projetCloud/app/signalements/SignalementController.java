@@ -23,6 +23,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.Parameter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -249,12 +252,27 @@ public class SignalementController {
             Signalement saved = signalementService.save(signalement);
             
             // Créer un historique pour le statut initial
-            historiqueService.createHistorique(
-                saved.getId(), 
-                saved.getIdStatus(), 
-                utilisateur.get().getId(), 
-                "Création du signalement"
-            );
+            LocalDateTime dateModif = parseDate(request.getDateModificationStatus());
+            String commentaire = (request.getCommentaireStatus() != null && !request.getCommentaireStatus().trim().isEmpty())
+                    ? "Création du signalement: " + request.getCommentaireStatus().trim()
+                    : "Création du signalement";
+            
+            if (dateModif != null) {
+                historiqueService.createHistorique(
+                    saved.getId(), 
+                    saved.getIdStatus(), 
+                    utilisateur.get().getId(), 
+                    commentaire,
+                    dateModif
+                );
+            } else {
+                historiqueService.createHistorique(
+                    saved.getId(), 
+                    saved.getIdStatus(), 
+                    utilisateur.get().getId(), 
+                    commentaire
+                );
+            }
             
             return ResponseEntity.ok(saved);
         } else {
@@ -326,6 +344,9 @@ public class SignalementController {
                 }
                 signalement.setTypeSignalement(typeSignalement.get());
             }
+            if (request.getNiveau() != null) {
+                signalement.setNiveau(request.getNiveau());
+            }
             
             // Gestion de la photo
             if (request.getPhotoUrl() != null) {
@@ -381,12 +402,27 @@ public class SignalementController {
                         ? ((Utilisateur) currentUserAttr).getId()
                         : signalement.getUtilisateur().getId();
 
-                historiqueService.createHistorique(
-                        saved.getId(),
-                        saved.getIdStatus(),
-                        userId,
-                        "Mise à jour du statut"
-                );
+                LocalDateTime dateModif = parseDate(request.getDateModificationStatus());
+                String commentaire = (request.getCommentaireStatus() != null && !request.getCommentaireStatus().trim().isEmpty())
+                        ? "Mise à jour status: " + request.getCommentaireStatus().trim()
+                        : "Mise à jour du statut";
+                
+                if (dateModif != null) {
+                    historiqueService.createHistorique(
+                            saved.getId(),
+                            saved.getIdStatus(),
+                            userId,
+                            commentaire,
+                            dateModif
+                    );
+                } else {
+                    historiqueService.createHistorique(
+                            saved.getId(),
+                            saved.getIdStatus(),
+                            userId,
+                            commentaire
+                    );
+                }
             }
 
             return ResponseEntity.ok(saved);
@@ -493,6 +529,21 @@ public class SignalementController {
         ));
     }
 
+    /**
+     * Méthode utilitaire pour parser une date ISO
+     */
+    private LocalDateTime parseDate(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } catch (DateTimeParseException e) {
+            System.err.println("Erreur de parsing de la date: " + dateStr + " - " + e.getMessage());
+            return null;
+        }
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Supprimer un signalement", description = "Supprime un signalement selon son identifiant")
     @ApiResponses(value = {
@@ -559,6 +610,15 @@ public class SignalementController {
 
         @Schema(description = "ID de l'utilisateur", example = "1", required = true, format = "int64")
         private Long idUtilisateur;
+
+        @Schema(description = "Date de modification du statut (format ISO: yyyy-MM-dd'T'HH:mm:ss)", example = "2024-01-15T14:30:00")
+        private String dateModificationStatus;
+
+        @Schema(description = "Commentaire personnalisé pour le changement de statut", example = "Validation par le manager")
+        private String commentaireStatus;
+
+        @Schema(description = "Niveau d'urgence ou de priorité", example = "3", format = "int32")
+        private Integer niveau;
 
         public BigDecimal getLatitude() {
             return latitude;
@@ -646,6 +706,30 @@ public class SignalementController {
 
         public void setIdUtilisateur(Long idUtilisateur) {
             this.idUtilisateur = idUtilisateur;
+        }
+
+        public String getDateModificationStatus() {
+            return dateModificationStatus;
+        }
+
+        public void setDateModificationStatus(String dateModificationStatus) {
+            this.dateModificationStatus = dateModificationStatus;
+        }
+
+        public String getCommentaireStatus() {
+            return commentaireStatus;
+        }
+
+        public void setCommentaireStatus(String commentaireStatus) {
+            this.commentaireStatus = commentaireStatus;
+        }
+
+        public Integer getNiveau() {
+            return niveau;
+        }
+
+        public void setNiveau(Integer niveau) {
+            this.niveau = niveau;
         }
     }
 }

@@ -658,6 +658,19 @@ public class SyncService {
      */
     public int syncSignalementsBidirectionnel() throws RuntimeException, TimeoutException {
         System.out.println("[SYNC][SIGNAL] Début synchronisation bi-directionnelle des signalements");
+        
+        // Vérifier s'il y a des utilisateurs (autres que les managers) dans la base avant de synchroniser
+        long totalUserCount = utilisateurRepository.count();
+        long nonManagerUserCount = utilisateurRepository.countNonManagerUsers();
+        
+        if (nonManagerUserCount == 0) {
+            String errorMessage = "ERREUR: Aucun utilisateur (autre que les managers) trouvé dans la base de données. Veuillez d'abord synchroniser les utilisateurs avant de synchroniser les signalements.";
+            System.err.println("[SYNC][SIGNAL] " + errorMessage);
+            System.err.println("[SYNC][SIGNAL] Total utilisateurs: " + totalUserCount + ", Utilisateurs non-managers: " + nonManagerUserCount);
+            throw new RuntimeException(errorMessage);
+        }
+        
+        System.out.println("[SYNC][SIGNAL] " + nonManagerUserCount + " utilisateur(s) non-manager(s) trouvé(s) dans la base (" + totalUserCount + " au total)");
         int totalSynced = 0;
         try {
             if (!connectivityService.isFirebaseOnline()) {

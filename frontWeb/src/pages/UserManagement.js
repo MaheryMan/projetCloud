@@ -202,25 +202,7 @@ function UserManagement() {
   };
 
   const handleResetPassword = async (userId) => {
-    if (!window.confirm('Réinitialiser le mot de passe de cet utilisateur ?')) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/users/${userId}/reset-password`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) throw new Error('Erreur de réinitialisation');
-
-      const data = await response.json();
-      alert(`Mot de passe réinitialisé : ${data.temporaryPassword}`);
-    } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors de la réinitialisation');
-    }
+    alert('⚠️ Fonctionnalité non disponible\n\nL\'endpoint de réinitialisation de mot de passe n\'existe pas encore dans le backend.\n\nVeuillez contacter l\'administrateur pour implémenter cette fonctionnalité.');
   };
 
   const handleCreateGoogleAccount = async () => {
@@ -279,7 +261,7 @@ function UserManagement() {
         password: newUser.password.trim()
       };
 
-      const response = await fetch('http://localhost:8080/api/users', {
+      const response = await fetch('http://localhost:8080/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
