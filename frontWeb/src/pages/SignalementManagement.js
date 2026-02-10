@@ -24,6 +24,7 @@ function SignalementManagement() {
   const [typesSignalement, setTypesSignalement] = useState([]);
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncLog, setSyncLog] = useState([]);
+  const [prixForfaitaire, setPrixForfaitaire] = useState(null);
   const terminalBodyRef = useRef(null);
 
   // Auto-scroll vers le bas du terminal
@@ -36,6 +37,7 @@ function SignalementManagement() {
   useEffect(() => {
     fetchEntreprises();
     fetchTypesSignalement();
+    fetchPrixForfaitaire();
   }, []);
 
 const fetchEntreprises = async () => {
@@ -65,6 +67,31 @@ const fetchEntreprises = async () => {
       console.error('Erreur:', error);
     }
   };
+
+  const fetchPrixForfaitaire = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/prix-forfaitaire/actif', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (!response.ok) throw new Error('Erreur de chargement du prix forfaitaire');
+      const data = await response.json();
+      setPrixForfaitaire(data);
+    } catch (error) {
+      console.error('Erreur prix forfaitaire:', error);
+    }
+  };
+
+  // Calcul automatique du budget quand surface ou niveau change
+  useEffect(() => {
+    if (editingId && editForm.surfaceM2 && editForm.niveau && prixForfaitaire) {
+      const budgetCalcule = parseFloat((prixForfaitaire.prixParMetreCarre * editForm.niveau * editForm.surfaceM2).toFixed(2));
+      // Ne mettre à jour que si le budget a changé
+      if (budgetCalcule !== editForm.budget) {
+        setEditForm(prev => ({ ...prev, budget: budgetCalcule }));
+      }
+    }
+  }, [editForm.surfaceM2, editForm.niveau, prixForfaitaire, editingId]);
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
@@ -890,14 +917,22 @@ const fetchEntreprises = async () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="budget">Budget *</label>
+                  <label htmlFor="budget">Budget (calculé automatiquement)</label>
                   <input
                     type="number"
                     id="budget"
                     value={editForm.budget ?? 0}
-                    onChange={(e) => setEditForm({ ...editForm, budget: parseFloat(e.target.value) })}
-                    placeholder="Entrez le budget"
+                    disabled
+                    placeholder="Budget"
+                    style={{ 
+                      backgroundColor: '#e9ecef',
+                      cursor: 'not-allowed',
+                      color: '#495057'
+                    }}
                   />
+                  <small style={{ color: '#6c757d', fontSize: '0.85em', marginTop: '4px', display: 'block' }}>
+                    Budget = Prix par m² ({prixForfaitaire?.prixParMetreCarre || 0}) × Niveau × Surface
+                  </small>
                 </div>
 
                 <div className="form-group">
