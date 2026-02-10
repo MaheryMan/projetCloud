@@ -206,6 +206,7 @@ CREATE TABLE signalements (
     id_entreprise INTEGER REFERENCES entreprises(id),
     id_utilisateur INTEGER NOT NULL REFERENCES utilisateurs(id), -- Celui qui a signalé
     id_status INTEGER NOT NULL REFERENCES status(id),            -- Statut courant
+    niveau INTEGER,                                              -- Niveau d'urgence ou de priorité
     
     -- Synchronisation Firebase
     is_synced_to_firebase BOOLEAN DEFAULT FALSE,
