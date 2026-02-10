@@ -24,6 +24,11 @@ export const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   
+  // Émettre un événement personnalisé pour notifier les autres composants
+  window.dispatchEvent(new CustomEvent('localStorageChange', { 
+    detail: { key: 'logout' } 
+  }));
+  
   // Rediriger vers la page de login
   window.location.href = '/login';
 };

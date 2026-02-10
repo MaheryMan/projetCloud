@@ -28,6 +28,12 @@ function Sidebar({ user, onLogout }) {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    
+    // Émettre un événement personnalisé pour notifier les autres composants
+    window.dispatchEvent(new CustomEvent('localStorageChange', { 
+      detail: { key: 'logout' } 
+    }));
+    
     if (onLogout) onLogout();
     navigate('/');
   };

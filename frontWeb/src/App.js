@@ -70,6 +70,11 @@ function App() {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     stopSessionMonitoring();
+    
+    // Émettre un événement personnalisé pour notifier les autres composants
+    window.dispatchEvent(new CustomEvent('localStorageChange', { 
+      detail: { key: 'logout' } 
+    }));
   };
 
   // Afficher un écran de chargement pendant la vérification de la session

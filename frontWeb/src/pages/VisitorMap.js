@@ -11,6 +11,7 @@ import { BiMoney } from 'react-icons/bi';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './VisitorMap.css';
+import { checkTokenValidity } from '../services/authService';
 
 // Fix pour les icônes Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -178,6 +179,12 @@ function VisitorMap() {
     setUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    
+    // Émettre un événement personnalisé pour notifier les autres composants
+    window.dispatchEvent(new CustomEvent('localStorageChange', { 
+      detail: { key: 'logout' } 
+    }));
+    
     window.location.href = '/';
   };
 
@@ -204,19 +211,75 @@ function VisitorMap() {
   }, []);
 
   useEffect(() => {
-    // Vérifier si l'utilisateur est déjà connecté
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Erreur lors du parsing de l\'utilisateur:', error);
+    // Vérifier si l'utilisateur est déjà connecté avec une session valide
+    const checkSession = async () => {
+      const storedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      
+      if (storedUser && token) {
+        try {
+          // Vérifier que le token est toujours valide
+          const isValid = await checkTokenValidity();
+          
+          if (isValid) {
+            // Session valide, restaurer l'utilisateur
+            setUser(JSON.parse(storedUser));
+          } else {
+            // Session invalide, nettoyer le localStorage
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Erreur lors de la vérification de la session:', error);
+          // En cas d'erreur, nettoyer par sécurité
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          setUser(null);
+        }
       }
-    }
+    };
     
+    checkSession();
     fetchSignalements();
     fetchTypesSignalement();
     fetchEntreprises();
+  }, []);
+
+  // Écouter les changements de localStorage pour détecter la déconnexion
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const storedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      
+      // Si token ou user sont supprimés, mettre à jour le state
+      if (!storedUser || !token) {
+        setUser(null);
+      } else if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error('Erreur lors du parsing de l\'utilisateur:', error);
+          setUser(null);
+        }
+      }
+    };
+
+    // Écouter les changements de localStorage depuis d'autres onglets
+    window.addEventListener('storage', handleStorageChange);
+
+    // Créer un événement personnalisé pour les changements dans le même onglet
+    const customStorageHandler = (e) => {
+      if (e.detail && e.detail.key === 'logout') {
+        handleStorageChange();
+      }
+    };
+    window.addEventListener('localStorageChange', customStorageHandler);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('localStorageChange', customStorageHandler);
+    };
   }, []);
 
   // Appliquer les filtres aux signalements
