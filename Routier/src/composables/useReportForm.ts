@@ -211,8 +211,8 @@ export function useReportForm(options: UseReportFormOptions) {
       return false
     }
 
-    if (reportDescription.value.trim().length < 5) {
-      options.showToast('Veuillez saisir une description (au moins 5 caractères)', 'warning')
+    if (reportDescription.value.trim().length < 1) {
+      options.showToast('Veuillez saisir une description (au moins 1 caractère)', 'warning')
       return false
     }
 
@@ -227,12 +227,12 @@ export function useReportForm(options: UseReportFormOptions) {
   const formProgress = computed(() => {
     let progress = 0
     if (reportType.value) progress += 50
-    if (reportDescription.value.trim().length >= 5) progress += 50
+    if (reportDescription.value.trim().length >= 1) progress += 50
     return progress
   })
 
   const canSubmit = computed(() => {
-    return reportType.value && reportDescription.value.trim().length >= 5
+    return reportType.value && reportDescription.value.trim().length >= 1
   })
 
   const placeholderText = computed(() => {

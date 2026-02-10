@@ -233,10 +233,16 @@ const goToHomeWithoutLogin = () => {
 .input-item {
     --background: #f8fafc;
     --border-radius: 12px;
+    --color: #1e293b;
     margin-bottom: 16px;
     border-radius: 12px;
     border: 2px solid transparent;
     transition: all 0.3s ease;
+}
+
+.input-item ion-input {
+    --color: #1e293b;
+    --placeholder-color: #94a3b8;
 }
 
 .input-item:focus-within {
@@ -254,6 +260,61 @@ const goToHomeWithoutLogin = () => {
 .password-toggle {
     --color: #64748b;
     margin: 0;
+}
+
+/* Mode sombre */
+@media (prefers-color-scheme: dark) {
+    .login-card {
+        background: rgba(30, 41, 59, 0.95);
+    }
+
+    .input-item {
+        --background: #1e293b;
+        --color: #f1f5f9;
+        border-color: #334155;
+    }
+
+    .input-item ion-input {
+        --color: #f1f5f9;
+        --placeholder-color: #64748b;
+    }
+
+    .input-item:focus-within {
+        --background: #0f172a;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+
+    .input-icon {
+        color: #94a3b8;
+    }
+
+    .password-toggle {
+        --color: #94a3b8;
+    }
+
+    .divider::before,
+    .divider::after {
+        border-bottom-color: #334155;
+    }
+
+    .divider-text {
+        color: #64748b;
+    }
+
+    .google-button {
+        --background: #1e293b;
+        --color: #f1f5f9;
+        border-color: #334155;
+    }
+
+    .google-button:hover {
+        --background: #0f172a;
+    }
+
+    .forgot-password ion-button {
+        --color: #94a3b8;
+    }
 }
 
 .error-text {
