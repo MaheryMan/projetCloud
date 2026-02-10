@@ -205,6 +205,7 @@ export function useReportMap(options: UseReportMapOptions) {
             <div class="popup-detail"><strong>Surface:</strong> ${(report.surfaceM2 || 0)} m²</div>
             <div class="popup-detail"><strong>Budget estimé:</strong> ${(report.budgetEstimated || 0)} Ar</div>
             <div class="popup-detail"><strong>Entreprise:</strong> ${report.companyName || 'Non spécifiée'}</div>
+            <div class="popup-detail"><strong>Niveau:</strong> ${report.niveau !== null && report.niveau !== undefined ? report.niveau : 'Non défini'}</div>
           </div>
           <div class="popup-footer">
             <ion-icon name="calendar-outline"></ion-icon>

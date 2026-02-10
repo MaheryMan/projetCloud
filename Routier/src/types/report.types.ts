@@ -15,6 +15,7 @@ export interface Report {
   surfaceM2?: number
   budgetEstimated?: number
   companyName?: string
+  niveau?: number
   createdAt: Timestamp
 }
 

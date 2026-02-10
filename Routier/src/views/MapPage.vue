@@ -394,6 +394,10 @@
             <span class="report-status">{{ selectedReport.status }}</span>
           </div>
           <p class="report-desc">{{ selectedReport.description }}</p>
+          <div class="report-extra-info" v-if="selectedReport.niveau !== null && selectedReport.niveau !== undefined">
+            <ion-icon name="flag-outline"></ion-icon>
+            <span>Niveau: {{ selectedReport.niveau }}</span>
+          </div>
         </div>
 
         <PhotoGallery :report-id="selectedReport.id!" />
