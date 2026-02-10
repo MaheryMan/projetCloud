@@ -12,7 +12,6 @@ import UserManagement from './pages/UserManagement';
 import Statistics from './pages/Statistics';
 import Settings from './pages/Settings';
 import PrixForfaitaire from './pages/PrixForfaitaire';
-import { startSessionMonitoring, stopSessionMonitoring } from './services/authService';
 import { startSessionMonitoring, stopSessionMonitoring, checkTokenValidity } from './services/authService';
 import './App.css';
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './PrixForfaitaire.css';
+import { fetchWithAuth } from '../services/authService';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -20,7 +21,7 @@ const PrixForfaitaire = () => {
     const fetchActivePrix = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/api/prix-forfaitaire/actif`);
+            const response = await fetchWithAuth(`${API_URL}/api/prix-forfaitaire/actif`);
             
             if (response.ok) {
                 const data = await response.json();
@@ -62,34 +63,46 @@ const PrixForfaitaire = () => {
             
             const method = prixActif ? 'PUT' : 'POST';
 
-            const response = await fetch(url, {
+            console.log('Envoi de la requête:', { url, method, data: { prixParMetreCarre: parseFloat(formData.prixParMetreCarre) } });
+
+            const response = await fetchWithAuth(url, {
                 method: method,
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    prixParMetreCarre: parseFloat(formData.prixParMetreCarre),
-                    multiplicateurNiveau: parseFloat(formData.multiplicateurNiveau)
+                    prixParMetreCarre: parseFloat(formData.prixParMetreCarre)
                 })
+            });
+
+            console.log('Réponse reçue:', { status: response.status, ok: response.ok });
 
             if (response.ok) {
                 const data = await response.json();
+                console.log('Données reçues:', data);
                 setPrixActif(data);
                 setSuccess('Prix forfaitaire mis à jour avec succès!');
                 setTimeout(() => setSuccess(null), 3000);
             } else {
-                const errorData = await response.json();
-                setError(errorData.message || 'Erreur lors de la mise à jour du prix');
+                let errorMessage = 'Erreur lors de la mise à jour du prix';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorMessage;
+                } catch (parseError) {
+                    console.error('Erreur lors du parsing de la réponse d\'erreur:', parseError);
+                    errorMessage = `Erreur ${response.status}: ${response.statusText}`;
+                }
+                console.error('Erreur API:', errorMessage);
+                setError(errorMessage);
             }
         } catch (err) {
-            setError('Erreur lors de la communication avec le serveur');
-            console.error(err);
+            console.error('Erreur de communication:', err);
+            setError(`Erreur lors de la communication avec le serveur: ${err.message}`);
         }
     };
 
     const calculerExemple = () => {
-        if (!formData.prixParMetreCarre || !formData.multiplicateurNiveau) {
-            return null;) {
+        if (!formData.prixParMetreCarre) {
             return null;
         }
 
@@ -99,7 +112,8 @@ const PrixForfaitaire = () => {
         return {
             niveau1: (prix * 1 * surface).toFixed(2),
             niveau2: (prix * 2 * surface).toFixed(2),
-            niveau3: (prix * 3 * surface
+            niveau3: (prix * 3 * surface).toFixed(2)
+        };
     };
 
     const exemples = calculerExemple();
@@ -137,62 +151,16 @@ const PrixForfaitaire = () => {
                         </small>
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="multiplicateurNiveau">
-                     /button>
+                    <button type="submit" className="btn btn-primary">
+                        {prixActif ? 'Mettre à jour le prix' : 'Créer le prix'}
+                    </button>
                 </form>
 
-                {exemples && (
-                    <div className="exemples-section">
-                        <h3>Exemples de Calcul (pour 50m²)</h3>
-                        <div className="exemples-grid">
-                            <div className="exemple-card">
-                                <div className="exemple-niveau">Niveau 1</div>
-                                <div className="exemple-prix">{exemples.niveau1} Ar</div>
-                                <div className="exemple-formule">
-                                    50 × {formData.prixParMetreCarre} × {formData.multiplicateurNiveau}<sup>1</sup>
-                                </div>
-                            </div>
-                            <div className="exemple-card">
-                                <div className="exemple-niveau">Niveau 2</div>
-                                <div className="exemple-prix">{exemples.niveau2} Ar</div>
-                                <div className="exemple-formule">
-                                    50 × {formData.prixParMetreCarre} × {formData.multiplicateurNiveau}<sup>2</sup>
-                                </div>
-                            </div>
-                            <div className="exemple-card">
-                                <div className="exemple-niveau">Niveau 3</div>
-                                <div className="exemple-prix">{exemples.niveau3} Ar</div>
-                                <div className="exemple-formule">
-                                    50 × {formData.prixParMetreCarre} × {formData.multiplicateurNiveau}<sup>3</sup>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
-                <div className="info{formData.prixParMetreCarre} × 1 × 50
-                                </div>
-                            </div>
-                            <div className="exemple-card">
-                                <div className="exemple-niveau">Niveau 2</div>
-                                <div className="exemple-prix">{exemples.niveau2} Ar</div>
-                                <div className="exemple-formule">
-                                    {formData.prixParMetreCarre} × 2 × 50
-                                </div>
-                            </div>
-                            <div className="exemple-card">
-                                <div className="exemple-niveau">Niveau 3</div>
-                                <div className="exemple-prix">{exemples.niveau3} Ar</div>
-                                <div className="exemple-formule">
-                                    {formData.prixParMetreCarre} × 3 × 50
+
+            </div>
         </div>
     );
 };
 
 export default PrixForfaitaire;
-Prix par m² × Niveau × Surface
-                    </code>
-                    <ul className="info-list">
-                        <li>Le prix est appliqué automatiquement lors de la création d'un signalement</li>
-                        <li>Le niveau est saisi pour chaque signalement

@@ -44,8 +44,7 @@ public class Signalement {
     @Column(name = "id_status", nullable = false)
     private Long idStatus;
 
-    @Column(name = "niveau")
-    private Integer niveau;
+   
 
     @ManyToOne
     @JoinColumn(name = "id_type_signalement", nullable = false)
@@ -149,15 +148,6 @@ public class Signalement {
     public void setBudget(BigDecimal budget) {
         this.budget = budget;
     }
-
-    public Integer getNiveau() {
-        return niveau;
-    }
-
-    public void setNiveau(Integer niveau) {
-        this.niveau = niveau;
-    }
-
     public Long getIdEntreprise() {
         return idEntreprise;
     }

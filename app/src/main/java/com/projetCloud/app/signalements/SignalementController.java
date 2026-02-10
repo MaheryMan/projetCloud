@@ -205,6 +205,7 @@ public class SignalementController {
                 request.getLongitude(),
                 request.getSurfaceM2(),
                 request.getBudget(),
+                request.getNiveau(),
                 request.getDescription(),
                 request.getIdEntreprise(),
                 status.get().getId(),
